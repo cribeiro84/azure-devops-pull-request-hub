@@ -44,6 +44,7 @@ import { css } from "azure-devops-ui/Util";
 import { Pill, PillSize } from "azure-devops-ui/Pill";
 import { PillGroup } from "azure-devops-ui/PillGroup";
 import { IColor } from "azure-devops-ui/Utilities/Color";
+import { PullRequestModel } from "./PulRequestsTabData";
 
 export class PullRequestsTab extends React.Component<
   {},
@@ -67,6 +68,28 @@ export class PullRequestsTab extends React.Component<
     this.gitClient = getClient(GitRestClient);
     this.filter = new Filter();
 
+    this.setupFilter();
+
+    this.state = {
+      pullRequests: [],
+      repositories: [],
+      currentProject: { id: "", name: "" },
+      creadtedByList: [],
+      sourceBranchList: [],
+      targetBranchList: [],
+      reviewerList: []
+    };
+  }
+
+  public async componentWillMount() {
+    DevOps.init();
+
+    this.initializeState();
+  }
+
+  public componentDidMount() {}
+
+  private setupFilter() {
     this.filter.subscribe(() => {
       const { pullRequests } = this.state;
       const filterPullRequestTitle = this.filter.getFilterItemValue<string>(
@@ -86,6 +109,10 @@ export class PullRequestsTab extends React.Component<
       );
       const reviewersFilter = this.filter.getFilterItemValue<string[]>(
         "reviewers"
+      );
+
+      const myApprovalStatusFilter = this.filter.getFilterItemValue<string>(
+        "myApproval"
       );
 
       let filteredPullRequest = pullRequests;
@@ -156,27 +183,19 @@ export class PullRequestsTab extends React.Component<
           return found;
         });
       }
+
+      if (myApprovalStatusFilter && myApprovalStatusFilter.length > 0) {
+        filteredPullRequest = filteredPullRequest.filter(pr => {
+          return (
+            pr.myApprovalStatus ==
+            -Data.ReviewerVoteOption[parseInt(myApprovalStatusFilter)]
+          );
+        });
+      }
+
       this.reloadPullRequestItemProvider(filteredPullRequest);
     }, FILTER_CHANGE_EVENT);
-
-    this.state = {
-      pullRequests: [],
-      repositories: [],
-      currentProject: { id: "", name: "" },
-      creadtedByList: [],
-      sourceBranchList: [],
-      targetBranchList: [],
-      reviewerList: []
-    };
   }
-
-  public async componentWillMount() {
-    DevOps.init();
-
-    this.initializeState();
-  }
-
-  public componentDidMount() {}
 
   private async initializeState() {
     console.log("initializeState called");
@@ -274,6 +293,15 @@ export class PullRequestsTab extends React.Component<
     creadtedByList = [];
     reviewerList = [];
 
+    pullRequests = pullRequests.sort(
+      (a: PullRequestModel, b: PullRequestModel) => {
+        return (
+          a.gitPullRequest.creationDate.getTime() -
+          b.gitPullRequest.creationDate.getTime()
+        );
+      }
+    );
+
     this.pullRequestItemProvider.push(...pullRequests);
 
     pullRequests.map(pr => {
@@ -362,12 +390,12 @@ export class PullRequestsTab extends React.Component<
 
     if (this.pullRequestItemProvider.value.length === 0) {
       return (
-          <div className="absolute-fill flex-column flex-grow flex-center justify-center">
-              <Spinner size={SpinnerSize.large} />
-              <div>Loading...</div>
-          </div>
+        <div className="absolute-fill flex-column flex-grow flex-center justify-center">
+          <Spinner size={SpinnerSize.large} />
+          <div>Loading...</div>
+        </div>
       );
-  }
+    }
 
     return (
       <div>
@@ -460,6 +488,23 @@ export class PullRequestsTab extends React.Component<
               })}
               selection={this.selectedReviewers}
               placeholder="Reviewers"
+            />
+          </React.Fragment>
+
+          <React.Fragment>
+            <DropdownFilterBarItem
+              filterItemKey="myApproval"
+              filter={this.filter}
+              items={Object.keys(Data.ReviewerVoteOption)
+                .filter(value => !isNaN(parseInt(value, 10)))
+                .map(item => {
+                  return {
+                    id: item,
+                    text: getVoteDescription(parseInt(item))
+                  };
+                })}
+              selection={this.selectedReviewers}
+              placeholder="My Approval Status"
             />
           </React.Fragment>
         </FilterBar>
@@ -805,6 +850,21 @@ function getPullRequestFailureDescription(
     default:
       return PullRequestAsyncStatus[prMergeStatus];
   }
+}
+
+function getVoteDescription(vote: number): string {
+  switch (vote) {
+    case 10:
+      return "Approved";
+    case 5:
+      return "Approved with Suggestions";
+    case -10:
+      return "Rejected";
+    case -5:
+      return "Waiting for Author";
+  }
+
+  return "No Vote";
 }
 
 function getReviewerColor(reviewer: IdentityRefWithVote): IColor {

@@ -1,4 +1,5 @@
 {
+    "baseUri": "https://localhost:3000",
     "manifestVersion": 1,
     "id": "pull-request-manager-hub",
     "publisher": "caribeiro84",

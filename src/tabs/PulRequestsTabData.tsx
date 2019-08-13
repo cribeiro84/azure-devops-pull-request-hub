@@ -27,6 +27,8 @@ export class PullRequestModel {
   public sourceBranchHref?: string;
   public targetBranchHref?: string;
   public baseUrl?: string;
+  public myApprovalStatus?: ReviewerVoteOption;
+  public currentUser: DevOps.IUserContext = DevOps.getUser();
 
   constructor(public gitPullRequest: GitPullRequest, public projectName: string)
   {
@@ -42,6 +44,22 @@ export class PullRequestModel {
     this.pullRequestHref = `${this.baseUrl}/${DevOps.getHost().name}/${this.projectName}/_git/${this.gitPullRequest.repository.name}/pullrequest/${this.gitPullRequest.pullRequestId}`;
     this.sourceBranchHref = `${this.baseUrl}/${DevOps.getHost().name}/${this.projectName}/_git/${this.gitPullRequest.repository.name}?version=GB${this.sourceBranchName}`;
     this.targetBranchHref = `${this.baseUrl}/${DevOps.getHost().name}/${this.projectName}/_git/${this.gitPullRequest.repository.name}?version=GB${this.targetBranchName}`;
+    this.myApprovalStatus = this.getCurrentUserVoteStatus(this.gitPullRequest.reviewers);
+  };
+
+  private getCurrentUserVoteStatus(reviewers: IdentityRefWithVote[]): ReviewerVoteOption {
+    let voteResult = ReviewerVoteOption.NoVote;
+    if (reviewers && reviewers.length > 0) {
+      const currentUserReviewer = reviewers.filter(r => r.id == this.currentUser.id);
+
+      if (currentUserReviewer.length > 0) {
+        voteResult = currentUserReviewer[0].vote as ReviewerVoteOption;
+      }
+
+      return voteResult;
+    }
+
+    return voteResult;
   };
 
   public static getModels (pullRequestList: GitPullRequest[] | undefined, projectName: string): PullRequestModel[] {
@@ -105,14 +123,6 @@ export const draftColor: IColor = {
   green: 180,
   blue: 250
 };
-
-export enum PullRequestVoteStatus {
-  pending = "Pending",
-  waitingForAuthor = "Waiting for Author",
-  rejected = "Rejected",
-  approved = "Approved",
-  approvedWithSuggestions = "Approved with Suggestions"
-}
 
 export const pullRequestCriteria: GitPullRequestSearchCriteria = {
   repositoryId: "",
