@@ -11,6 +11,7 @@ import { Page } from "azure-devops-ui/Page";
 import { Tab, TabBar, TabSize } from "azure-devops-ui/Tabs";
 import { showRootComponent } from "./common";
 import { PullRequestsTab } from "./tabs/PullRequestsTab";
+import { addPolyFills } from "./polyfills";
 
 interface IHubContentState {
   selectedTabId: string;
@@ -19,6 +20,8 @@ interface IHubContentState {
   useLargeTitle?: boolean;
   useCompactPivots?: boolean;
 }
+
+addPolyFills();
 
 export class App extends React.Component<{}, IHubContentState> {
   constructor(props: {}) {
