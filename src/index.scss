@@ -1,0 +1,37 @@
+@import "azure-devops-ui/Core/_platformCommon.scss";
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    font-family: sans-serif;
+
+    width: 100%;
+    height: 100%;
+}
+
+//
+// Global styles
+//
+.bolt-panel-content, 
+.custom-scrollbar {
+    scrollbar-color: $transblack-20 transparent;
+    scrollbar-width: thin;
+}
+
+.bolt-panel-content::-webkit-scrollbar {
+    width: 18px;
+}
+
+.bolt-panel-content::-webkit-scrollbar-thumb {
+    border: 6px solid transparent;
+    background: $transblack-20;
+    border-radius: 10px;
+    background-clip: padding-box;
+}
+
+.bolt-panel-content::-webkit-scrollbar-thumb:hover {
+    background: $transblack-30;
+    background-clip: padding-box;
+}
+
