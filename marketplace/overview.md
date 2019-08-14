@@ -8,6 +8,6 @@ Manage your Pull Requests of all your repositories at a single place without hav
 
 ## Updates
 
-**03/08/2019** - 1.0.0
+**21/08/2019** - 1.0.0
 
 - Public release of **Pull Request Manager Hub**
