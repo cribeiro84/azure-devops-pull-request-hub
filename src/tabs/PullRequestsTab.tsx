@@ -26,7 +26,7 @@ import { IHeaderCommandBarItem } from "azure-devops-ui/HeaderCommandBar";
 import { FilterBar } from "azure-devops-ui/FilterBar";
 import { KeywordFilterBarItem } from "azure-devops-ui/TextFilterBarItem";
 import { Filter, FILTER_CHANGE_EVENT } from "azure-devops-ui/Utilities/Filter";
-import { DropdownMultiSelection } from "azure-devops-ui/Utilities/DropdownSelection";
+import { DropdownMultiSelection, DropdownSelection } from "azure-devops-ui/Utilities/DropdownSelection";
 import { DropdownFilterBarItem } from "azure-devops-ui/Dropdown";
 import {
   ObservableArray,
@@ -56,6 +56,7 @@ export class PullRequestsTab extends React.Component<
   private selectedSourceBranches = new DropdownMultiSelection();
   private selectedTargetBranches = new DropdownMultiSelection();
   private selectedReviewers = new DropdownMultiSelection();
+  private selectedMyApprovalStatus = new DropdownSelection();
   private pullRequestItemProvider = new ObservableArray<
     | Data.PullRequestModel
     | IReadonlyObservableValue<Data.PullRequestModel | undefined>
@@ -187,8 +188,7 @@ export class PullRequestsTab extends React.Component<
       if (myApprovalStatusFilter && myApprovalStatusFilter.length > 0) {
         filteredPullRequest = filteredPullRequest.filter(pr => {
           return (
-            pr.myApprovalStatus ==
-            -Data.ReviewerVoteOption[parseInt(myApprovalStatusFilter)]
+            pr.myApprovalStatus === (parseInt(myApprovalStatusFilter) as Data.ReviewerVoteOption)
           );
         });
       }
@@ -503,7 +503,7 @@ export class PullRequestsTab extends React.Component<
                     text: getVoteDescription(parseInt(item))
                   };
                 })}
-              selection={this.selectedReviewers}
+              selection={this.selectedMyApprovalStatus}
               placeholder="My Approval Status"
             />
           </React.Fragment>

@@ -1,5 +1,4 @@
 {
-  "baseUri": "https://localhost:3000",
   "name": "azure-pull-request-hub",
   "version": "0.1.0",
   "private": true,

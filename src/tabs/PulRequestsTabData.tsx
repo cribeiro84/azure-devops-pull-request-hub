@@ -15,6 +15,14 @@ import { IdentityRef } from "azure-devops-extension-api/WebApi/WebApi";
 
 export const refsPreffix = "refs/heads/";
 
+export enum ReviewerVoteOption {
+  Approved = 10,
+  ApprovedWithSuggestions = 5,
+  Rejected = -10,
+  WaitingForAuthor = -5,
+  NoVote = 0
+}
+
 export class BranchDropDownItem {
   public repositoryName?: string;
   public branchName?: string;
@@ -50,13 +58,11 @@ export class PullRequestModel {
   private getCurrentUserVoteStatus(reviewers: IdentityRefWithVote[]): ReviewerVoteOption {
     let voteResult = ReviewerVoteOption.NoVote;
     if (reviewers && reviewers.length > 0) {
-      const currentUserReviewer = reviewers.filter(r => r.id == this.currentUser.id);
+      const currentUserReviewer = reviewers.filter(r => r.id === this.currentUser.id);
 
       if (currentUserReviewer.length > 0) {
         voteResult = currentUserReviewer[0].vote as ReviewerVoteOption;
       }
-
-      return voteResult;
     }
 
     return voteResult;
@@ -73,14 +79,6 @@ export class PullRequestModel {
 
     return modelList;
   }
-}
-
-export enum ReviewerVoteOption {
-  Approved = 10,
-  ApprovedWithSuggestions = 5,
-  Rejected = -10,
-  WaitingForAuthor = -5,
-  NoVote = 0
 }
 
 export interface IStatusIndicatorData {
