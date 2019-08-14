@@ -56,7 +56,7 @@ export class PullRequestsTab extends React.Component<
   private selectedSourceBranches = new DropdownMultiSelection();
   private selectedTargetBranches = new DropdownMultiSelection();
   private selectedReviewers = new DropdownMultiSelection();
-  private selectedMyApprovalStatus = new DropdownSelection();
+  private selectedMyApprovalStatuses = new DropdownMultiSelection();
   private pullRequestItemProvider = new ObservableArray<
     | Data.PullRequestModel
     | IReadonlyObservableValue<Data.PullRequestModel | undefined>
@@ -112,8 +112,8 @@ export class PullRequestsTab extends React.Component<
         "reviewers"
       );
 
-      const myApprovalStatusFilter = this.filter.getFilterItemValue<string>(
-        "myApproval"
+      const myApprovalStatusFilter = this.filter.getFilterItemValue<string[]>(
+        "myApprovals"
       );
 
       let filteredPullRequest = pullRequests;
@@ -187,9 +187,10 @@ export class PullRequestsTab extends React.Component<
 
       if (myApprovalStatusFilter && myApprovalStatusFilter.length > 0) {
         filteredPullRequest = filteredPullRequest.filter(pr => {
-          return (
-            pr.myApprovalStatus === (parseInt(myApprovalStatusFilter) as Data.ReviewerVoteOption)
-          );
+          const found = myApprovalStatusFilter.some(vote => {
+            return pr.myApprovalStatus === (parseInt(vote) as Data.ReviewerVoteOption)
+          });
+          return found;
         });
       }
 
@@ -493,7 +494,7 @@ export class PullRequestsTab extends React.Component<
 
           <React.Fragment>
             <DropdownFilterBarItem
-              filterItemKey="myApproval"
+              filterItemKey="myApprovals"
               filter={this.filter}
               items={Object.keys(Data.ReviewerVoteOption)
                 .filter(value => !isNaN(parseInt(value, 10)))
@@ -503,7 +504,7 @@ export class PullRequestsTab extends React.Component<
                     text: getVoteDescription(parseInt(item))
                   };
                 })}
-              selection={this.selectedMyApprovalStatus}
+              selection={this.selectedMyApprovalStatuses}
               placeholder="My Approval Status"
             />
           </React.Fragment>
