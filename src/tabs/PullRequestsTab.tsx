@@ -44,7 +44,6 @@ import { css } from "azure-devops-ui/Util";
 import { Pill, PillSize } from "azure-devops-ui/Pill";
 import { PillGroup } from "azure-devops-ui/PillGroup";
 import { IColor } from "azure-devops-ui/Utilities/Color";
-import { PullRequestModel } from "./PulRequestsTabData";
 
 export class PullRequestsTab extends React.Component<
   {},
@@ -295,7 +294,7 @@ export class PullRequestsTab extends React.Component<
     reviewerList = [];
 
     pullRequests = pullRequests.sort(
-      (a: PullRequestModel, b: PullRequestModel) => {
+      (a: Data.PullRequestModel, b: Data.PullRequestModel) => {
         return (
           a.gitPullRequest.creationDate.getTime() -
           b.gitPullRequest.creationDate.getTime()
@@ -522,6 +521,7 @@ export class PullRequestsTab extends React.Component<
               itemProvider={this.pullRequestItemProvider}
               showLines={true}
               role="table"
+              rowHeight={50}
             />
           </React.Fragment>
         </Card>
@@ -585,9 +585,6 @@ export class PullRequestsTab extends React.Component<
     tableColumn: ITableColumn<Data.PullRequestModel>,
     tableItem: Data.PullRequestModel
   ): JSX.Element {
-    const tooltip = `from ${tableItem.sourceBranchName} to ${
-      tableItem.targetBranchName
-    }`;
     return (
       <TwoLineTableCell
         className="bolt-table-cell-content-with-inline-link no-v-padding"
@@ -598,7 +595,7 @@ export class PullRequestsTab extends React.Component<
           <span className="flex-row scroll-hidden">
             <VssPersona
               className="icon-margin"
-              imageUrl={tableItem.gitPullRequest.createdBy.imageUrl}
+              imageUrl={tableItem.gitPullRequest.createdBy._links["avatar"].href}
               size={"small"}
               displayName={tableItem.gitPullRequest.createdBy.displayName}
             />
@@ -618,28 +615,26 @@ export class PullRequestsTab extends React.Component<
           </span>
         }
         line2={
-          <Tooltip text={tooltip} overflowOnly>
-            <span className="fontSize font-size secondary-text flex-row flex-center text-ellipsis">
-              <br />
-              <br />
-              <strong>Reviewers:&nbsp;</strong>
-              <PillGroup className="flex-row">
-                {tableItem.gitPullRequest.reviewers.map((reviewer, i) => {
-                  // @ts-ignore
-                  return (
-                    <Pill
-                      key={reviewer.id}
-                      color={getReviewerColor(reviewer)}
-                      // @ts-ignore
-                      size={PillSize.regular}
-                    >
-                      {reviewer.displayName}
-                    </Pill>
-                  );
-                })}
-              </PillGroup>
-            </span>
-          </Tooltip>
+          <span className="fontSize font-size secondary-text flex-row flex-center text-ellipsis">
+            <br />
+            <br />
+            <strong>Reviewers:&nbsp;</strong>
+            <PillGroup className="flex-row">
+              {tableItem.gitPullRequest.reviewers.map((reviewer, i) => {
+                // @ts-ignore
+                return (
+                  <Pill
+                    key={reviewer.id}
+                    color={getReviewerColor(reviewer)}
+                    // @ts-ignore
+                    size={PillSize.regular}
+                  >
+                    {reviewer.displayName}
+                  </Pill>
+                );
+              })}
+            </PillGroup>
+          </span>
         }
       />
     );
