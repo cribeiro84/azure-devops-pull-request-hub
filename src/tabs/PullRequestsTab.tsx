@@ -521,7 +521,6 @@ export class PullRequestsTab extends React.Component<
               itemProvider={this.pullRequestItemProvider}
               showLines={true}
               role="table"
-              rowHeight={50}
             />
           </React.Fragment>
         </Card>
@@ -615,11 +614,11 @@ export class PullRequestsTab extends React.Component<
           </span>
         }
         line2={
-          <span className="fontSize font-size secondary-text flex-row flex-center text-ellipsis">
+          <span className="flex-wrap fontSize font-size secondary-text flex-row flex-center text-ellipsis">
             <br />
             <br />
             <strong>Reviewers:&nbsp;</strong>
-            <PillGroup className="flex-row">
+            <PillGroup className="flex-row flex-wrap">
               {tableItem.gitPullRequest.reviewers.map((reviewer, i) => {
                 // @ts-ignore
                 return (
