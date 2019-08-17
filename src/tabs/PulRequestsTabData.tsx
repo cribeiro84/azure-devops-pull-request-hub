@@ -37,6 +37,8 @@ export class PullRequestModel {
   public baseUrl?: string;
   public myApprovalStatus?: ReviewerVoteOption;
   public currentUser: DevOps.IUserContext = DevOps.getUser();
+  public lastCommitId?: string;
+  public lastShortCommitId?: string;
 
   constructor(public gitPullRequest: GitPullRequest, public projectName: string)
   {
@@ -53,6 +55,8 @@ export class PullRequestModel {
     this.sourceBranchHref = `${this.baseUrl}/${DevOps.getHost().name}/${this.projectName}/_git/${this.gitPullRequest.repository.name}?version=GB${this.sourceBranchName}`;
     this.targetBranchHref = `${this.baseUrl}/${DevOps.getHost().name}/${this.projectName}/_git/${this.gitPullRequest.repository.name}?version=GB${this.targetBranchName}`;
     this.myApprovalStatus = this.getCurrentUserVoteStatus(this.gitPullRequest.reviewers);
+    this.lastCommitId = this.gitPullRequest.lastMergeSourceCommit.commitId;
+    this.lastShortCommitId = this.lastCommitId.substr(0, 8);
   };
 
   private getCurrentUserVoteStatus(reviewers: IdentityRefWithVote[]): ReviewerVoteOption {
