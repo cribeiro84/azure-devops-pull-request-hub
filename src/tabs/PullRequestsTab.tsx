@@ -42,7 +42,7 @@ import { Duration } from "azure-devops-ui/Duration";
 import { Tooltip } from "azure-devops-ui/TooltipEx";
 import { css } from "azure-devops-ui/Util";
 import { Pill, PillSize } from "azure-devops-ui/Pill";
-import { PillGroup } from "azure-devops-ui/PillGroup";
+import { PillGroup, PillGroupOverflow } from "azure-devops-ui/PillGroup";
 import { IColor } from "azure-devops-ui/Utilities/Color";
 
 export class PullRequestsTab extends React.Component<
@@ -373,6 +373,8 @@ export class PullRequestsTab extends React.Component<
     });
 
     DevOps.notifyLoadSucceeded();
+
+    this.setupFilter();
   }
 
   refresh = () => {
@@ -614,11 +616,13 @@ export class PullRequestsTab extends React.Component<
           </span>
         }
         line2={
-          <span className="flex-wrap fontSize font-size secondary-text flex-row flex-center text-ellipsis">
+          <span className="fontSize font-size secondary-text flex-row flex-center text-ellipsis">
             <br />
             <br />
-            <strong>Reviewers:&nbsp;</strong>
-            <PillGroup className="flex-row flex-wrap">
+            <strong>Reviewers:&nbsp;</strong><br />
+            <PillGroup className="flex-row"
+              // @ts-ignore
+              overflow={PillGroupOverflow.wrap}>
               {tableItem.gitPullRequest.reviewers.map((reviewer, i) => {
                 // @ts-ignore
                 return (
