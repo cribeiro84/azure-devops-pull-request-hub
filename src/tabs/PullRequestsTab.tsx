@@ -381,6 +381,8 @@ export class PullRequestsTab extends React.Component<
     this.filter.applyChanges();
 
     DevOps.notifyLoadSucceeded();
+
+    this.setupFilter();
   }
 
   refresh = () => {
