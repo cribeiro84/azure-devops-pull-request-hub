@@ -26,7 +26,10 @@ import { IHeaderCommandBarItem } from "azure-devops-ui/HeaderCommandBar";
 import { FilterBar } from "azure-devops-ui/FilterBar";
 import { KeywordFilterBarItem } from "azure-devops-ui/TextFilterBarItem";
 import { Filter, FILTER_CHANGE_EVENT } from "azure-devops-ui/Utilities/Filter";
-import { DropdownMultiSelection, DropdownSelection } from "azure-devops-ui/Utilities/DropdownSelection";
+import {
+  DropdownMultiSelection,
+  DropdownSelection
+} from "azure-devops-ui/Utilities/DropdownSelection";
 import { DropdownFilterBarItem } from "azure-devops-ui/Dropdown";
 import {
   ObservableArray,
@@ -187,7 +190,10 @@ export class PullRequestsTab extends React.Component<
       if (myApprovalStatusFilter && myApprovalStatusFilter.length > 0) {
         filteredPullRequest = filteredPullRequest.filter(pr => {
           const found = myApprovalStatusFilter.some(vote => {
-            return pr.myApprovalStatus === (parseInt(vote) as Data.ReviewerVoteOption)
+            return (
+              pr.myApprovalStatus ===
+              (parseInt(vote) as Data.ReviewerVoteOption)
+            );
           });
           return found;
         });
@@ -371,6 +377,8 @@ export class PullRequestsTab extends React.Component<
       creadtedByList,
       reviewerList
     });
+
+    this.filter.applyChanges();
 
     DevOps.notifyLoadSucceeded();
 
@@ -564,84 +572,18 @@ export class PullRequestsTab extends React.Component<
       width: -33
     },
     {
+      id: "reviewers",
+      name: "Reviewers",
+      renderCell: this.renderReviewersColumn,
+      width: -33
+    },
+    {
       id: "time",
       readonly: true,
       renderCell: this.renderDateColumn,
       width: -33
     }
   ];
-
-  private sortFunctions = [
-    // Sort on Title column
-    (item1: Data.PullRequestModel, item2: Data.PullRequestModel) => {
-      return item1.gitPullRequest.title.localeCompare(
-        item2.gitPullRequest.title!
-      );
-    }
-  ];
-
-  private renderDetailsColumn(
-    rowIndex: number,
-    columnIndex: number,
-    tableColumn: ITableColumn<Data.PullRequestModel>,
-    tableItem: Data.PullRequestModel
-  ): JSX.Element {
-    return (
-      <TwoLineTableCell
-        className="bolt-table-cell-content-with-inline-link no-v-padding"
-        key={"col-" + columnIndex}
-        columnIndex={columnIndex}
-        tableColumn={tableColumn}
-        line1={
-          <span className="flex-row scroll-hidden">
-            <VssPersona
-              className="icon-margin"
-              imageUrl={tableItem.gitPullRequest.createdBy._links["avatar"].href}
-              size={"small"}
-              displayName={tableItem.gitPullRequest.createdBy.displayName}
-            />
-            <Tooltip
-              text={tableItem.gitPullRequest.createdBy.displayName}
-              overflowOnly
-            >
-              <Link
-                className="fontSizeM font-size-m text-ellipsis bolt-table-link bolt-table-inline-link"
-                excludeTabStop
-                href="#"
-                target="_blank"
-              >
-                {tableItem.gitPullRequest.createdBy.displayName}
-              </Link>
-            </Tooltip>
-          </span>
-        }
-        line2={
-          <span className="fontSize font-size secondary-text flex-row flex-center text-ellipsis">
-            <br />
-            <br />
-            <strong>Reviewers:&nbsp;</strong><br />
-            <PillGroup className="flex-row"
-              // @ts-ignore
-              overflow={PillGroupOverflow.wrap}>
-              {tableItem.gitPullRequest.reviewers.map((reviewer, i) => {
-                // @ts-ignore
-                return (
-                  <Pill
-                    key={reviewer.id}
-                    color={getReviewerColor(reviewer)}
-                    // @ts-ignore
-                    size={PillSize.regular}
-                  >
-                    {reviewer.displayName}
-                  </Pill>
-                );
-              })}
-            </PillGroup>
-          </span>
-        }
-      />
-    );
-  }
 
   private renderTitleColumn(
     rowIndex: number,
@@ -733,6 +675,100 @@ export class PullRequestsTab extends React.Component<
               </Link>
             </span>
           </Tooltip>
+        }
+      />
+    );
+  }
+
+  private renderDetailsColumn(
+    rowIndex: number,
+    columnIndex: number,
+    tableColumn: ITableColumn<Data.PullRequestModel>,
+    tableItem: Data.PullRequestModel
+  ): JSX.Element {
+    return (
+      <TwoLineTableCell
+        className="bolt-table-cell-content-with-inline-link no-v-padding"
+        key={"col-" + columnIndex}
+        columnIndex={columnIndex}
+        tableColumn={tableColumn}
+        line1={
+          <span className="flex-row scroll-hidden">
+            <VssPersona
+              className="icon-margin"
+              imageUrl={
+                tableItem.gitPullRequest.createdBy._links["avatar"].href
+              }
+              size={"small"}
+              displayName={tableItem.gitPullRequest.createdBy.displayName}
+            />
+            <Tooltip
+              text={tableItem.gitPullRequest.createdBy.displayName}
+              overflowOnly
+            >
+              <Link
+                className="fontSizeM font-size-m text-ellipsis bolt-table-link bolt-table-inline-link"
+                excludeTabStop
+                href="#"
+                target="_blank"
+              >
+                {tableItem.gitPullRequest.createdBy.displayName}
+              </Link>
+            </Tooltip>
+          </span>
+        }
+        line2={
+          <div>
+            <strong>Number of Changes:</strong>{" "}
+            {tableItem.gitPullRequest.lastMergeSourceCommit.changeCounts}
+            <br />
+            <strong>Last commit Id:</strong>{" "}
+            <Icon iconName="copy-button" />
+            {tableItem.lastShortCommitId}{" "}
+          </div>
+        }
+      />
+    );
+  }
+
+  private renderReviewersColumn(
+    rowIndex: number,
+    columnIndex: number,
+    tableColumn: ITableColumn<Data.PullRequestModel>,
+    tableItem: Data.PullRequestModel
+  ): JSX.Element {
+    return (
+      <TwoLineTableCell
+        className="bolt-table-cell-content-with-inline-link no-v-padding"
+        key={"col-" + columnIndex}
+        columnIndex={columnIndex}
+        tableColumn={tableColumn}
+        line1={
+          <span className="fontSize font-size secondary-text flex-row flex-center text-ellipsis">
+            <strong>Reviewers:&nbsp;</strong>
+            <br />
+          </span>
+        }
+        line2={
+          <PillGroup
+            className="flex-row"
+            // @ts-ignore
+            overflow={PillGroupOverflow.wrap}
+          >
+            {tableItem.gitPullRequest.reviewers.map((reviewer, i) => {
+              // @ts-ignore
+              return (
+                <Pill
+                  key={reviewer.id}
+                  color={getReviewerColor(reviewer)}
+                  // @ts-ignore
+                  size={PillSize.regular}
+                >
+                  {reviewer.displayName}
+                </Pill>
+              );
+            })}
+          </PillGroup>
         }
       />
     );
