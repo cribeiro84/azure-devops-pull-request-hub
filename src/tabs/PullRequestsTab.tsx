@@ -719,8 +719,6 @@ export class PullRequestsTab extends React.Component<
         }
         line2={
           <div>
-            <strong>Number of Changes:</strong>{" "}
-            {tableItem.gitPullRequest.lastMergeSourceCommit.changeCounts}
             <br />
             <strong>Last commit Id:</strong>{" "}
             <Icon iconName="copy-button" />
