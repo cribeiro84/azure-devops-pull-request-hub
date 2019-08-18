@@ -22,6 +22,7 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "package-release": "npm run clean-build && tfx extension create --root ./ --output-path ./azure-pull-request-hub.vsix",
+    "package-dev": "npm run clean-build && tfx extension create --root ./ --output-path ./azure-pull-request-hub-dev.vsix --overrides-file ./vss-extension.dev.json --share-with caixaazul",
     "clean-build": "del-cli build/**/runtime~main*.map build/**/runtime~main*.js"
   },
   "eslintConfig": {
