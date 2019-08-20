@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "name": "Pull Request Manager Hub",
     "description": "A complete and nice Pull Request Hub to manage all your repositories's PRs with must have filters at one simplified view.",
-    "public": false,
+    "public": true,
     "categories": ["Azure Repos"],
     "demands": ["api-version/3.0"],
     "scopes": [
