@@ -1,4 +1,6 @@
 {
     "baseUri": "https://localhost:3000",
-    "id": "pull-request-manager-hub-dev"
+    "id": "pull-request-manager-hub-dev",
+    "public": false,
+    "name": "Pull Request Manager Hub - DEV"
 }
