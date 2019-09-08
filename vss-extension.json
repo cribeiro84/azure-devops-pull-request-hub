@@ -1,62 +1,63 @@
 {
-    "manifestVersion": 1,
-    "id": "pull-request-manager-hub",
-    "publisher": "caribeiro84",
-    "version": "1.0.0",
-    "name": "Pull Request Manager Hub",
-    "description": "A complete and nice Pull Request Hub to manage all your repositories's PRs with must have filters at one simplified view.",
-    "public": true,
-    "categories": ["Azure Repos"],
-    "demands": ["api-version/3.0"],
-    "scopes": [
-      "vso.code"
-    ],
-    "targets": [
-        {
-            "id": "Microsoft.VisualStudio.Services"
-        }
-    ],
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/cribeiro84/azure-devops-pull-request-hub"
-    },
-    "icons": {
-      "default": "marketplace/logo.png",
-      "branding": "marketplace/logo.png"
-    },
-    "content": {
-      "details": {
-          "path": "marketplace/overview.md"
-      },
-      "license": {
-          "path": "marketplace/license.md"
-      }
+  "manifestVersion": 1,
+  "id": "pull-request-manager-hub",
+  "publisher": "caribeiro84",
+  "version": "1.0.0",
+  "name": "Pull Request Manager Hub",
+  "description": "A complete and nice Pull Request Hub to manage all your repositories's PRs with must have filters at one simplified view.",
+  "public": true,
+  "categories": ["Azure Repos"],
+  "demands": ["api-version/3.0"],
+  "scopes": [
+    "vso.code"
+  ],
+  "targets": [{
+    "id": "Microsoft.VisualStudio.Services"
+  }],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cribeiro84/azure-devops-pull-request-hub"
   },
-    "contributions": [
-        {
-            "id": "view",
-            "type": "ms.vss-web.hub",
-            "targets": [
-                "ms.vss-code-web.code-hub-group"
-            ],
-            "properties": {
-                "name": "Pull Request Manager Hub",
-                "uri": "build/index.html",
-                "icon": {
-                  "light": "marketplace/icon-light.png",
-                  "dark": "marketplace/icon-dark.png"
-              }
-            }
-        }
+  "icons": {
+    "default": "marketplace/logo.png",
+    "branding": "marketplace/logo.png"
+  },
+  "content": {
+    "details": {
+      "path": "marketplace/overview.md"
+    },
+    "license": {
+      "path": "marketplace/license.md"
+    }
+  },
+  "tags": ["code", "pull request", "git", "code review", "open source"],
+  "screenshots": [
+      {"path":"marketplace/screenshot-01.png"},
+      {"path":"marketplace/screenshot-02.png"},
+      {"path":"marketplace/screenshot-03.png"}
+  ],
+  "contributions": [{
+    "id": "view",
+    "type": "ms.vss-web.hub",
+    "targets": [
+      "ms.vss-code-web.code-hub-group"
     ],
-    "files": [
-        {
-            "path": "build",
-            "addressable": true
-        },
-        {
-          "path": "marketplace",
-          "addressable": true
+    "properties": {
+      "name": "Pull Request Manager Hub",
+      "uri": "build/index.html",
+      "icon": {
+        "light": "marketplace/icon-light.png",
+        "dark": "marketplace/icon-dark.png"
       }
-    ]
+    }
+  }],
+  "files": [{
+      "path": "build",
+      "addressable": true
+    },
+    {
+      "path": "marketplace",
+      "addressable": true
+    }
+  ]
 }
