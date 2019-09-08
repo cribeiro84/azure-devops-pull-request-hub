@@ -32,9 +32,9 @@
   },
   "tags": ["code", "pull request", "git", "code review", "open source"],
   "screenshots": [
-      {"path":"marketplace/screenshot-01.png"},
-      {"path":"marketplace/screenshot-02.png"},
-      {"path":"marketplace/screenshot-03.png"}
+      {"path":"marketplace/screenshots/screenshot-01.png"},
+      {"path":"marketplace/screenshots/screenshot-02.png"},
+      {"path":"marketplace/screenshots/screenshot-03.png"}
   ],
   "contributions": [{
     "id": "view",
@@ -57,6 +57,10 @@
     },
     {
       "path": "marketplace",
+      "addressable": true
+    },
+    {
+      "path": "marketplace/screenshots",
       "addressable": true
     }
   ]

@@ -8,9 +8,9 @@ Manage your Pull Requests of all your repositories at a single place without hav
 
 ## Screenshots
 
-![Pull Request Manager Hub - No filter](screenshot-01.png)
-![Pull Request Manager Hub - Filtering](screenshot-02.png)
-![Pull Request Manager Hub - Light Theme](screenshot-03.png)
+![Pull Request Manager Hub - No filter](screenshots/screenshot-01.png)
+![Pull Request Manager Hub - Filtering](screenshots/screenshot-02.png)
+![Pull Request Manager Hub - Light Theme](screenshots/screenshot-03.png)
 
 ## Updates
 
