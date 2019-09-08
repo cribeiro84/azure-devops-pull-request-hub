@@ -44,7 +44,7 @@ import { Ago } from "azure-devops-ui/Ago";
 import { Duration } from "azure-devops-ui/Duration";
 import { Tooltip } from "azure-devops-ui/TooltipEx";
 import { css } from "azure-devops-ui/Util";
-import { Pill, PillSize } from "azure-devops-ui/Pill";
+import { Pill, PillSize, PillVariant } from "azure-devops-ui/Pill";
 import { PillGroup, PillGroupOverflow } from "azure-devops-ui/PillGroup";
 import { IColor } from "azure-devops-ui/Utilities/Color";
 
@@ -720,9 +720,15 @@ export class PullRequestsTab extends React.Component<
         line2={
           <div>
             <br />
-            <strong>Last commit Id:</strong>{" "}
-            <Icon iconName="copy-button" />
-            {tableItem.lastShortCommitId}{" "}
+            <Icon iconName="BranchCommit" />
+            <Link
+                className="fontSizeM font-size-m text-ellipsis bolt-table-link bolt-table-inline-link"
+                excludeTabStop
+                href={tableItem.lastCommitUrl}
+                target="_blank"
+              >
+                {tableItem.lastShortCommitId}{" "}
+              </Link>
           </div>
         }
       />
@@ -759,6 +765,8 @@ export class PullRequestsTab extends React.Component<
                 <Pill
                   key={reviewer.id}
                   color={getReviewerColor(reviewer)}
+                  // @ts-ignore
+                  variant={PillVariant.colored}
                   // @ts-ignore
                   size={PillSize.regular}
                 >

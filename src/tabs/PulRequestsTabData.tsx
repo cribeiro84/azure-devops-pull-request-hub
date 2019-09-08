@@ -39,6 +39,7 @@ export class PullRequestModel {
   public currentUser: DevOps.IUserContext = DevOps.getUser();
   public lastCommitId?: string;
   public lastShortCommitId?: string;
+  public lastCommitUrl?: string;
 
   constructor(public gitPullRequest: GitPullRequest, public projectName: string)
   {
@@ -57,6 +58,7 @@ export class PullRequestModel {
     this.myApprovalStatus = this.getCurrentUserVoteStatus(this.gitPullRequest.reviewers);
     this.lastCommitId = this.gitPullRequest.lastMergeSourceCommit.commitId;
     this.lastShortCommitId = this.lastCommitId.substr(0, 8);
+    this.lastCommitUrl = `${this.baseUrl}/${DevOps.getHost().name}/${this.projectName}/_git/${this.gitPullRequest.repository.name}/commit/${this.lastCommitId}?refName=GB${this.gitPullRequest.sourceRefName}`;
   };
 
   private getCurrentUserVoteStatus(reviewers: IdentityRefWithVote[]): ReviewerVoteOption {
@@ -91,9 +93,9 @@ export interface IStatusIndicatorData {
 }
 
 export const approvedColor: IColor = {
-  red: 0,
-  green: 102,
-  blue: 0
+  red: 51,
+  green: 204,
+  blue: 51
 };
 
 export const waitingAuthorColor: IColor = {
@@ -109,9 +111,9 @@ export const approvedWithSuggestionsColor: IColor = {
 };
 
 export const noVoteColor: IColor = {
-  red: 128,
-  green: 128,
-  blue: 128
+  red: 230,
+  green: 230,
+  blue: 230
 };
 
 export const rejectedColor: IColor = {
