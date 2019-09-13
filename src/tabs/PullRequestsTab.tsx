@@ -424,7 +424,7 @@ export class PullRequestsTab extends React.Component<
                 </span>
             }
             imageAltText="No PRs!"
-            imagePath={require("../images/emptyPRList.svg")}
+            imagePath={require("../images/emptyPRList.png")}
             actionText="Refresh"
             // @ts-ignore
             actionType={ZeroDataActionType.ctaButton}
