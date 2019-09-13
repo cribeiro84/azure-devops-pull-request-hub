@@ -33,7 +33,8 @@ import {
 import { DropdownFilterBarItem } from "azure-devops-ui/Dropdown";
 import {
   ObservableArray,
-  IReadonlyObservableValue
+  IReadonlyObservableValue,
+  ObservableValue
 } from "azure-devops-ui/Core/Observable";
 import { Card } from "azure-devops-ui/Card";
 import { Icon, IIconProps } from "azure-devops-ui/Icon";
@@ -47,6 +48,7 @@ import { css } from "azure-devops-ui/Util";
 import { Pill, PillSize, PillVariant } from "azure-devops-ui/Pill";
 import { PillGroup, PillGroupOverflow } from "azure-devops-ui/PillGroup";
 import { IColor } from "azure-devops-ui/Utilities/Color";
+import { ZeroData, ZeroDataActionType } from "azure-devops-ui/ZeroData";
 
 export class PullRequestsTab extends React.Component<
   {},
@@ -80,7 +82,8 @@ export class PullRequestsTab extends React.Component<
       creadtedByList: [],
       sourceBranchList: [],
       targetBranchList: [],
-      reviewerList: []
+      reviewerList: [],
+      loading: true
     };
   }
 
@@ -239,6 +242,7 @@ export class PullRequestsTab extends React.Component<
   }
 
   private async getAllPullRequests() {
+    this.setState({loading: true});
     let { repositories, pullRequests } = this.state;
 
     //clear the pull request list to be reloaded...
@@ -383,6 +387,8 @@ export class PullRequestsTab extends React.Component<
     DevOps.notifyLoadSucceeded();
 
     this.setupFilter();
+
+    this.setState({loading: false});
   }
 
   refresh = () => {
@@ -395,15 +401,37 @@ export class PullRequestsTab extends React.Component<
       creadtedByList,
       sourceBranchList,
       targetBranchList,
-      reviewerList
+      reviewerList,
+      loading
     } = this.state;
 
-    if (this.pullRequestItemProvider.value.length === 0) {
+    if (loading === true) {
       return (
         <div className="absolute-fill flex-column flex-grow flex-center justify-center">
           <Spinner size={SpinnerSize.large} />
           <div>Loading...</div>
         </div>
+      );
+    }
+
+    if (this.pullRequestItemProvider.value.length === 0) {
+      return (
+        <ZeroData
+            primaryText="Yeah! No Pull Request to be reviewed. "
+            secondaryText={
+                <span>
+                    Enjoy your free time to code and raise PRs for your team/project!
+                </span>
+            }
+            imageAltText="No PRs!"
+            imagePath={require("../images/emptyPRList.svg")}
+            actionText="Refresh"
+            // @ts-ignore
+            actionType={ZeroDataActionType.ctaButton}
+            onActionClick={(event, item) =>
+                this.refresh()
+            }
+        />
       );
     }
 
