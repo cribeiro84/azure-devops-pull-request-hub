@@ -24,11 +24,20 @@ export enum ReviewerVoteOption {
 }
 
 export class BranchDropDownItem {
-  public repositoryName?: string;
-  public branchName?: string;
+  private _displayName: string = "";
+
+  constructor(public repositoryName: string, public branchName: string)
+  {
+    this._displayName = `${this.repositoryName}->${this.branchName}`;
+  }
+
+  public get displayName(): string {
+    return this._displayName;
+  }
 }
 
 export class PullRequestModel {
+  public title?: string;
   public pullRequestHref?: string;
   public sourceBranchName?: string;
   public targetBranchName?: string;
@@ -50,6 +59,7 @@ export class PullRequestModel {
     const url = new URL(document.referrer);
 
     this.baseUrl = url.origin + '/' + url.pathname.split('/')[0];
+    this.title = `${this.gitPullRequest.pullRequestId} - ${this.gitPullRequest.title}`;
     this.sourceBranchName = this.gitPullRequest.sourceRefName.replace(refsPreffix, '');
     this.targetBranchName = this.gitPullRequest.targetRefName.replace(refsPreffix, '');
     this.pullRequestHref = `${this.baseUrl}/${DevOps.getHost().name}/${this.projectName}/_git/${this.gitPullRequest.repository.name}/pullrequest/${this.gitPullRequest.pullRequestId}`;
@@ -143,7 +153,7 @@ export interface IPullRequestsTabState {
   currentProject?: IProjectInfo | undefined;
   pullRequests: PullRequestModel[];
   repositories: GitRepository[];
-  creadtedByList: IdentityRef[];
+  createdByList: IdentityRef[];
   sourceBranchList: BranchDropDownItem[];
   targetBranchList: BranchDropDownItem[];
   reviewerList: IdentityRefWithVote[];

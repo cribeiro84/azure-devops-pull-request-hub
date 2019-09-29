@@ -17,7 +17,8 @@ import {
 import { GitRestClient } from "azure-devops-extension-api/Git/GitClient";
 import {
   IdentityRefWithVote,
-  PullRequestAsyncStatus
+  PullRequestAsyncStatus,
+  GitRepository
 } from "azure-devops-extension-api/Git/Git";
 
 //Azure DevOps UI
@@ -25,16 +26,14 @@ import { VssPersona } from "azure-devops-ui/VssPersona";
 import { IHeaderCommandBarItem } from "azure-devops-ui/HeaderCommandBar";
 import { FilterBar } from "azure-devops-ui/FilterBar";
 import { KeywordFilterBarItem } from "azure-devops-ui/TextFilterBarItem";
-import { Filter, FILTER_CHANGE_EVENT } from "azure-devops-ui/Utilities/Filter";
+import { Filter, FILTER_CHANGE_EVENT, IFilterItemState } from "azure-devops-ui/Utilities/Filter";
 import {
-  DropdownMultiSelection,
-  DropdownSelection
+  DropdownMultiSelection
 } from "azure-devops-ui/Utilities/DropdownSelection";
 import { DropdownFilterBarItem } from "azure-devops-ui/Dropdown";
 import {
   ObservableArray,
-  IReadonlyObservableValue,
-  ObservableValue
+  IReadonlyObservableValue
 } from "azure-devops-ui/Core/Observable";
 import { Card } from "azure-devops-ui/Card";
 import { Icon, IIconProps } from "azure-devops-ui/Icon";
@@ -49,6 +48,7 @@ import { Pill, PillSize, PillVariant } from "azure-devops-ui/Pill";
 import { PillGroup, PillGroupOverflow } from "azure-devops-ui/PillGroup";
 import { IColor } from "azure-devops-ui/Utilities/Color";
 import { ZeroData, ZeroDataActionType } from "azure-devops-ui/ZeroData";
+import { IdentityRef } from 'azure-devops-extension-api/WebApi/WebApi';
 
 export class PullRequestsTab extends React.Component<
   {},
@@ -65,150 +65,58 @@ export class PullRequestsTab extends React.Component<
     | Data.PullRequestModel
     | IReadonlyObservableValue<Data.PullRequestModel | undefined>
   >();
+  private myApprovalStatuses = Object.keys(Data.ReviewerVoteOption)
+  .filter(value => !isNaN(parseInt(value, 10)))
+  .map(item => {
+    return {
+      id: item,
+      text: getVoteDescription(parseInt(item))
+    };
+  });
+
   private readonly gitClient: GitRestClient;
 
   constructor(props: {}) {
     super(props);
 
     this.gitClient = getClient(GitRestClient);
-    this.filter = new Filter();
-
-    this.setupFilter();
 
     this.state = {
       pullRequests: [],
       repositories: [],
       currentProject: { id: "", name: "" },
-      creadtedByList: [],
+      createdByList: [],
       sourceBranchList: [],
       targetBranchList: [],
       reviewerList: [],
       loading: true
     };
+
+    this.filter = new Filter();
   }
 
   public async componentWillMount() {
     DevOps.init();
-
     this.initializeState();
   }
 
-  public componentDidMount() {}
+  public componentDidMount() {
+    this.setupFilter();
+  }
+
+  componentWillUnmount() {
+    this.filter.unsubscribe(() => {
+      this.filterPullRequests();
+    }, FILTER_CHANGE_EVENT);
+  }
 
   private setupFilter() {
     this.filter.subscribe(() => {
-      const { pullRequests } = this.state;
-      const filterPullRequestTitle = this.filter.getFilterItemValue<string>(
-        "pullRequestTitle"
-      );
-      const repositoriesFilter = this.filter.getFilterItemValue<string[]>(
-        "repositories"
-      );
-      const sourceBranchFilter = this.filter.getFilterItemValue<string[]>(
-        "sourceBranch"
-      );
-      const targetBranchFilter = this.filter.getFilterItemValue<string[]>(
-        "targetBranch"
-      );
-      const createdByFilter = this.filter.getFilterItemValue<string[]>(
-        "createdBy"
-      );
-      const reviewersFilter = this.filter.getFilterItemValue<string[]>(
-        "reviewers"
-      );
-
-      const myApprovalStatusFilter = this.filter.getFilterItemValue<string[]>(
-        "myApprovals"
-      );
-
-      let filteredPullRequest = pullRequests;
-
-      if (filterPullRequestTitle && filterPullRequestTitle.length > 0) {
-        filteredPullRequest = pullRequests.filter(pr => {
-          const found =
-            pr.gitPullRequest.title
-              .toLocaleLowerCase()
-              .indexOf(filterPullRequestTitle.toLocaleLowerCase()) > -1;
-          return found;
-        });
-      }
-
-      if (repositoriesFilter && repositoriesFilter.length > 0) {
-        filteredPullRequest = filteredPullRequest.filter(pr => {
-          const found = repositoriesFilter.some(r => {
-            return pr.gitPullRequest.repository.id === r;
-          });
-
-          return found;
-        });
-      }
-
-      if (sourceBranchFilter && sourceBranchFilter.length > 0) {
-        filteredPullRequest = filteredPullRequest.filter(pr => {
-          const found = sourceBranchFilter.some(r => {
-            return (
-              `${pr.gitPullRequest.repository.name}->${pr.sourceBranchName}` ===
-              r
-            );
-          });
-
-          return found;
-        });
-      }
-
-      if (targetBranchFilter && targetBranchFilter.length > 0) {
-        filteredPullRequest = filteredPullRequest.filter(pr => {
-          const found = targetBranchFilter.some(r => {
-            return (
-              `${pr.gitPullRequest.repository.name}->${pr.targetBranchName}` ===
-              r
-            );
-          });
-
-          return found;
-        });
-      }
-
-      if (createdByFilter && createdByFilter.length > 0) {
-        filteredPullRequest = filteredPullRequest.filter(pr => {
-          const found = createdByFilter.some(r => {
-            return pr.gitPullRequest.createdBy.id === r;
-          });
-
-          return found;
-        });
-      }
-
-      if (reviewersFilter && reviewersFilter.length > 0) {
-        filteredPullRequest = filteredPullRequest.filter(pr => {
-          const found = reviewersFilter.some(r => {
-            return pr.gitPullRequest.reviewers.some(rv => {
-              return rv.id === r;
-            });
-          });
-          return found;
-        });
-      }
-
-      if (myApprovalStatusFilter && myApprovalStatusFilter.length > 0) {
-        filteredPullRequest = filteredPullRequest.filter(pr => {
-          const found = myApprovalStatusFilter.some(vote => {
-            return (
-              pr.myApprovalStatus ===
-              (parseInt(vote) as Data.ReviewerVoteOption)
-            );
-          });
-          return found;
-        });
-      }
-
-      this.reloadPullRequestItemProvider(filteredPullRequest);
+      this.filterPullRequests();
     }, FILTER_CHANGE_EVENT);
   }
 
   private async initializeState() {
-    console.log("initializeState called");
-
     this.setState({
       pullRequests: []
     });
@@ -222,18 +130,20 @@ export class PullRequestsTab extends React.Component<
       currentProject: await projectService.getProject()
     });
 
-    console.log("getProject called");
-
     this.setState({
-      repositories: await this.gitClient.getRepositories(
+      repositories: (await this.gitClient.getRepositories(
         this.state.currentProject!.name,
         true
+      )).sort(
+        (a: GitRepository, b: GitRepository) => {
+          if(a.name < b.name) { return -1; }
+          if(a.name > b.name) { return 1; }
+          return 0;
+        }
       )
     });
-    console.log("getRepositories called");
 
     this.getAllPullRequests();
-    console.log("getAllPullRequests called");
   }
 
   private reloadPullRequestItemProvider(newList: Data.PullRequestModel[]) {
@@ -290,18 +200,10 @@ export class PullRequestsTab extends React.Component<
 
   private loadLists() {
     let {
-      sourceBranchList,
-      targetBranchList,
-      creadtedByList,
-      pullRequests,
-      reviewerList
+      pullRequests
     } = this.state;
 
     this.reloadPullRequestItemProvider([]);
-    sourceBranchList = [];
-    targetBranchList = [];
-    creadtedByList = [];
-    reviewerList = [];
 
     pullRequests = pullRequests.sort(
       (a: Data.PullRequestModel, b: Data.PullRequestModel) => {
@@ -314,42 +216,169 @@ export class PullRequestsTab extends React.Component<
 
     this.pullRequestItemProvider.push(...pullRequests);
 
-    pullRequests.map(pr => {
-      let found = creadtedByList.some(item => {
-        return item.id === pr.gitPullRequest.createdBy.id;
+    this.populateFilterBarFields(pullRequests);
+    this.setState({loading: false});
+    this.filterPullRequests();
+  }
+
+  private filterPullRequests() {
+    const { pullRequests } = this.state
+
+    const filterPullRequestTitle = this.filter.getFilterItemValue<string>(
+      "pullRequestTitle"
+    );
+    const repositoriesFilter = this.filter.getFilterItemValue<string[]>(
+      "selectedRepos"
+    );
+    const sourceBranchFilter = this.filter.getFilterItemValue<string[]>(
+      "selectedSourceBranches"
+    );
+    const targetBranchFilter = this.filter.getFilterItemValue<string[]>(
+      "selectedTargetBranches"
+    );
+    const createdByFilter = this.filter.getFilterItemValue<string[]>(
+      "selectedAuthors"
+    );
+    const reviewersFilter = this.filter.getFilterItemValue<string[]>(
+      "selectedReviewers"
+    );
+
+    const myApprovalStatusFilter = this.filter.getFilterItemValue<string[]>(
+      "selectedMyApprovalStatuses"
+    );
+
+    let filteredPullRequest = pullRequests;
+
+    if (filterPullRequestTitle && filterPullRequestTitle.length > 0) {
+      filteredPullRequest = pullRequests.filter(pr => {
+        const found =
+          pr.title!
+            .toLocaleLowerCase()
+            .indexOf(filterPullRequestTitle.toLocaleLowerCase()) > -1;
+        return found;
       });
+    }
+
+    if (repositoriesFilter && repositoriesFilter.length > 0) {
+      filteredPullRequest = filteredPullRequest.filter(pr => {
+        const found = repositoriesFilter.some(r => {
+          return pr.gitPullRequest.repository.id === r;
+        });
+
+        return found;
+      });
+    }
+
+    if (sourceBranchFilter && sourceBranchFilter.length > 0) {
+      filteredPullRequest = filteredPullRequest.filter(pr => {
+        const found = sourceBranchFilter.some(r => {
+          return (
+            `${pr.gitPullRequest.repository.name}->${pr.sourceBranchName}` ===
+            r
+          );
+        });
+
+        return found;
+      });
+    }
+
+    if (targetBranchFilter && targetBranchFilter.length > 0) {
+      filteredPullRequest = filteredPullRequest.filter(pr => {
+        const found = targetBranchFilter.some(r => {
+          return (
+            `${pr.gitPullRequest.repository.name}->${pr.targetBranchName}` ===
+            r
+          );
+        });
+
+        return found;
+      });
+    }
+
+    if (createdByFilter && createdByFilter.length > 0) {
+      filteredPullRequest = filteredPullRequest.filter(pr => {
+        const found = createdByFilter.some(r => {
+          return pr.gitPullRequest.createdBy.id === r;
+        });
+
+        return found;
+      });
+    }
+
+    if (reviewersFilter && reviewersFilter.length > 0) {
+      filteredPullRequest = filteredPullRequest.filter(pr => {
+        const found = reviewersFilter.some(r => {
+          return pr.gitPullRequest.reviewers.some(rv => {
+            return rv.id === r;
+          });
+        });
+        return found;
+      });
+    }
+
+    if (myApprovalStatusFilter && myApprovalStatusFilter.length > 0) {
+      filteredPullRequest = filteredPullRequest.filter(pr => {
+        const found = myApprovalStatusFilter.some(vote => {
+          return (
+            pr.myApprovalStatus ===
+            (parseInt(vote) as Data.ReviewerVoteOption)
+          );
+        });
+        return found;
+      });
+    }
+
+    this.reloadPullRequestItemProvider(filteredPullRequest);
+  };
+
+  private hasFilterValue(list: Array<Data.BranchDropDownItem | IdentityRef | IdentityRefWithVote>, value: any): Boolean {
+    return list.some((item) => {
+      if (item.hasOwnProperty("id"))
+      {
+        const convertedValue = item as IdentityRef;
+        return convertedValue.id === value;
+      }
+      else if (item.constructor.name === "BranchDropDownItem")
+      {
+        const convertedValue = item as Data.BranchDropDownItem;
+        return convertedValue.displayName === value;
+      }
+      else {
+        return item === value;
+      }
+    });
+  };
+
+  private populateFilterBarFields = (pullRequests: Data.PullRequestModel[]) => {
+    let {
+      sourceBranchList,
+      targetBranchList,
+      createdByList,
+      reviewerList
+    } = this.state;
+
+    sourceBranchList = [];
+    targetBranchList = [];
+    createdByList = [];
+    reviewerList = [];
+
+    pullRequests.map(pr => {
+      let found = this.hasFilterValue(createdByList, pr.gitPullRequest.createdBy.id);
 
       if (found === false) {
-        creadtedByList.push(pr.gitPullRequest.createdBy);
+        createdByList.push(pr.gitPullRequest.createdBy);
       }
 
-      const sourceBranch: Data.BranchDropDownItem = {
-        repositoryName: pr.gitPullRequest.repository.name,
-        branchName: pr.sourceBranchName
-      };
+      const sourceBranch = new Data.BranchDropDownItem(pr.gitPullRequest.repository.name, pr.sourceBranchName!);
+      const targetBranch = new Data.BranchDropDownItem(pr.gitPullRequest.repository.name, pr.targetBranchName!);
 
-      const targetBranch: Data.BranchDropDownItem = {
-        repositoryName: pr.gitPullRequest.repository.name,
-        branchName: pr.targetBranchName
-      };
-
-      found = sourceBranchList.some(item => {
-        return (
-          item.repositoryName === sourceBranch.repositoryName &&
-          item.branchName === sourceBranch.branchName
-        );
-      });
+      found = this.hasFilterValue(sourceBranchList, sourceBranch.displayName);
 
       if (found === false) {
         sourceBranchList.push(sourceBranch);
       }
 
-      found = targetBranchList.some(item => {
-        return (
-          item.repositoryName === targetBranch.repositoryName &&
-          item.branchName === targetBranch.branchName
-        );
-      });
+      found = this.hasFilterValue(targetBranchList, targetBranch.displayName);
 
       if (found === false) {
         targetBranchList.push(targetBranch);
@@ -360,9 +389,7 @@ export class PullRequestsTab extends React.Component<
         pr.gitPullRequest.reviewers.length > 0
       ) {
         pr.gitPullRequest.reviewers.map(r => {
-          found = reviewerList.some(item => {
-            return item.id === r.id;
-          });
+          found = this.hasFilterValue(reviewerList, r.id);
 
           if (found === false) {
             reviewerList.push(r);
@@ -375,30 +402,52 @@ export class PullRequestsTab extends React.Component<
       return pr;
     });
 
+    sourceBranchList = sourceBranchList.sort(sortMethod);
+    targetBranchList = targetBranchList.sort(sortMethod);
+    createdByList = createdByList.sort(sortMethod);
+    reviewerList = reviewerList.sort(sortMethod);
+
+    const selectionObjectList = ["selectedAuthors", "selectedReviewers", "selectedSourceBranches", "selectedTargetBranches"];
+    const selectionFilterObjects = [this.selectedAuthors, this.selectedReviewers, this.selectedSourceBranches, this.selectedTargetBranches];
+    const selectedItemsObjectList = [createdByList, reviewerList, sourceBranchList, targetBranchList];
+
+    selectionObjectList.forEach((objectKey, index) => {
+      const filterItemState = this.filter.getFilterItemState(objectKey);
+
+      if (!filterItemState) {
+        return;
+      }
+
+      const filterStateValueList: string[] = (filterItemState as IFilterItemState).value;
+
+      filterStateValueList.map((item, itemIndex) => {
+        const found = this.hasFilterValue(selectedItemsObjectList[index], item);
+
+        if (!found) {
+          filterStateValueList.splice(itemIndex, 1);
+          selectionFilterObjects[index].clear();
+        }
+      });
+
+      this.filter.setFilterItemState(objectKey, filterItemState);
+    });
+
     this.setState({
       sourceBranchList,
       targetBranchList,
-      creadtedByList,
+      createdByList,
       reviewerList
     });
+  };
 
-    this.filter.applyChanges();
-
-    DevOps.notifyLoadSucceeded();
-
-    this.setupFilter();
-
-    this.setState({loading: false});
-  }
-
-  refresh = () => {
-    this.getAllPullRequests();
+  refresh = async () => {
+    await this.getAllPullRequests();
   };
 
   public render(): JSX.Element {
     const {
       repositories,
-      creadtedByList,
+      createdByList,
       sourceBranchList,
       targetBranchList,
       reviewerList,
@@ -446,7 +495,7 @@ export class PullRequestsTab extends React.Component<
 
           <React.Fragment>
             <DropdownFilterBarItem
-              filterItemKey="repositories"
+              filterItemKey="selectedRepos"
               filter={this.filter}
               selection={this.selectedRepos}
               placeholder="Repositories"
@@ -463,14 +512,14 @@ export class PullRequestsTab extends React.Component<
 
           <React.Fragment>
             <DropdownFilterBarItem
-              filterItemKey="sourceBranch"
+              filterItemKey="selectedSourceBranches"
               filter={this.filter}
               showFilterBox={true}
               noItemsText="No source branch found"
               items={sourceBranchList.map(i => {
                 return {
-                  id: `${i.repositoryName}->${i.branchName}`,
-                  text: `${i.repositoryName}->${i.branchName}`
+                  id: i.displayName,
+                  text: i.displayName
                 };
               })}
               selection={this.selectedSourceBranches}
@@ -480,14 +529,14 @@ export class PullRequestsTab extends React.Component<
 
           <React.Fragment>
             <DropdownFilterBarItem
-              filterItemKey="targetBranch"
+              filterItemKey="selectedTargetBranches"
               filter={this.filter}
               showFilterBox={true}
               noItemsText="No target branch found"
               items={targetBranchList.map(i => {
                 return {
-                  id: `${i.repositoryName}->${i.branchName}`,
-                  text: `${i.repositoryName}->${i.branchName}`
+                  id: i.displayName,
+                  text: i.displayName
                 };
               })}
               selection={this.selectedTargetBranches}
@@ -497,11 +546,11 @@ export class PullRequestsTab extends React.Component<
 
           <React.Fragment>
             <DropdownFilterBarItem
-              filterItemKey="createdBy"
+              filterItemKey="selectedAuthors"
               noItemsText="No one found"
               filter={this.filter}
               showFilterBox={true}
-              items={creadtedByList.map(i => {
+              items={createdByList.map(i => {
                 return {
                   id: i.id,
                   text: i.displayName
@@ -514,7 +563,7 @@ export class PullRequestsTab extends React.Component<
 
           <React.Fragment>
             <DropdownFilterBarItem
-              filterItemKey="reviewers"
+              filterItemKey="selectedReviewers"
               noItemsText="No one found"
               filter={this.filter}
               showFilterBox={true}
@@ -531,16 +580,9 @@ export class PullRequestsTab extends React.Component<
 
           <React.Fragment>
             <DropdownFilterBarItem
-              filterItemKey="myApprovals"
+              filterItemKey="selectedMyApprovalStatuses"
               filter={this.filter}
-              items={Object.keys(Data.ReviewerVoteOption)
-                .filter(value => !isNaN(parseInt(value, 10)))
-                .map(item => {
-                  return {
-                    id: item,
-                    text: getVoteDescription(parseInt(item))
-                  };
-                })}
+              items={this.myApprovalStatuses}
               selection={this.selectedMyApprovalStatuses}
               placeholder="My Approval Status"
             />
@@ -647,7 +689,7 @@ export class PullRequestsTab extends React.Component<
                   href={tableItem.pullRequestHref}
                   target="_blank"
                 >
-                  {tableItem.gitPullRequest.title}
+                  {tableItem.title}
                 </Link>
               </Tooltip>
               {tableItem.gitPullRequest.isDraft ? (
@@ -787,7 +829,9 @@ export class PullRequestsTab extends React.Component<
             // @ts-ignore
             overflow={PillGroupOverflow.wrap}
           >
-            {tableItem.gitPullRequest.reviewers.map((reviewer, i) => {
+            {tableItem.gitPullRequest.reviewers
+              .sort(sortMethod)
+              .map((reviewer, i) => {
               // @ts-ignore
               return (
                 <Pill
@@ -798,7 +842,7 @@ export class PullRequestsTab extends React.Component<
                   // @ts-ignore
                   size={PillSize.regular}
                 >
-                  {reviewer.displayName}
+              {reviewer.displayName}
                 </Pill>
               );
             })}
@@ -973,3 +1017,9 @@ function PullRequestTypeIcon() {
     key: "release-type"
   });
 }
+
+function sortMethod (a: Data.BranchDropDownItem | IdentityRef, b: Data.BranchDropDownItem | IdentityRef) {
+  if(a.displayName! < b.displayName!) { return -1; }
+  if(a.displayName! > b.displayName!) { return 1; }
+  return 0;
+};
