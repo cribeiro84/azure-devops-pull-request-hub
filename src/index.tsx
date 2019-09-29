@@ -109,69 +109,6 @@ export class App extends React.Component<{}, IHubContentState> {
     ];
   }
 
-  private async onMessagePromptClick(): Promise<void> {
-    const dialogService = await DevOps.getService<IHostPageLayoutService>(
-      // @ts-ignore
-      CommonServiceIds.HostPageLayoutService
-    );
-    dialogService.openMessageDialog("Use large title?", {
-      showCancel: true,
-      title: "Message dialog",
-      onClose: result => {
-        this.setState({ useLargeTitle: result });
-      }
-    });
-  }
-
-  private async onCustomPromptClick(): Promise<void> {
-    const dialogService = await DevOps.getService<IHostPageLayoutService>(
-      // @ts-ignore
-      CommonServiceIds.HostPageLayoutService
-    );
-    dialogService.openCustomDialog<boolean | undefined>(
-      DevOps.getExtensionContext().id + ".panel-content",
-      {
-        title: "Custom dialog",
-        configuration: {
-          message: "Use compact pivots?",
-          initialValue: this.state.useCompactPivots
-        },
-        onClose: result => {
-          if (result !== undefined) {
-            this.setState({ useCompactPivots: result });
-          }
-        }
-      }
-    );
-  }
-
-  private async onPanelClick(): Promise<void> {
-    const panelService = await DevOps.getService<IHostPageLayoutService>(
-      // @ts-ignore
-      CommonServiceIds.HostPageLayoutService
-    );
-    panelService.openPanel<boolean | undefined>(
-      DevOps.getExtensionContext().id + ".panel-content",
-      {
-        title: "My Panel",
-        description: "Description of my panel",
-        configuration: {
-          message: "Show header description?",
-          initialValue: !!this.state.headerDescription
-        },
-        onClose: result => {
-          if (result !== undefined) {
-            this.setState({
-              headerDescription: result
-                ? "This is a header description"
-                : undefined
-            });
-          }
-        }
-      }
-    );
-  }
-
   private async initializeFullScreenState() {
     const layoutService = await DevOps.getService<IHostPageLayoutService>(
       // @ts-ignore
@@ -181,17 +118,6 @@ export class App extends React.Component<{}, IHubContentState> {
     if (fullScreenMode !== this.state.fullScreenMode) {
       this.setState({ fullScreenMode });
     }
-  }
-
-  private async onToggleFullScreenMode(): Promise<void> {
-    const fullScreenMode = !this.state.fullScreenMode;
-    this.setState({ fullScreenMode });
-
-    const layoutService = await DevOps.getService<IHostPageLayoutService>(
-      // @ts-ignore
-      CommonServiceIds.HostPageLayoutService
-    );
-    layoutService.setFullScreenMode(fullScreenMode);
   }
 }
 
