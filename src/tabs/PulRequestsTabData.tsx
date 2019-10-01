@@ -23,6 +23,11 @@ export enum ReviewerVoteOption {
   NoVote = 0
 }
 
+export enum YesOrNo {
+  No = 0,
+  Yes = 1
+}
+
 export class BranchDropDownItem {
   private _displayName: string = "";
 

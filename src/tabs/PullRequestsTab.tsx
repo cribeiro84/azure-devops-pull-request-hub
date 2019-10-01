@@ -61,6 +61,7 @@ export class PullRequestsTab extends React.Component<
   private selectedTargetBranches = new DropdownMultiSelection();
   private selectedReviewers = new DropdownMultiSelection();
   private selectedMyApprovalStatuses = new DropdownMultiSelection();
+  private selectedIsDraft = new DropdownMultiSelection();
   private pullRequestItemProvider = new ObservableArray<
     | Data.PullRequestModel
     | IReadonlyObservableValue<Data.PullRequestModel | undefined>
@@ -71,6 +72,15 @@ export class PullRequestsTab extends React.Component<
     return {
       id: item,
       text: getVoteDescription(parseInt(item))
+    };
+  });
+
+  private isDraftItems = Object.keys(Data.YesOrNo)
+  .filter(value => !isNaN(parseInt(value, 10)))
+  .map(item => {
+    return {
+      id: item,
+      text: Object.values(Data.YesOrNo)[parseInt(item)].toString()
     };
   });
 
@@ -247,6 +257,10 @@ export class PullRequestsTab extends React.Component<
       "selectedMyApprovalStatuses"
     );
 
+    const isDraftFilter = this.filter.getFilterItemValue<number[]>(
+      "selectedIsDraft"
+    );
+
     let filteredPullRequest = pullRequests;
 
     if (filterPullRequestTitle && filterPullRequestTitle.length > 0) {
@@ -322,6 +336,17 @@ export class PullRequestsTab extends React.Component<
           return (
             pr.myApprovalStatus ===
             (parseInt(vote) as Data.ReviewerVoteOption)
+          );
+        });
+        return found;
+      });
+    }
+
+    if (isDraftFilter && isDraftFilter.length > 0) {
+      filteredPullRequest = filteredPullRequest.filter(pr => {
+        const found = isDraftFilter.some(item => {
+          return (
+            pr.gitPullRequest.isDraft === (item == 1)
           );
         });
         return found;
@@ -463,27 +488,6 @@ export class PullRequestsTab extends React.Component<
       );
     }
 
-    if (this.pullRequestItemProvider.value.length === 0) {
-      return (
-        <ZeroData
-            primaryText="Yeah! No Pull Request to be reviewed. "
-            secondaryText={
-                <span>
-                    Enjoy your free time to code and raise PRs for your team/project!
-                </span>
-            }
-            imageAltText="No PRs!"
-            imagePath={require("../images/emptyPRList.png")}
-            actionText="Refresh"
-            // @ts-ignore
-            actionType={ZeroDataActionType.ctaButton}
-            onActionClick={(event, item) =>
-                this.refresh()
-            }
-        />
-      );
-    }
-
     return (
       <div>
         <FilterBar filter={this.filter}>
@@ -587,26 +591,63 @@ export class PullRequestsTab extends React.Component<
               placeholder="My Approval Status"
             />
           </React.Fragment>
-        </FilterBar>
 
-        <Card
-          className="flex-grow bolt-table-card"
-          contentProps={{ contentPadding: false }}
-          titleProps={{ text: "List of Active Pull Requests" }}
-          headerCommandBarItems={this.listHeaderColumns}
-        >
           <React.Fragment>
-            <Table<Data.PullRequestModel>
-              columns={this.columns}
-              itemProvider={this.pullRequestItemProvider}
-              showLines={true}
-              role="table"
+            <DropdownFilterBarItem
+              filterItemKey="selectedIsDraft"
+              filter={this.filter}
+              items={this.isDraftItems}
+              selection={this.selectedIsDraft}
+              placeholder="Is Draft"
             />
           </React.Fragment>
-        </Card>
+        </FilterBar>
+
+        {this.getRenderContent()}
       </div>
     );
   }
+
+  getRenderContent() {
+    console.log(this.pullRequestItemProvider.length);
+    if (this.pullRequestItemProvider.value.length === 0) {
+       return <ZeroData
+            primaryText="Yeah! No Pull Request to be reviewed. "
+            secondaryText={
+                <span>
+                    Enjoy your free time to code and raise PRs for your team/project!
+                </span>
+            }
+            imageAltText="No PRs!"
+            imagePath={require("../images/emptyPRList.png")}
+            actionText="Refresh"
+            // @ts-ignore
+            actionType={ZeroDataActionType.ctaButton}
+            onActionClick={(event, item) =>
+                this.refresh()
+            }
+        />
+    }
+    else {
+       return <Card
+            className="flex-grow bolt-table-card"
+            contentProps={{ contentPadding: false }}
+            titleProps={{ text: "List of Active Pull Requests" }}
+            headerCommandBarItems={this.listHeaderColumns}
+          >
+            <React.Fragment>
+              <Table<Data.PullRequestModel>
+                columns={this.columns}
+                itemProvider={this.pullRequestItemProvider}
+                showLines={true}
+                role="table"
+              />
+            </React.Fragment>
+          </Card>
+    }
+  }
+
+
 
   private listHeaderColumns: IHeaderCommandBarItem[] = [
     {
