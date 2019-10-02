@@ -22,6 +22,14 @@ Manage your Pull Requests of all your repositories at a single place without hav
 
 ## Updates
 
+**02/10/2019** - 1.20191002.1
+
+- Filter fixes
+- New filter: Is Draft
+- UI tweaks
+- Code cleanup
+- Removed support for TFS
+
 **28/09/2019** - 1.20190928.1
 
 - Filter fixes

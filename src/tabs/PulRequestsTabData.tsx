@@ -23,11 +23,17 @@ export enum ReviewerVoteOption {
   NoVote = 0
 }
 
+export enum YesOrNo {
+  No = 0,
+  Yes = 1
+}
+
 export class BranchDropDownItem {
   private _displayName: string = "";
 
   constructor(public repositoryName: string, public branchName: string)
   {
+    this.branchName = this.branchName.replace(refsPreffix, '');
     this._displayName = `${this.repositoryName}->${this.branchName}`;
   }
 
@@ -39,8 +45,9 @@ export class BranchDropDownItem {
 export class PullRequestModel {
   public title?: string;
   public pullRequestHref?: string;
-  public sourceBranchName?: string;
-  public targetBranchName?: string;
+  public repositoryHref?: string;
+  public sourceBranch?: BranchDropDownItem;
+  public targetBranch?: BranchDropDownItem;
   public sourceBranchHref?: string;
   public targetBranchHref?: string;
   public baseUrl?: string;
@@ -57,18 +64,19 @@ export class PullRequestModel {
 
   private setupPullRequest() {
     const url = new URL(document.referrer);
-
     this.baseUrl = url.origin + '/' + url.pathname.split('/')[0];
+    const baseHostUrl = `${this.baseUrl}/${DevOps.getHost().name}/${this.projectName}`;
     this.title = `${this.gitPullRequest.pullRequestId} - ${this.gitPullRequest.title}`;
-    this.sourceBranchName = this.gitPullRequest.sourceRefName.replace(refsPreffix, '');
-    this.targetBranchName = this.gitPullRequest.targetRefName.replace(refsPreffix, '');
-    this.pullRequestHref = `${this.baseUrl}/${DevOps.getHost().name}/${this.projectName}/_git/${this.gitPullRequest.repository.name}/pullrequest/${this.gitPullRequest.pullRequestId}`;
-    this.sourceBranchHref = `${this.baseUrl}/${DevOps.getHost().name}/${this.projectName}/_git/${this.gitPullRequest.repository.name}?version=GB${this.sourceBranchName}`;
-    this.targetBranchHref = `${this.baseUrl}/${DevOps.getHost().name}/${this.projectName}/_git/${this.gitPullRequest.repository.name}?version=GB${this.targetBranchName}`;
+    this.sourceBranch = new BranchDropDownItem(this.gitPullRequest.repository.name, this.gitPullRequest.sourceRefName);
+    this.targetBranch = new BranchDropDownItem(this.gitPullRequest.repository.name, this.gitPullRequest.targetRefName);
+    this.repositoryHref = `${baseHostUrl}/_git/${this.gitPullRequest.repository.name}/`;
+    this.pullRequestHref = `${baseHostUrl}/_git/${this.gitPullRequest.repository.name}/pullrequest/${this.gitPullRequest.pullRequestId}`;
+    this.sourceBranchHref = `${baseHostUrl}/_git/${this.gitPullRequest.repository.name}?version=GB${this.sourceBranch.branchName}`;
+    this.targetBranchHref = `${baseHostUrl}/_git/${this.gitPullRequest.repository.name}?version=GB${this.targetBranch.branchName}`;
     this.myApprovalStatus = this.getCurrentUserVoteStatus(this.gitPullRequest.reviewers);
     this.lastCommitId = this.gitPullRequest.lastMergeSourceCommit.commitId;
     this.lastShortCommitId = this.lastCommitId.substr(0, 8);
-    this.lastCommitUrl = `${this.baseUrl}/${DevOps.getHost().name}/${this.projectName}/_git/${this.gitPullRequest.repository.name}/commit/${this.lastCommitId}?refName=GB${this.gitPullRequest.sourceRefName}`;
+    this.lastCommitUrl = `${baseHostUrl}/_git/${this.gitPullRequest.repository.name}/commit/${this.lastCommitId}?refName=GB${this.gitPullRequest.sourceRefName}`;
   };
 
   private getCurrentUserVoteStatus(reviewers: IdentityRefWithVote[]): ReviewerVoteOption {
