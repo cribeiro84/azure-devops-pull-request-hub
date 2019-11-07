@@ -6,12 +6,11 @@ import {
   IdentityRefWithVote
 } from "azure-devops-extension-api/Git/Git";
 import * as DevOps from "azure-devops-extension-sdk";
-import {
-  IStatusProps
-} from "azure-devops-ui/Status";
+import { IStatusProps } from "azure-devops-ui/Status";
 import { IColor } from "azure-devops-ui/Utilities/Color";
 import { IProjectInfo } from "azure-devops-extension-api/Common/CommonServices";
 import { IdentityRef } from "azure-devops-extension-api/WebApi/WebApi";
+import { Statuses } from "azure-devops-ui/Status";
 
 export const refsPreffix = "refs/heads/";
 
@@ -31,9 +30,8 @@ export enum YesOrNo {
 export class BranchDropDownItem {
   private _displayName: string = "";
 
-  constructor(public repositoryName: string, public branchName: string)
-  {
-    this.branchName = this.branchName.replace(refsPreffix, '');
+  constructor(public repositoryName: string, public branchName: string) {
+    this.branchName = this.branchName.replace(refsPreffix, "");
     this._displayName = `${this.repositoryName}->${this.branchName}`;
   }
 
@@ -56,33 +54,53 @@ export class PullRequestModel {
   public lastCommitId?: string;
   public lastShortCommitId?: string;
   public lastCommitUrl?: string;
+  public pullRequestProgressStatus?: IStatusIndicatorData;
 
-  constructor(public gitPullRequest: GitPullRequest, public projectName: string)
-  {
+  constructor(
+    public gitPullRequest: GitPullRequest,
+    public projectName: string
+  ) {
     this.setupPullRequest();
   }
 
   private setupPullRequest() {
     const url = new URL(document.referrer);
-    this.baseUrl = url.origin + '/' + url.pathname.split('/')[0];
-    const baseHostUrl = `${this.baseUrl}/${DevOps.getHost().name}/${this.projectName}`;
+    this.baseUrl = url.origin + "/" + url.pathname.split("/")[0];
+    const baseHostUrl = `${this.baseUrl}${DevOps.getHost().name}/${
+      this.projectName
+    }`;
     this.title = `${this.gitPullRequest.pullRequestId} - ${this.gitPullRequest.title}`;
-    this.sourceBranch = new BranchDropDownItem(this.gitPullRequest.repository.name, this.gitPullRequest.sourceRefName);
-    this.targetBranch = new BranchDropDownItem(this.gitPullRequest.repository.name, this.gitPullRequest.targetRefName);
+    this.sourceBranch = new BranchDropDownItem(
+      this.gitPullRequest.repository.name,
+      this.gitPullRequest.sourceRefName
+    );
+    this.targetBranch = new BranchDropDownItem(
+      this.gitPullRequest.repository.name,
+      this.gitPullRequest.targetRefName
+    );
     this.repositoryHref = `${baseHostUrl}/_git/${this.gitPullRequest.repository.name}/`;
     this.pullRequestHref = `${baseHostUrl}/_git/${this.gitPullRequest.repository.name}/pullrequest/${this.gitPullRequest.pullRequestId}`;
     this.sourceBranchHref = `${baseHostUrl}/_git/${this.gitPullRequest.repository.name}?version=GB${this.sourceBranch.branchName}`;
     this.targetBranchHref = `${baseHostUrl}/_git/${this.gitPullRequest.repository.name}?version=GB${this.targetBranch.branchName}`;
-    this.myApprovalStatus = this.getCurrentUserVoteStatus(this.gitPullRequest.reviewers);
+    this.myApprovalStatus = this.getCurrentUserVoteStatus(
+      this.gitPullRequest.reviewers
+    );
     this.lastCommitId = this.gitPullRequest.lastMergeSourceCommit.commitId;
     this.lastShortCommitId = this.lastCommitId.substr(0, 8);
     this.lastCommitUrl = `${baseHostUrl}/_git/${this.gitPullRequest.repository.name}/commit/${this.lastCommitId}?refName=GB${this.gitPullRequest.sourceRefName}`;
-  };
+    this.pullRequestProgressStatus = this.getStatusIndicatorData(
+      this.gitPullRequest.reviewers
+    );
+  }
 
-  private getCurrentUserVoteStatus(reviewers: IdentityRefWithVote[]): ReviewerVoteOption {
+  private getCurrentUserVoteStatus(
+    reviewers: IdentityRefWithVote[]
+  ): ReviewerVoteOption {
     let voteResult = ReviewerVoteOption.NoVote;
     if (reviewers && reviewers.length > 0) {
-      const currentUserReviewer = reviewers.filter(r => r.id === this.currentUser.id);
+      const currentUserReviewer = reviewers.filter(
+        r => r.id === this.currentUser.id
+      );
 
       if (currentUserReviewer.length > 0) {
         voteResult = currentUserReviewer[0].vote as ReviewerVoteOption;
@@ -90,9 +108,59 @@ export class PullRequestModel {
     }
 
     return voteResult;
-  };
+  }
 
-  public static getModels (pullRequestList: GitPullRequest[] | undefined, projectName: string): PullRequestModel[] {
+  private getStatusIndicatorData(
+    reviewers: IdentityRefWithVote[]
+  ): IStatusIndicatorData {
+    const indicatorData: IStatusIndicatorData = {
+      label: "Waiting Review",
+      statusProps: { ...Statuses.Waiting, ariaLabel: "Waiting Review" }
+    };
+
+    if (!reviewers || reviewers.length === 0) return indicatorData;
+
+    if (reviewers.some(r => r.vote === -10)) {
+      indicatorData.statusProps = {
+        ...Statuses.Failed,
+        ariaLabel: "One or more of the reviewers has rejected."
+      };
+      indicatorData.label =
+        "One or more of the reviewers has rejected.";
+    } else if (reviewers.some(r => r.vote === -5)) {
+      indicatorData.statusProps = {
+        ...Statuses.Warning,
+        ariaLabel: "One or more of the reviewers is waiting for the author."
+      };
+      indicatorData.label =
+      "One or more of the reviewers is waiting for the author.";
+    } else if (reviewers.filter(r => r.isRequired).every(r => r.vote === 10 || r.vote === 5)) {
+      indicatorData.statusProps = {
+        ...Statuses.Success,
+        ariaLabel: "Ready for completion"
+      };
+      indicatorData.label = "Success";
+    } else if (reviewers.filter(r => r.isRequired).every(r => r.vote === 0)) {
+      indicatorData.statusProps = {
+        ...Statuses.Waiting,
+        ariaLabel: "Waiting Review of required Reviewers"
+      };
+      indicatorData.label = "Waiting Review";
+    } else if (reviewers.filter(r => r.isRequired).some(r => r.vote > 0)) {
+      indicatorData.statusProps = {
+        ...Statuses.Running,
+        ariaLabel: "Waiting remaining required reviewers"
+      };
+      indicatorData.label = "Review in progress";
+    }
+
+    return indicatorData;
+  }
+
+  public static getModels(
+    pullRequestList: GitPullRequest[] | undefined,
+    projectName: string
+  ): PullRequestModel[] {
     let modelList: PullRequestModel[] = [];
 
     pullRequestList!.map(pr => {
