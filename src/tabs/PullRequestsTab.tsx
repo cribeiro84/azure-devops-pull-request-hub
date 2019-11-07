@@ -35,13 +35,19 @@ import { DropdownMultiSelection } from "azure-devops-ui/Utilities/DropdownSelect
 import { DropdownFilterBarItem } from "azure-devops-ui/Dropdown";
 import {
   ObservableArray,
-  IReadonlyObservableValue
+  IReadonlyObservableValue,
+  ObservableValue
 } from "azure-devops-ui/Core/Observable";
 import { Card } from "azure-devops-ui/Card";
 import { Icon, IIconProps } from "azure-devops-ui/Icon";
 import { Link } from "azure-devops-ui/Link";
 import { Status, StatusSize, Statuses } from "azure-devops-ui/Status";
-import { ITableColumn, Table, TwoLineTableCell } from "azure-devops-ui/Table";
+import {
+  ITableColumn,
+  Table,
+  TwoLineTableCell,
+  ColumnFill
+} from "azure-devops-ui/Table";
 import { Ago } from "azure-devops-ui/Ago";
 import { Duration } from "azure-devops-ui/Duration";
 import { Tooltip } from "azure-devops-ui/TooltipEx";
@@ -356,10 +362,10 @@ export class PullRequestsTab extends React.Component<
     return list.some(item => {
       if (item.hasOwnProperty("id")) {
         const convertedValue = item as IdentityRef;
-        return convertedValue.id === value;
+        return convertedValue.id.localeCompare(value) === 0;
       } else if (item.constructor.name === "BranchDropDownItem") {
         const convertedValue = item as Data.BranchDropDownItem;
-        return convertedValue.displayName === value;
+        return convertedValue.displayName.localeCompare(value) === 0;
       } else {
         return item === value;
       }
@@ -389,13 +395,19 @@ export class PullRequestsTab extends React.Component<
         createdByList.push(pr.gitPullRequest.createdBy);
       }
 
-      found = this.hasFilterValue(sourceBranchList, pr.sourceBranch!.displayName);
+      found = this.hasFilterValue(
+        sourceBranchList,
+        pr.sourceBranch!.displayName
+      );
 
       if (found === false) {
         sourceBranchList.push(pr.sourceBranch!);
       }
 
-      found = this.hasFilterValue(targetBranchList, pr.targetBranch!.displayName);
+      found = this.hasFilterValue(
+        targetBranchList,
+        pr.targetBranch!.displayName
+      );
 
       if (found === false) {
         targetBranchList.push(pr.targetBranch!);
@@ -679,26 +691,27 @@ export class PullRequestsTab extends React.Component<
         ariaLabelAscending: "Sorted A to Z",
         ariaLabelDescending: "Sorted Z to A"
       },
-      width: -33
+      width: -50
     },
     {
       className: "pipelines-two-line-cell",
       id: "details",
       name: "Details",
       renderCell: this.renderDetailsColumn,
-      width: -33
+      width: -20
     },
     {
       id: "reviewers",
       name: "Reviewers",
       renderCell: this.renderReviewersColumn,
-      width: -33
+      width: -20
     },
     {
       id: "time",
+      name: "When",
       readonly: true,
       renderCell: this.renderDateColumn,
-      width: -33
+      width: -10
     }
   ];
 
@@ -708,7 +721,9 @@ export class PullRequestsTab extends React.Component<
     tableColumn: ITableColumn<Data.PullRequestModel>,
     tableItem: Data.PullRequestModel
   ): JSX.Element {
-    const tooltip = `from ${tableItem.sourceBranch!.branchName} into ${tableItem.targetBranch!.branchName}`;
+    const tooltip = `from ${tableItem.sourceBranch!.branchName} into ${
+      tableItem.targetBranch!.branchName
+    }`;
     return (
       <TwoLineTableCell
         className="bolt-table-cell-content-with-inline-link no-v-padding"
@@ -717,17 +732,20 @@ export class PullRequestsTab extends React.Component<
         tableColumn={tableColumn}
         line1={
           <span className="flex-row scroll-hidden">
-            <Status
-              {...getStatusIndicatorData(
-                tableItem.gitPullRequest.status.toString()
-              ).statusProps}
-              className="icon-large-margin"
-              // @ts-ignore
-              size={StatusSize.l}
-            />
+            <Tooltip
+              text={tableItem.pullRequestProgressStatus!.statusProps.ariaLabel}
+              overflowOnly={false}
+            >
+              <Status
+                {...tableItem.pullRequestProgressStatus!.statusProps}
+                className="icon-large-margin"
+                // @ts-ignore
+                size={StatusSize.l}
+              />
+            </Tooltip>
             <span className="flex-row scroll-hidden">
               {PullRequestTypeIcon()}
-              <Tooltip text={tableItem.gitPullRequest.title} overflowOnly>
+              <Tooltip text={tableItem.gitPullRequest.title}>
                 <Link
                   className="fontSizeM font-size-m text-ellipsis bolt-table-link bolt-table-inline-link"
                   excludeTabStop
@@ -866,10 +884,7 @@ export class PullRequestsTab extends React.Component<
         columnIndex={columnIndex}
         tableColumn={tableColumn}
         line1={
-          <span className="fontSize font-size secondary-text flex-row flex-center text-ellipsis">
-            <strong>Reviewers:&nbsp;</strong>
-            <br />
-          </span>
+          <span className="fontSize font-size secondary-text flex-row flex-center text-ellipsis"></span>
         }
         line2={
           <PillGroup
@@ -945,61 +960,6 @@ export class PullRequestsTab extends React.Component<
   }
 }
 
-function getStatusIndicatorData(status: string): Data.IStatusIndicatorData {
-  status = status || "";
-  status = status.toLowerCase();
-  const indicatorData: Data.IStatusIndicatorData = {
-    label: "Success",
-    statusProps: { ...Statuses.Success, ariaLabel: "Success" }
-  };
-
-  /**
-     * Status not set. Default state.
-    NotSet = 0,
-     * Pull request is active.
-    Active = 1,
-     * Pull request is abandoned.
-    Abandoned = 2,
-     * Pull request is completed.
-    Completed = 3,
-     * Used in pull request search criterias to include all statuses.
-    All = 4
-  */
-
-  switch (status) {
-    case "0": //NotSet
-      indicatorData.statusProps = {
-        ...Statuses.Skipped,
-        ariaLabel: "Pending"
-      };
-      indicatorData.label = "Pending";
-      break;
-    case "1": //Active
-      indicatorData.statusProps = {
-        ...Statuses.Waiting,
-        ariaLabel: "Active"
-      };
-      indicatorData.label = "Active";
-      break;
-    case "2":
-      indicatorData.statusProps = {
-        ...Statuses.Warning,
-        ariaLabel: "Abandoned"
-      };
-      indicatorData.label = "Abandoned";
-      break;
-    case "3":
-      indicatorData.statusProps = {
-        ...Statuses.Success,
-        ariaLabel: "Success"
-      };
-      indicatorData.label = "Completed";
-      break;
-  }
-
-  return indicatorData;
-}
-
 function hasPullRequestFailure(pullRequest: Data.PullRequestModel): boolean {
   const prMergeStatus = pullRequest.gitPullRequest.mergeStatus;
   return (
@@ -1055,13 +1015,13 @@ function getReviewerVoteIconStatus(reviewer: IdentityRefWithVote): JSX.Element {
   }
 
   return (
-      <Status
-        {...voteStatusIcon}
-        key="success"
-        // @ts-ignore
-        size={StatusSize.m}
-        className="status-example flex-self-center"
-      />
+    <Status
+      {...voteStatusIcon}
+      key="success"
+      // @ts-ignore
+      size={StatusSize.m}
+      className="status-example flex-self-center"
+    />
   );
 }
 
