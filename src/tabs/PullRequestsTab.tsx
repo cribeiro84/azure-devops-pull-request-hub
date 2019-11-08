@@ -363,7 +363,7 @@ export class PullRequestsTab extends React.Component<
       if (item.hasOwnProperty("id")) {
         const convertedValue = item as IdentityRef;
         return convertedValue.id.localeCompare(value) === 0;
-      } else if (item.constructor.name === "BranchDropDownItem") {
+      } else if (item.hasOwnProperty("branchName")) {
         const convertedValue = item as Data.BranchDropDownItem;
         return convertedValue.displayName.localeCompare(value) === 0;
       } else {
