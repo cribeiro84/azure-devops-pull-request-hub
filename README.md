@@ -10,6 +10,10 @@ Manage your Pull Requests of all your repositories at a single place without hav
 
 ## Updates
 
+**08/11/2019** - 1.20191108.1
+
+- Filter fixes
+
 **06/11/2019** - 1.20191106.1
 
 - Filter fixes
