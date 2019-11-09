@@ -26,6 +26,8 @@ import { VssPersona } from "azure-devops-ui/VssPersona";
 import { IHeaderCommandBarItem } from "azure-devops-ui/HeaderCommandBar";
 import { FilterBar } from "azure-devops-ui/FilterBar";
 import { KeywordFilterBarItem } from "azure-devops-ui/TextFilterBarItem";
+import { Observer } from "azure-devops-ui/Observer";
+import { Dialog } from "azure-devops-ui/Dialog";
 import {
   Filter,
   FILTER_CHANGE_EVENT,
@@ -62,6 +64,7 @@ export class PullRequestsTab extends React.Component<
   {},
   Data.IPullRequestsTabState
 > {
+  private isDialogOpen = new ObservableValue<boolean>(false);
   private filter: Filter;
   private selectedAuthors = new DropdownMultiSelection();
   private selectedRepos = new DropdownMultiSelection();
@@ -489,6 +492,10 @@ export class PullRequestsTab extends React.Component<
     await this.getAllPullRequests();
   };
 
+  onHelpDismiss = () => {
+    this.isDialogOpen.value = false;
+  };
+
   public render(): JSX.Element {
     const {
       repositories,
@@ -662,6 +669,67 @@ export class PullRequestsTab extends React.Component<
               role="table"
             />
           </React.Fragment>
+
+          <Observer isDialogOpen={this.isDialogOpen}>
+          {(props: { isDialogOpen: boolean }) => {
+              return props.isDialogOpen ? (
+                  <Dialog
+                      titleProps={{ text: "Help" }}
+                      footerButtonProps={[
+                          {
+                              text: "Close",
+                              onClick: this.onHelpDismiss
+                          }
+                      ]}
+                      onDismiss={this.onHelpDismiss}
+                  >
+                      <strong>Statuses legend:</strong>
+                      <div className="flex-column" style={{ minWidth: "120px" }}>
+                            <div className="body-m secondary-text">
+                              <Status
+                                {...Statuses.Success}
+                                key="success"
+                                // @ts-ignore
+                                size={StatusSize.m}
+                                className="status-example flex-self-center "
+                              />
+                              &nbsp;Ready for completion.
+                            </div>
+                            <div className="body-m secondary-text">
+                              <Status
+                                {...Statuses.Warning}
+                                key="success"
+                                // @ts-ignore
+                                size={StatusSize.m}
+                                className="status-example flex-self-center "
+                              />
+                              &nbsp;At least one reviewer has voted as Waiting For Author
+                            </div>
+                            <div className="body-m secondary-text">
+                              <Status
+                                {...Statuses.Failed}
+                                key="success"
+                                // @ts-ignore
+                                size={StatusSize.m}
+                                className="status-example flex-self-center "
+                              />
+                              &nbsp;Someone has rejected.
+                            </div>
+                            <div className="body-m secondary-text">
+                              <Status
+                                {...Statuses.Waiting}
+                                key="success"
+                                // @ts-ignore
+                                size={StatusSize.m}
+                                className="status-example flex-self-center "
+                              />
+                              &nbsp;No one has started the review
+                            </div>
+                        </div>
+                  </Dialog>
+              ) : null;
+          }}
+          </Observer>
         </Card>
       );
     }
@@ -677,6 +745,17 @@ export class PullRequestsTab extends React.Component<
       },
       iconProps: {
         iconName: "fabric-icon ms-Icon--Refresh"
+      }
+    },
+    {
+      id: "help",
+      text: "Help",
+      isPrimary: true,
+      onActivate: () => {
+        this.isDialogOpen.value = true;
+      },
+      iconProps: {
+        iconName: "fabric-icon ms-Icon--Help"
       }
     }
   ];

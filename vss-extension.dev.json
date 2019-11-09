@@ -1,6 +1,25 @@
 {
     "baseUri": "https://localhost:3000",
-    "id": "pull-request-manager-hub-dev",
+    "id": "pull-request-manager-hub-new-dev",
     "public": false,
-    "name": "Pull Request Manager Hub - DEV"
+    "name": "Pull Request Manager Hub - DEV",
+    "version": "1.20191109.4",
+    "scopes": [
+      "vso.code"
+    ],
+  "contributions": [{
+    "id": "view-dev",
+    "type": "ms.vss-web.hub",
+    "targets": [
+      "ms.vss-code-web.code-hub-group"
+    ],
+    "properties": {
+      "name": "Pull Request Manager Hub - DEV",
+      "uri": "build/index.html",
+      "icon": {
+        "light": "marketplace/icon-light.png",
+        "dark": "marketplace/icon-dark.png"
+      }
+    }
+  }]
 }
