@@ -22,6 +22,7 @@ import {
 } from "azure-devops-extension-api/Git/Git";
 
 //Azure DevOps UI
+import { ListSelection } from "azure-devops-ui/List";
 import { VssPersona } from "azure-devops-ui/VssPersona";
 import { IHeaderCommandBarItem } from "azure-devops-ui/HeaderCommandBar";
 import { FilterBar } from "azure-devops-ui/FilterBar";
@@ -48,6 +49,7 @@ import {
   ITableColumn,
   Table,
   TwoLineTableCell,
+  ITableRow,
   ColumnFill
 } from "azure-devops-ui/Table";
 import { Ago } from "azure-devops-ui/Ago";
@@ -59,11 +61,13 @@ import { PillGroup, PillGroupOverflow } from "azure-devops-ui/PillGroup";
 import { IColor } from "azure-devops-ui/Utilities/Color";
 import { ZeroData, ZeroDataActionType } from "azure-devops-ui/ZeroData";
 import { IdentityRef } from "azure-devops-extension-api/WebApi/WebApi";
+import { IStatusIndicatorData } from './PulRequestsTabData';
 
 export class PullRequestsTab extends React.Component<
   {},
   Data.IPullRequestsTabState
 > {
+  private prRowSelecion = new ListSelection({ selectOnFocus: true, multiSelect: false });
   private isDialogOpen = new ObservableValue<boolean>(false);
   private filter: Filter;
   private selectedAuthors = new DropdownMultiSelection();
@@ -666,6 +670,9 @@ export class PullRequestsTab extends React.Component<
               columns={this.columns}
               itemProvider={this.pullRequestItemProvider}
               showLines={true}
+              selection={this.prRowSelecion}
+              singleClickActivation={true}
+              selectRowOnClick={true}
               role="table"
             />
           </React.Fragment>
