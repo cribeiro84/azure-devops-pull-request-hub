@@ -48,9 +48,7 @@ import { Status, StatusSize, Statuses } from "azure-devops-ui/Status";
 import {
   ITableColumn,
   Table,
-  TwoLineTableCell,
-  ITableRow,
-  ColumnFill
+  TwoLineTableCell
 } from "azure-devops-ui/Table";
 import { Ago } from "azure-devops-ui/Ago";
 import { Duration } from "azure-devops-ui/Duration";
@@ -58,10 +56,8 @@ import { Tooltip } from "azure-devops-ui/TooltipEx";
 import { css } from "azure-devops-ui/Util";
 import { Pill, PillSize, PillVariant } from "azure-devops-ui/Pill";
 import { PillGroup, PillGroupOverflow } from "azure-devops-ui/PillGroup";
-import { IColor } from "azure-devops-ui/Utilities/Color";
 import { ZeroData, ZeroDataActionType } from "azure-devops-ui/ZeroData";
 import { IdentityRef } from "azure-devops-extension-api/WebApi/WebApi";
-import { IStatusIndicatorData } from './PulRequestsTabData';
 
 export class PullRequestsTab extends React.Component<
   {},
@@ -510,6 +506,8 @@ export class PullRequestsTab extends React.Component<
       loading
     } = this.state;
 
+    const rowSelection = this.prRowSelecion;
+
     if (loading === true) {
       return (
         <div className="absolute-fill flex-column flex-grow flex-center justify-center">
@@ -674,6 +672,9 @@ export class PullRequestsTab extends React.Component<
               singleClickActivation={true}
               selectRowOnClick={true}
               role="table"
+              onFocus={(event, data) => {
+                this.prRowSelecion.select(data.index, 1, true);
+              }}
             />
           </React.Fragment>
 
@@ -777,7 +778,8 @@ export class PullRequestsTab extends React.Component<
         ariaLabelAscending: "Sorted A to Z",
         ariaLabelDescending: "Sorted Z to A"
       },
-      width: -50
+      width: -50,
+
     },
     {
       className: "pipelines-two-line-cell",
