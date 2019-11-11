@@ -22,10 +22,13 @@ import {
 } from "azure-devops-extension-api/Git/Git";
 
 //Azure DevOps UI
+import { ListSelection } from "azure-devops-ui/List";
 import { VssPersona } from "azure-devops-ui/VssPersona";
 import { IHeaderCommandBarItem } from "azure-devops-ui/HeaderCommandBar";
 import { FilterBar } from "azure-devops-ui/FilterBar";
 import { KeywordFilterBarItem } from "azure-devops-ui/TextFilterBarItem";
+import { Observer } from "azure-devops-ui/Observer";
+import { Dialog } from "azure-devops-ui/Dialog";
 import {
   Filter,
   FILTER_CHANGE_EVENT,
@@ -45,8 +48,7 @@ import { Status, StatusSize, Statuses } from "azure-devops-ui/Status";
 import {
   ITableColumn,
   Table,
-  TwoLineTableCell,
-  ColumnFill
+  TwoLineTableCell
 } from "azure-devops-ui/Table";
 import { Ago } from "azure-devops-ui/Ago";
 import { Duration } from "azure-devops-ui/Duration";
@@ -54,7 +56,6 @@ import { Tooltip } from "azure-devops-ui/TooltipEx";
 import { css } from "azure-devops-ui/Util";
 import { Pill, PillSize, PillVariant } from "azure-devops-ui/Pill";
 import { PillGroup, PillGroupOverflow } from "azure-devops-ui/PillGroup";
-import { IColor } from "azure-devops-ui/Utilities/Color";
 import { ZeroData, ZeroDataActionType } from "azure-devops-ui/ZeroData";
 import { IdentityRef } from "azure-devops-extension-api/WebApi/WebApi";
 
@@ -62,6 +63,8 @@ export class PullRequestsTab extends React.Component<
   {},
   Data.IPullRequestsTabState
 > {
+  private prRowSelecion = new ListSelection({ selectOnFocus: true, multiSelect: false });
+  private isDialogOpen = new ObservableValue<boolean>(false);
   private filter: Filter;
   private selectedAuthors = new DropdownMultiSelection();
   private selectedRepos = new DropdownMultiSelection();
@@ -489,6 +492,10 @@ export class PullRequestsTab extends React.Component<
     await this.getAllPullRequests();
   };
 
+  onHelpDismiss = () => {
+    this.isDialogOpen.value = false;
+  };
+
   public render(): JSX.Element {
     const {
       repositories,
@@ -659,9 +666,76 @@ export class PullRequestsTab extends React.Component<
               columns={this.columns}
               itemProvider={this.pullRequestItemProvider}
               showLines={true}
+              selection={this.prRowSelecion}
+              singleClickActivation={true}
+              selectRowOnClick={true}
               role="table"
+              onFocus={(event, data) => {
+                this.prRowSelecion.select(data.index, 1, true);
+              }}
             />
           </React.Fragment>
+
+          <Observer isDialogOpen={this.isDialogOpen}>
+          {(props: { isDialogOpen: boolean }) => {
+              return props.isDialogOpen ? (
+                  <Dialog
+                      titleProps={{ text: "Help" }}
+                      footerButtonProps={[
+                          {
+                              text: "Close",
+                              onClick: this.onHelpDismiss
+                          }
+                      ]}
+                      onDismiss={this.onHelpDismiss}
+                  >
+                      <strong>Statuses legend:</strong>
+                      <div className="flex-column" style={{ minWidth: "120px" }}>
+                            <div className="body-m secondary-text">
+                              <Status
+                                {...Statuses.Success}
+                                key="success"
+                                // @ts-ignore
+                                size={StatusSize.m}
+                                className="status-example flex-self-center "
+                              />
+                              &nbsp;Ready for completion.
+                            </div>
+                            <div className="body-m secondary-text">
+                              <Status
+                                {...Statuses.Warning}
+                                key="success"
+                                // @ts-ignore
+                                size={StatusSize.m}
+                                className="status-example flex-self-center "
+                              />
+                              &nbsp;At least one reviewer has voted as Waiting For Author
+                            </div>
+                            <div className="body-m secondary-text">
+                              <Status
+                                {...Statuses.Failed}
+                                key="success"
+                                // @ts-ignore
+                                size={StatusSize.m}
+                                className="status-example flex-self-center "
+                              />
+                              &nbsp;Someone has rejected.
+                            </div>
+                            <div className="body-m secondary-text">
+                              <Status
+                                {...Statuses.Waiting}
+                                key="success"
+                                // @ts-ignore
+                                size={StatusSize.m}
+                                className="status-example flex-self-center "
+                              />
+                              &nbsp;No one has started the review
+                            </div>
+                        </div>
+                  </Dialog>
+              ) : null;
+          }}
+          </Observer>
         </Card>
       );
     }
@@ -678,6 +752,17 @@ export class PullRequestsTab extends React.Component<
       iconProps: {
         iconName: "fabric-icon ms-Icon--Refresh"
       }
+    },
+    {
+      id: "help",
+      text: "Help",
+      isPrimary: true,
+      onActivate: () => {
+        this.isDialogOpen.value = true;
+      },
+      iconProps: {
+        iconName: "fabric-icon ms-Icon--Help"
+      }
     }
   ];
 
@@ -691,7 +776,8 @@ export class PullRequestsTab extends React.Component<
         ariaLabelAscending: "Sorted A to Z",
         ariaLabelDescending: "Sorted Z to A"
       },
-      width: -50
+      width: -50,
+
     },
     {
       className: "pipelines-two-line-cell",

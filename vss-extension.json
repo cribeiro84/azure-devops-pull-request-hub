@@ -36,21 +36,6 @@
       {"path":"marketplace/screenshots/screenshot-02.png"},
       {"path":"marketplace/screenshots/screenshot-03.png"}
   ],
-  "contributions": [{
-    "id": "view",
-    "type": "ms.vss-web.hub",
-    "targets": [
-      "ms.vss-code-web.code-hub-group"
-    ],
-    "properties": {
-      "name": "Pull Request Manager Hub",
-      "uri": "build/index.html",
-      "icon": {
-        "light": "marketplace/icon-light.png",
-        "dark": "marketplace/icon-dark.png"
-      }
-    }
-  }],
   "files": [{
       "path": "build",
       "addressable": true

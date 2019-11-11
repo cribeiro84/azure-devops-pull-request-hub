@@ -22,17 +22,23 @@ Manage your Pull Requests of all your repositories at a single place without hav
 
 ## Updates
 
-**08/11/2019** - 1.20191108.1
+**10/11/2019**
+
+- Minor fixes
+- Added feature to highlight the row when it's clicked
+- Added a help button to indicate what each PR status icon represents
+
+**08/11/2019**
 
 - Filter fixes
 
-**06/11/2019** - 1.20191106.1
+**06/11/2019**
 
 - Filter fixes
 - UI tweaks
 - Code cleanup
 
-**02/10/2019** - 1.20191002.1
+**02/10/2019**
 
 - Filter fixes
 - New filter: Is Draft
@@ -40,18 +46,18 @@ Manage your Pull Requests of all your repositories at a single place without hav
 - Code cleanup
 - Removed support for TFS
 
-**28/09/2019** - 1.20190928.1
+**28/09/2019**
 
 - Filter fixes
 - Sort filter dropdown lists
 - Filter by Pull Request ID
 - Code cleanup
 
-**09/09/2019** - 1.20190909.1
+**09/09/2019**
 
 - Minor fixes
 - Screenshots
 
-**21/08/2019** - 1.0.0
+**21/08/2019**
 
 - Public release of **Pull Request Manager Hub**
