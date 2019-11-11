@@ -3,7 +3,7 @@
     "id": "pull-request-manager-hub-new-dev",
     "public": false,
     "name": "Pull Request Manager Hub - DEV",
-    "version": "1.20191109.4",
+    "version": "1.20191110.4",
     "scopes": [
       "vso.code"
     ],

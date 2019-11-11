@@ -506,8 +506,6 @@ export class PullRequestsTab extends React.Component<
       loading
     } = this.state;
 
-    const rowSelection = this.prRowSelecion;
-
     if (loading === true) {
       return (
         <div className="absolute-fill flex-column flex-grow flex-center justify-center">
