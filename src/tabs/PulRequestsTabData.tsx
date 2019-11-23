@@ -48,7 +48,6 @@ export class PullRequestModel {
   public targetBranch?: BranchDropDownItem;
   public sourceBranchHref?: string;
   public targetBranchHref?: string;
-  public baseUrl?: string;
   public myApprovalStatus?: ReviewerVoteOption;
   public currentUser: DevOps.IUserContext = DevOps.getUser();
   public lastCommitId?: string;
@@ -58,17 +57,14 @@ export class PullRequestModel {
 
   constructor(
     public gitPullRequest: GitPullRequest,
-    public projectName: string
+    public projectName: string,
+    public baseUrl: string
   ) {
     this.setupPullRequest();
   }
 
-  private setupPullRequest() {
-    const url = new URL(document.referrer);
-    this.baseUrl = url.origin + "/" + url.pathname.split("/")[0];
-    const baseHostUrl = `${this.baseUrl}${DevOps.getHost().name}/${
-      this.projectName
-    }`;
+  private async setupPullRequest() {
+    const baseHostUrl = `${this.baseUrl}${this.projectName}`;
     this.title = `${this.gitPullRequest.pullRequestId} - ${this.gitPullRequest.title}`;
     this.sourceBranch = new BranchDropDownItem(
       this.gitPullRequest.repository.name,
@@ -159,12 +155,13 @@ export class PullRequestModel {
 
   public static getModels(
     pullRequestList: GitPullRequest[] | undefined,
-    projectName: string
+    projectName: string,
+    baseUrl: string
   ): PullRequestModel[] {
     let modelList: PullRequestModel[] = [];
 
     pullRequestList!.map(pr => {
-      modelList.push(new PullRequestModel(pr, projectName));
+      modelList.push(new PullRequestModel(pr, projectName, baseUrl));
 
       return pr;
     });

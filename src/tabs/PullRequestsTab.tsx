@@ -58,11 +58,13 @@ import { Pill, PillSize, PillVariant } from "azure-devops-ui/Pill";
 import { PillGroup, PillGroupOverflow } from "azure-devops-ui/PillGroup";
 import { ZeroData, ZeroDataActionType } from "azure-devops-ui/ZeroData";
 import { IdentityRef } from "azure-devops-extension-api/WebApi/WebApi";
+import { Button } from "azure-devops-ui/Button";
 
 export class PullRequestsTab extends React.Component<
   {},
   Data.IPullRequestsTabState
 > {
+  private baseUrl: string = "";
   private prRowSelecion = new ListSelection({ selectOnFocus: true, multiSelect: false });
   private isDialogOpen = new ObservableValue<boolean>(false);
   private filter: Filter;
@@ -117,7 +119,7 @@ export class PullRequestsTab extends React.Component<
   }
 
   public async componentWillMount() {
-    DevOps.init();
+    await DevOps.init();
     this.initializeState();
   }
 
@@ -141,6 +143,12 @@ export class PullRequestsTab extends React.Component<
     this.setState({
       pullRequests: []
     });
+
+    await fetch(`https://dev.azure.com/_apis/resourceAreas/79134C72-4A58-4B42-976C-04E7115F32BF?accountName=${DevOps.getHost().name}&api-version=5.0-preview.1`)
+    .then(res => res.json())
+    .then(result => {
+        this.baseUrl = result.locationUrl;
+      });
 
     const projectService = await DevOps.getService<IProjectPageService>(
       // @ts-ignore
@@ -204,7 +212,8 @@ export class PullRequestsTab extends React.Component<
           pullRequests.push(
             ...Data.PullRequestModel.getModels(
               pr,
-              this.state.currentProject!.name
+              this.state.currentProject!.name,
+              this.baseUrl
             )
           );
           return pr;
@@ -693,6 +702,26 @@ export class PullRequestsTab extends React.Component<
                       <div className="flex-column" style={{ minWidth: "120px" }}>
                             <div className="body-m secondary-text">
                               <Status
+                                {...Statuses.Waiting}
+                                key="waiting"
+                                // @ts-ignore
+                                size={StatusSize.m}
+                                className="status-example flex-self-center "
+                              />
+                              &nbsp;No one has voted yet.
+                            </div>
+                            <div className="body-m secondary-text">
+                              <Status
+                                {...Statuses.Running}
+                                key="running"
+                                // @ts-ignore
+                                size={StatusSize.m}
+                                className="status-example flex-self-center "
+                              />
+                              &nbsp;Review in progress, not all required reviwers have approved.
+                            </div>
+                            <div className="body-m secondary-text">
+                              <Status
                                 {...Statuses.Success}
                                 key="success"
                                 // @ts-ignore
@@ -704,32 +733,22 @@ export class PullRequestsTab extends React.Component<
                             <div className="body-m secondary-text">
                               <Status
                                 {...Statuses.Warning}
-                                key="success"
+                                key="warning"
                                 // @ts-ignore
                                 size={StatusSize.m}
                                 className="status-example flex-self-center "
                               />
-                              &nbsp;At least one reviewer has voted as Waiting For Author
+                              &nbsp;At least one reviewer is Waiting For Author.
                             </div>
                             <div className="body-m secondary-text">
                               <Status
                                 {...Statuses.Failed}
-                                key="success"
+                                key="failed"
                                 // @ts-ignore
                                 size={StatusSize.m}
                                 className="status-example flex-self-center "
                               />
-                              &nbsp;Someone has rejected.
-                            </div>
-                            <div className="body-m secondary-text">
-                              <Status
-                                {...Statuses.Waiting}
-                                key="success"
-                                // @ts-ignore
-                                size={StatusSize.m}
-                                className="status-example flex-self-center "
-                              />
-                              &nbsp;No one has started the review
+                              &nbsp;One or more members has rejected.
                             </div>
                         </div>
                   </Dialog>
@@ -768,6 +787,13 @@ export class PullRequestsTab extends React.Component<
 
   private columns: ITableColumn<Data.PullRequestModel>[] = [
     {
+      id: "status",
+      name: "",
+      renderCell: this.renderStatusColumn,
+      readonly: true,
+      width: -4
+    },
+    {
       id: "title",
       name: "Pull Request",
       renderCell: this.renderTitleColumn,
@@ -776,8 +802,7 @@ export class PullRequestsTab extends React.Component<
         ariaLabelAscending: "Sorted A to Z",
         ariaLabelDescending: "Sorted Z to A"
       },
-      width: -50,
-
+      width: -46
     },
     {
       className: "pipelines-two-line-cell",
@@ -801,6 +826,39 @@ export class PullRequestsTab extends React.Component<
     }
   ];
 
+  private renderStatusColumn(
+    rowIndex: number,
+    columnIndex: number,
+    tableColumn: ITableColumn<Data.PullRequestModel>,
+    tableItem: Data.PullRequestModel
+  ): JSX.Element {
+    return (
+      <TwoLineTableCell
+        className="bolt-table-cell-content-with-inline-link no-v-padding"
+        key={"col-" + columnIndex}
+        columnIndex={columnIndex}
+        tableColumn={tableColumn}
+        line1={
+            <Button
+                tooltipProps={{ text: tableItem.pullRequestProgressStatus!.statusProps.ariaLabel }}
+                disabled={true}
+                subtle={true}
+              >
+              <Status
+                  {...tableItem.pullRequestProgressStatus!.statusProps}
+                  className="icon-large-margin"
+                  // @ts-ignore
+                  size={StatusSize.l}
+                />
+            </Button>
+        }
+        line2={
+          <div></div>
+        }
+      />
+    );
+  }
+
   private renderTitleColumn(
     rowIndex: number,
     columnIndex: number,
@@ -818,17 +876,6 @@ export class PullRequestsTab extends React.Component<
         tableColumn={tableColumn}
         line1={
           <span className="flex-row scroll-hidden">
-            <Tooltip
-              text={tableItem.pullRequestProgressStatus!.statusProps.ariaLabel}
-              overflowOnly={false}
-            >
-              <Status
-                {...tableItem.pullRequestProgressStatus!.statusProps}
-                className="icon-large-margin"
-                // @ts-ignore
-                size={StatusSize.l}
-              />
-            </Tooltip>
             <span className="flex-row scroll-hidden">
               {PullRequestTypeIcon()}
               <Tooltip text={tableItem.gitPullRequest.title}>
