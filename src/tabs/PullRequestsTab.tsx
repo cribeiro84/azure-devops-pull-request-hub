@@ -374,7 +374,7 @@ export class PullRequestsTab extends React.Component<
     if (isDraftFilter && isDraftFilter.length > 0) {
       filteredPullRequest = filteredPullRequest.filter(pr => {
         const found = isDraftFilter.some(item => {
-          return pr.gitPullRequest.isDraft === (item === 1);
+          return pr.gitPullRequest.isDraft === (item == 1);
         });
         return found;
       });
