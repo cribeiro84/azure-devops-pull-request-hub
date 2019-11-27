@@ -5,6 +5,7 @@ import {
 import * as DevOps from "azure-devops-extension-sdk";
 import * as React from "react";
 import "./index.scss";
+import { Surface } from 'azure-devops-ui/Surface';
 import { Header, TitleSize } from "azure-devops-ui/Header";
 import { IHeaderCommandBarItem } from "azure-devops-ui/HeaderCommandBar";
 import { Page } from "azure-devops-ui/Page";
@@ -50,7 +51,8 @@ export class App extends React.Component<{}, IHubContentState> {
     } = this.state;
 
     return (
-      <Page className="azure-pull-request-hub flex-grow">
+      <Surface background={1}>
+        <Page className="azure-pull-request-hub flex-grow">
         <Header
           title="Pull Request Manager Hub"
           commandBarItems={this.getCommandBarItems()}
@@ -67,11 +69,14 @@ export class App extends React.Component<{}, IHubContentState> {
           // @ts-ignore
           tabSize={useCompactPivots ? TabSize.Compact : TabSize.Tall}
         >
-          <Tab name="All Active Pull Requests" id="pull-requests" />
+          <Tab name="Active Pull Requests" id="pull-requests" />
         </TabBar>
 
-        <div className="page-content">{this.getPageContent()}</div>
+        <div className="page-content-left page-content-right page-content-top page-content-bottom">
+          {this.getPageContent()}
+        </div>
       </Page>
+      </Surface>
     );
   }
 

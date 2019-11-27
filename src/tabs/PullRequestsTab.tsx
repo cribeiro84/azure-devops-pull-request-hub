@@ -1,4 +1,5 @@
 import * as React from "react";
+import { AZDEVOPS_API_ORGANIZATION } from "../models/constants";
 
 import { Spinner, SpinnerSize } from "office-ui-fabric-react";
 
@@ -22,6 +23,7 @@ import {
 } from "azure-devops-extension-api/Git/Git";
 
 //Azure DevOps UI
+import { AgoFormat } from "azure-devops-ui/Utilities/Date";
 import { ListSelection } from "azure-devops-ui/List";
 import { VssPersona } from "azure-devops-ui/VssPersona";
 import { IHeaderCommandBarItem } from "azure-devops-ui/HeaderCommandBar";
@@ -38,18 +40,13 @@ import { DropdownMultiSelection } from "azure-devops-ui/Utilities/DropdownSelect
 import { DropdownFilterBarItem } from "azure-devops-ui/Dropdown";
 import {
   ObservableArray,
-  IReadonlyObservableValue,
-  ObservableValue
+  IReadonlyObservableValue
 } from "azure-devops-ui/Core/Observable";
 import { Card } from "azure-devops-ui/Card";
 import { Icon, IIconProps } from "azure-devops-ui/Icon";
 import { Link } from "azure-devops-ui/Link";
 import { Status, StatusSize, Statuses } from "azure-devops-ui/Status";
-import {
-  ITableColumn,
-  Table,
-  TwoLineTableCell
-} from "azure-devops-ui/Table";
+import { ITableColumn, Table, TwoLineTableCell } from "azure-devops-ui/Table";
 import { Ago } from "azure-devops-ui/Ago";
 import { Duration } from "azure-devops-ui/Duration";
 import { Tooltip } from "azure-devops-ui/TooltipEx";
@@ -59,13 +56,17 @@ import { PillGroup, PillGroupOverflow } from "azure-devops-ui/PillGroup";
 import { ZeroData, ZeroDataActionType } from "azure-devops-ui/ZeroData";
 import { IdentityRef } from "azure-devops-extension-api/WebApi/WebApi";
 import { Button } from "azure-devops-ui/Button";
+import { ObservableValue } from "azure-devops-ui/Core/Observable";
 
 export class PullRequestsTab extends React.Component<
   {},
   Data.IPullRequestsTabState
 > {
   private baseUrl: string = "";
-  private prRowSelecion = new ListSelection({ selectOnFocus: true, multiSelect: false });
+  private prRowSelecion = new ListSelection({
+    selectOnFocus: true,
+    multiSelect: false
+  });
   private isDialogOpen = new ObservableValue<boolean>(false);
   private filter: Filter;
   private selectedAuthors = new DropdownMultiSelection();
@@ -144,11 +145,7 @@ export class PullRequestsTab extends React.Component<
       pullRequests: []
     });
 
-    await fetch(`https://dev.azure.com/_apis/resourceAreas/79134C72-4A58-4B42-976C-04E7115F32BF?accountName=${DevOps.getHost().name}&api-version=5.0-preview.1`)
-    .then(res => res.json())
-    .then(result => {
-        this.baseUrl = result.locationUrl;
-      });
+    await this.getOrganizationBaseUrl();
 
     const projectService = await DevOps.getService<IProjectPageService>(
       // @ts-ignore
@@ -160,10 +157,12 @@ export class PullRequestsTab extends React.Component<
     });
 
     this.setState({
-      repositories: (await this.gitClient.getRepositories(
-        this.state.currentProject!.name,
-        true
-      )).sort((a: GitRepository, b: GitRepository) => {
+      repositories: (
+        await this.gitClient.getRepositories(
+          this.state.currentProject!.name,
+          true
+        )
+      ).sort((a: GitRepository, b: GitRepository) => {
         if (a.name < b.name) {
           return -1;
         }
@@ -175,6 +174,23 @@ export class PullRequestsTab extends React.Component<
     });
 
     this.getAllPullRequests();
+  }
+
+  private async getOrganizationBaseUrl() {
+    await fetch(
+      `${AZDEVOPS_API_ORGANIZATION}?accountName=${
+        DevOps.getHost().name
+      }&api-version=5.0-preview.1`
+    )
+      .then(res => res.json())
+      .then(result => {
+        this.baseUrl = result.locationUrl;
+      })
+      .catch(() => {
+        console.log("trying to get onprem URL - " + document.referrer);
+        const url = new URL(document.referrer);
+        this.baseUrl = `${url.origin}/tfs/`;
+      });
   }
 
   private reloadPullRequestItemProvider(newList: Data.PullRequestModel[]) {
@@ -358,7 +374,7 @@ export class PullRequestsTab extends React.Component<
     if (isDraftFilter && isDraftFilter.length > 0) {
       filteredPullRequest = filteredPullRequest.filter(pr => {
         const found = isDraftFilter.some(item => {
-          return pr.gitPullRequest.isDraft === (item == 1);
+          return pr.gitPullRequest.isDraft === (item === 1);
         });
         return found;
       });
@@ -484,6 +500,8 @@ export class PullRequestsTab extends React.Component<
           filterStateValueList.splice(itemIndex, 1);
           selectionFilterObjects[index].clear();
         }
+
+        return found;
       });
 
       this.filter.setFilterItemState(objectKey, filterItemState);
@@ -525,7 +543,7 @@ export class PullRequestsTab extends React.Component<
     }
 
     return (
-      <div>
+      <div className="flex-column">
         <FilterBar filter={this.filter}>
           <KeywordFilterBarItem
             filterItemKey="pullRequestTitle"
@@ -639,7 +657,10 @@ export class PullRequestsTab extends React.Component<
           </React.Fragment>
         </FilterBar>
 
-        {this.getRenderContent()}
+        <div className="margin-top-8">
+          <br />
+          {this.getRenderContent()}
+        </div>
       </div>
     );
   }
@@ -667,7 +688,9 @@ export class PullRequestsTab extends React.Component<
         <Card
           className="flex-grow bolt-table-card"
           contentProps={{ contentPadding: false }}
-          titleProps={{ text: "List of Active Pull Requests" }}
+          titleProps={{
+            text: `Pull Requests (${this.pullRequestItemProvider.length})`
+          }}
           headerCommandBarItems={this.listHeaderColumns}
         >
           <React.Fragment>
@@ -677,7 +700,6 @@ export class PullRequestsTab extends React.Component<
               showLines={true}
               selection={this.prRowSelecion}
               singleClickActivation={true}
-              selectRowOnClick={true}
               role="table"
               onFocus={(event, data) => {
                 this.prRowSelecion.select(data.index, 1, true);
@@ -686,74 +708,75 @@ export class PullRequestsTab extends React.Component<
           </React.Fragment>
 
           <Observer isDialogOpen={this.isDialogOpen}>
-          {(props: { isDialogOpen: boolean }) => {
+            {(props: { isDialogOpen: boolean }) => {
               return props.isDialogOpen ? (
-                  <Dialog
-                      titleProps={{ text: "Help" }}
-                      footerButtonProps={[
-                          {
-                              text: "Close",
-                              onClick: this.onHelpDismiss
-                          }
-                      ]}
-                      onDismiss={this.onHelpDismiss}
-                  >
-                      <strong>Statuses legend:</strong>
-                      <div className="flex-column" style={{ minWidth: "120px" }}>
-                            <div className="body-m secondary-text">
-                              <Status
-                                {...Statuses.Waiting}
-                                key="waiting"
-                                // @ts-ignore
-                                size={StatusSize.m}
-                                className="status-example flex-self-center "
-                              />
-                              &nbsp;No one has voted yet.
-                            </div>
-                            <div className="body-m secondary-text">
-                              <Status
-                                {...Statuses.Running}
-                                key="running"
-                                // @ts-ignore
-                                size={StatusSize.m}
-                                className="status-example flex-self-center "
-                              />
-                              &nbsp;Review in progress, not all required reviwers have approved.
-                            </div>
-                            <div className="body-m secondary-text">
-                              <Status
-                                {...Statuses.Success}
-                                key="success"
-                                // @ts-ignore
-                                size={StatusSize.m}
-                                className="status-example flex-self-center "
-                              />
-                              &nbsp;Ready for completion.
-                            </div>
-                            <div className="body-m secondary-text">
-                              <Status
-                                {...Statuses.Warning}
-                                key="warning"
-                                // @ts-ignore
-                                size={StatusSize.m}
-                                className="status-example flex-self-center "
-                              />
-                              &nbsp;At least one reviewer is Waiting For Author.
-                            </div>
-                            <div className="body-m secondary-text">
-                              <Status
-                                {...Statuses.Failed}
-                                key="failed"
-                                // @ts-ignore
-                                size={StatusSize.m}
-                                className="status-example flex-self-center "
-                              />
-                              &nbsp;One or more members has rejected.
-                            </div>
-                        </div>
-                  </Dialog>
+                <Dialog
+                  titleProps={{ text: "Help" }}
+                  footerButtonProps={[
+                    {
+                      text: "Close",
+                      onClick: this.onHelpDismiss
+                    }
+                  ]}
+                  onDismiss={this.onHelpDismiss}
+                >
+                  <strong>Statuses legend:</strong>
+                  <div className="flex-column" style={{ minWidth: "120px" }}>
+                    <div className="body-m secondary-text">
+                      <Status
+                        {...Statuses.Waiting}
+                        key="waiting"
+                        // @ts-ignore
+                        size={StatusSize.m}
+                        className="status-example flex-self-center "
+                      />
+                      &nbsp;No one has voted yet.
+                    </div>
+                    <div className="body-m secondary-text">
+                      <Status
+                        {...Statuses.Running}
+                        key="running"
+                        // @ts-ignore
+                        size={StatusSize.m}
+                        className="status-example flex-self-center "
+                      />
+                      &nbsp;Review in progress, not all required reviwers have
+                      approved.
+                    </div>
+                    <div className="body-m secondary-text">
+                      <Status
+                        {...Statuses.Success}
+                        key="success"
+                        // @ts-ignore
+                        size={StatusSize.m}
+                        className="status-example flex-self-center "
+                      />
+                      &nbsp;Ready for completion.
+                    </div>
+                    <div className="body-m secondary-text">
+                      <Status
+                        {...Statuses.Warning}
+                        key="warning"
+                        // @ts-ignore
+                        size={StatusSize.m}
+                        className="status-example flex-self-center "
+                      />
+                      &nbsp;At least one reviewer is Waiting For Author.
+                    </div>
+                    <div className="body-m secondary-text">
+                      <Status
+                        {...Statuses.Failed}
+                        key="failed"
+                        // @ts-ignore
+                        size={StatusSize.m}
+                        className="status-example flex-self-center "
+                      />
+                      &nbsp;One or more members has rejected.
+                    </div>
+                  </div>
+                </Dialog>
               ) : null;
-          }}
+            }}
           </Observer>
         </Card>
       );
@@ -839,22 +862,22 @@ export class PullRequestsTab extends React.Component<
         columnIndex={columnIndex}
         tableColumn={tableColumn}
         line1={
-            <Button
-                tooltipProps={{ text: tableItem.pullRequestProgressStatus!.statusProps.ariaLabel }}
-                disabled={true}
-                subtle={true}
-              >
-              <Status
-                  {...tableItem.pullRequestProgressStatus!.statusProps}
-                  className="icon-large-margin"
-                  // @ts-ignore
-                  size={StatusSize.l}
-                />
-            </Button>
+          <Button
+            tooltipProps={{
+              text: tableItem.pullRequestProgressStatus!.statusProps.ariaLabel
+            }}
+            disabled={true}
+            subtle={true}
+          >
+            <Status
+              {...tableItem.pullRequestProgressStatus!.statusProps}
+              className="icon-large-margin"
+              // @ts-ignore
+              size={StatusSize.l}
+            />
+          </Button>
         }
-        line2={
-          <div></div>
-        }
+        line2={<div></div>}
       />
     );
   }
@@ -899,6 +922,17 @@ export class PullRequestsTab extends React.Component<
               ) : (
                 ""
               )}
+              {tableItem.gitPullRequest.autoCompleteSetBy !== undefined ? (
+                <Pill
+                  color={Data.autoCompleteColor}
+                  // @ts-ignore
+                  size={PillSize.regular}
+                >
+                  Auto-complete
+                </Pill>
+              ) : (
+                ""
+              )}
               {hasPullRequestFailure(tableItem) ? (
                 <Pill
                   color={Data.rejectedColor}
@@ -914,39 +948,44 @@ export class PullRequestsTab extends React.Component<
           </span>
         }
         line2={
-          <Tooltip text={tooltip} overflowOnly>
+          <Tooltip text={tooltip}>
             <span className="fontSize font-size secondary-text flex-row flex-center text-ellipsis">
-              {Icon({
-                className: "icon-margin",
-                iconName: "OpenSource",
-                key: "branch-name"
-              })}
-              <Link
-                className="fontSizeM font-size-m text-ellipsis bolt-table-link bolt-table-inline-link"
-                excludeTabStop
-                href={tableItem.repositoryHref}
-                target="_blank"
-              >
-                {tableItem.gitPullRequest.repository.name}
-              </Link>
-              -> from{" "}
-              <Link
-                className="fontSizeM font-size-m text-ellipsis bolt-table-link bolt-table-inline-link"
-                excludeTabStop
-                href={tableItem.sourceBranchHref}
-                target="_blank"
-              >
-                {tableItem.sourceBranch!.branchName}
-              </Link>
+              <Button
+                className="branch-button"
+                text={tableItem.gitPullRequest.repository.name}
+                iconProps={{ iconName: "Repo" }}
+                onClick={() => {
+                  window.open(tableItem.repositoryHref!, "_blank");
+                }}
+                subtle
+              />
+              <Button
+                className="branch-button text-ellipsis"
+                text={tableItem.sourceBranch!.branchName}
+                iconProps={{ iconName: "BranchMerge" }}
+                tooltipProps={{
+                  text: tableItem.sourceBranch!.branchName,
+                  delayMs: 500
+                }}
+                onClick={() => {
+                  window.open(tableItem.sourceBranchHref!, "_blank");
+                }}
+                subtle
+              />
               into
-              <Link
-                className="fontSizeM font-size-m text-ellipsis bolt-table-link bolt-table-inline-link"
-                excludeTabStop
-                href={`${tableItem.targetBranchHref}`}
-                target="_blank"
-              >
-                {tableItem.targetBranch!.branchName}
-              </Link>
+              <Button
+                className="branch-button"
+                text={tableItem.targetBranch!.branchName}
+                iconProps={{ iconName: "BranchMerge" }}
+                tooltipProps={{
+                  text: tableItem.targetBranch!.branchName,
+                  delayMs: 500
+                }}
+                onClick={() => {
+                  window.open(tableItem.targetBranchHref!, "_blank");
+                }}
+                subtle
+              />
             </span>
           </Tooltip>
         }
@@ -960,6 +999,12 @@ export class PullRequestsTab extends React.Component<
     tableColumn: ITableColumn<Data.PullRequestModel>,
     tableItem: Data.PullRequestModel
   ): JSX.Element {
+    const lastCommitDate: ObservableValue<Date> = new ObservableValue<Date>(
+      tableItem.gitPullRequest.creationDate
+    );
+    tableItem.lastCommitDetails.subscribe(value => {
+      lastCommitDate.value = value!.committer.date;
+    });
     return (
       <TwoLineTableCell
         className="bolt-table-cell-content-with-inline-link no-v-padding"
@@ -989,7 +1034,7 @@ export class PullRequestsTab extends React.Component<
         line2={
           <div>
             <br />
-            <Icon iconName="BranchCommit" />
+            <strong>Last commit:</strong> <Icon iconName="BranchCommit" />
             <Link
               className="fontSizeM font-size-m text-ellipsis bolt-table-link bolt-table-inline-link"
               excludeTabStop
@@ -998,6 +1043,13 @@ export class PullRequestsTab extends React.Component<
             >
               {tableItem.lastShortCommitId}
             </Link>
+            {" - "}
+            <Observer startDate={lastCommitDate}>
+              <Duration
+                startDate={lastCommitDate.value!!}
+                endDate={new Date(Date.now())}
+              />
+            </Observer>
           </div>
         }
       />
@@ -1028,26 +1080,52 @@ export class PullRequestsTab extends React.Component<
             {tableItem.gitPullRequest.reviewers
               .sort(sortMethod)
               .map((reviewer, i) => {
-                // @ts-ignore
                 return (
-                  <Pill
-                    key={reviewer.id}
-                    // color={getReviewerColor(reviewer)}
-                    // @ts-ignore
-                    variant={PillVariant.colored}
-                    // @ts-ignore
-                    size={PillSize.large}
+                  <Tooltip
+                    key={i}
+                    renderContent={() => (
+                      <div className="flex-row rhythm-horizontal-4">
+                        <div className="flex-column">
+                          <div className="flex-row flex-center justify-center">
+                            <VssPersona
+                              className="icon-margin"
+                              imageUrl={reviewer._links["avatar"].href}
+                              size={"small"}
+                              displayName={reviewer.displayName}
+                            />
+                            <span>{reviewer.displayName}</span>
+                          </div>
+                          <br />
+                          <div className="flex-row flex-center justify-start margin-top-8">
+                            {getReviewerVoteIconStatus(reviewer)}&nbsp;
+                            <span className="font-weight-semibold">
+                              {getVoteDescription(reviewer.vote)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   >
-                    <div className="flex-row rhythm-horizontal-8">
-                      {getReviewerVoteIconStatus(reviewer)}
-                      <VssPersona
-                        className="icon-margin"
-                        imageUrl={reviewer._links["avatar"].href}
-                        size={"small"}
-                        displayName={reviewer.displayName}
-                      />
+                    <div className="tooltip-overflow-child">
+                      <Pill
+                        key={reviewer.id}
+                        color={Data.reviewerVoteToIColorLight(reviewer.vote)}
+                        // @ts-ignore
+                        variant={PillVariant.colored}
+                        // @ts-ignore
+                        size={PillSize.large}
+                      >
+                        <div className="flex-row rhythm-horizontal-8">
+                          {getReviewerVoteIconStatus(reviewer)}
+                          <VssPersona
+                            className="icon-margin"
+                            imageUrl={reviewer._links["avatar"].href}
+                            size={"small"}
+                          />
+                        </div>
+                      </Pill>
                     </div>
-                  </Pill>
+                  </Tooltip>
                 );
               })}
           </PillGroup>

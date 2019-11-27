@@ -12,6 +12,8 @@ Manage your Pull Requests of all your repositories at a single place without hav
   - [Features](#features)
   - [Future releaes](#future-releaes)
   - [Updates](#updates)
+    - [26/11/2019](#26112019)
+    - [23/11/2019](#23112019)
     - [10/11/2019](#10112019)
     - [08/11/2019](#08112019)
     - [06/11/2019](#06112019)
@@ -39,6 +41,7 @@ Manage your Pull Requests of all your repositories at a single place without hav
   - Draft
 - Continue where you left - When you click to review a Pull Request (it always opens in a **new window**) the row will be kept highlighted
 - Easily identify the reviewers of that Pull Request
+- Last Commit push date
 
 ## Future releaes
 
@@ -48,12 +51,22 @@ Manage your Pull Requests of all your repositories at a single place without hav
   - Last PR reviewed (highlight)
 - Work Items count
 - Comments count + resolved ones (For instance: 1/2 resolved)
-- Last Commit push date and who did it
 - Where you left:
   - New badge (Pill) for your voted PRs with new changes
 - Filter by other projects
 
 ## Updates
+
+### 26/11/2019
+
+- Minor fixes
+- UI tweaks
+- Last Commit push date
+
+### 23/11/2019
+
+- Minor fixes
+- UI tweaks
 
 ### 10/11/2019
 
