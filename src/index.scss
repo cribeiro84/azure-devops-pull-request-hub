@@ -13,7 +13,7 @@ body {
 //
 // Global styles
 //
-.bolt-panel-content, 
+.bolt-panel-content,
 .custom-scrollbar {
     scrollbar-color: $transblack-20 transparent;
     scrollbar-width: thin;
@@ -31,7 +31,7 @@ body {
 }
 
 .bolt-panel-content::-webkit-scrollbar-thumb:hover {
-    background: $transblack-30;
+    background: $transblack-20;
     background-clip: padding-box;
 }
 

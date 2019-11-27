@@ -3,7 +3,9 @@ import {
   GitPullRequest,
   GitPullRequestSearchCriteria,
   PullRequestStatus,
-  IdentityRefWithVote
+  IdentityRefWithVote,
+  GitCommit,
+  GitCommitRef
 } from "azure-devops-extension-api/Git/Git";
 import * as DevOps from "azure-devops-extension-sdk";
 import { IStatusProps } from "azure-devops-ui/Status";
@@ -11,8 +13,58 @@ import { IColor } from "azure-devops-ui/Utilities/Color";
 import { IProjectInfo } from "azure-devops-extension-api/Common/CommonServices";
 import { IdentityRef } from "azure-devops-extension-api/WebApi/WebApi";
 import { Statuses } from "azure-devops-ui/Status";
+import { ObservableValue } from "azure-devops-ui/Core/Observable";
+import { getClient } from "azure-devops-extension-api";
+import { GitRestClient } from "azure-devops-extension-api/Git/GitClient";
 
 export const refsPreffix = "refs/heads/";
+
+export const approvedLightColor: IColor = {
+  red: 231,
+  green: 242,
+  blue: 231,
+};
+
+export const approvedWithSuggestionsLightColor: IColor = {
+  red: 231,
+  green: 242,
+  blue: 231,
+};
+
+export const noVoteLightColor: IColor = {
+  red: 218,
+  green: 227,
+  blue: 243,
+};
+
+export const waitingAuthorLightColor: IColor = {
+  red: 255,
+  green: 249,
+  blue: 230,
+};
+
+export const rejectedLightColor: IColor = {
+  red: 250,
+  green: 235,
+  blue: 235,
+};
+
+export const autoCompleteColor: IColor = {
+  red: 235,
+  green: 121,
+  blue: 8,
+};
+
+export const reviewerVoteToIColorLight = (vote: number | string) => {
+  const colorMap: Record<string, IColor> = {
+    '10': approvedLightColor,
+    '5': approvedWithSuggestionsLightColor,
+    '0': noVoteLightColor,
+    '-5': waitingAuthorLightColor,
+    '-10': rejectedLightColor,
+  };
+  return colorMap[vote];
+};
 
 export enum ReviewerVoteOption {
   Approved = 10,
@@ -54,6 +106,11 @@ export class PullRequestModel {
   public lastShortCommitId?: string;
   public lastCommitUrl?: string;
   public pullRequestProgressStatus?: IStatusIndicatorData;
+  public lastCommitDetails: ObservableValue<
+    GitCommit | undefined
+  > = new ObservableValue(undefined);
+
+  private gitClient: GitRestClient = getClient(GitRestClient);
 
   constructor(
     public gitPullRequest: GitPullRequest,
@@ -81,11 +138,25 @@ export class PullRequestModel {
     this.myApprovalStatus = this.getCurrentUserVoteStatus(
       this.gitPullRequest.reviewers
     );
-    this.lastCommitId = this.gitPullRequest.lastMergeSourceCommit.commitId;
-    this.lastShortCommitId = this.lastCommitId.substr(0, 8);
     this.lastCommitUrl = `${baseHostUrl}/_git/${this.gitPullRequest.repository.name}/commit/${this.lastCommitId}?refName=GB${this.gitPullRequest.sourceRefName}`;
     this.pullRequestProgressStatus = this.getStatusIndicatorData(
       this.gitPullRequest.reviewers
+    );
+
+    this.getLastCommitDetails(
+      this.gitPullRequest.lastMergeSourceCommit,
+      this.gitPullRequest.repository
+    );
+  }
+
+  private async getLastCommitDetails(
+    gitCommit: GitCommitRef,
+    repository: GitRepository
+  ) {
+    this.lastShortCommitId = gitCommit.commitId.substr(0, 8);
+    this.lastCommitDetails.value = await this.gitClient.getCommit(
+      gitCommit.commitId,
+      repository.id
     );
   }
 
@@ -121,16 +192,19 @@ export class PullRequestModel {
         ...Statuses.Failed,
         ariaLabel: "One or more of the reviewers has rejected."
       };
-      indicatorData.label =
-        "One or more of the reviewers has rejected.";
+      indicatorData.label = "One or more of the reviewers has rejected.";
     } else if (reviewers.some(r => r.vote === -5)) {
       indicatorData.statusProps = {
         ...Statuses.Warning,
         ariaLabel: "One or more of the reviewers is waiting for the author."
       };
       indicatorData.label =
-      "One or more of the reviewers is waiting for the author.";
-    } else if (reviewers.filter(r => r.isRequired).every(r => r.vote === 10 || r.vote === 5)) {
+        "One or more of the reviewers is waiting for the author.";
+    } else if (
+      reviewers
+        .filter(r => r.isRequired)
+        .every(r => r.vote === 10 || r.vote === 5)
+    ) {
       indicatorData.statusProps = {
         ...Statuses.Success,
         ariaLabel: "Ready for completion"
