@@ -197,8 +197,6 @@ export class PullRequestsTab extends React.Component<
         return 0;
       })
     });
-
-    console.log(this.state.repositories);
   }
 
   private async getOrganizationBaseUrl() {

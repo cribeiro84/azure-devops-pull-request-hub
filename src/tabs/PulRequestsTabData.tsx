@@ -152,6 +152,7 @@ export class PullRequestModel {
       0,
       8
     );
+
     const pullRequestDetails = await this.gitClient.getPullRequestById(
       this.gitPullRequest.pullRequestId
     );
