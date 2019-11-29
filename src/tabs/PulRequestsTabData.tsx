@@ -4,7 +4,6 @@ import {
   GitPullRequestSearchCriteria,
   PullRequestStatus,
   IdentityRefWithVote,
-  GitCommit,
   GitCommitRef
 } from "azure-devops-extension-api/Git/Git";
 import * as DevOps from "azure-devops-extension-sdk";
@@ -16,52 +15,53 @@ import { Statuses } from "azure-devops-ui/Status";
 import { ObservableValue } from "azure-devops-ui/Core/Observable";
 import { getClient } from "azure-devops-extension-api";
 import { GitRestClient } from "azure-devops-extension-api/Git/GitClient";
+import { TeamProjectReference } from "azure-devops-extension-api/Core/Core";
 
 export const refsPreffix = "refs/heads/";
 
 export const approvedLightColor: IColor = {
   red: 231,
   green: 242,
-  blue: 231,
+  blue: 231
 };
 
 export const approvedWithSuggestionsLightColor: IColor = {
   red: 231,
   green: 242,
-  blue: 231,
+  blue: 231
 };
 
 export const noVoteLightColor: IColor = {
   red: 218,
   green: 227,
-  blue: 243,
+  blue: 243
 };
 
 export const waitingAuthorLightColor: IColor = {
   red: 255,
   green: 249,
-  blue: 230,
+  blue: 230
 };
 
 export const rejectedLightColor: IColor = {
   red: 250,
   green: 235,
-  blue: 235,
+  blue: 235
 };
 
 export const autoCompleteColor: IColor = {
   red: 235,
   green: 121,
-  blue: 8,
+  blue: 8
 };
 
 export const reviewerVoteToIColorLight = (vote: number | string) => {
   const colorMap: Record<string, IColor> = {
-    '10': approvedLightColor,
-    '5': approvedWithSuggestionsLightColor,
-    '0': noVoteLightColor,
-    '-5': waitingAuthorLightColor,
-    '-10': rejectedLightColor,
+    "10": approvedLightColor,
+    "5": approvedWithSuggestionsLightColor,
+    "0": noVoteLightColor,
+    "-5": waitingAuthorLightColor,
+    "-10": rejectedLightColor
   };
   return colorMap[vote];
 };
@@ -107,8 +107,9 @@ export class PullRequestModel {
   public lastCommitUrl?: string;
   public pullRequestProgressStatus?: IStatusIndicatorData;
   public lastCommitDetails: ObservableValue<
-    GitCommit | undefined
+    GitCommitRef | undefined
   > = new ObservableValue(undefined);
+  public isAutoCompleteSet: ObservableValue<boolean> = new ObservableValue(false);
 
   private gitClient: GitRestClient = getClient(GitRestClient);
 
@@ -143,21 +144,20 @@ export class PullRequestModel {
       this.gitPullRequest.reviewers
     );
 
-    this.getLastCommitDetails(
-      this.gitPullRequest.lastMergeSourceCommit,
-      this.gitPullRequest.repository
-    );
+    this.getPullRequestDetailsAsync();
   }
 
-  private async getLastCommitDetails(
-    gitCommit: GitCommitRef,
-    repository: GitRepository
-  ) {
-    this.lastShortCommitId = gitCommit.commitId.substr(0, 8);
-    this.lastCommitDetails.value = await this.gitClient.getCommit(
-      gitCommit.commitId,
-      repository.id
+  private async getPullRequestDetailsAsync() {
+    this.lastShortCommitId = this.gitPullRequest.lastMergeSourceCommit.commitId.substr(
+      0,
+      8
     );
+    const pullRequestDetails = await this.gitClient.getPullRequestById(
+      this.gitPullRequest.pullRequestId
+    );
+
+    this.lastCommitDetails.value = pullRequestDetails.lastMergeCommit;
+    this.isAutoCompleteSet.value = pullRequestDetails.autoCompleteSetBy !== undefined;
   }
 
   private getCurrentUserVoteStatus(
@@ -297,7 +297,8 @@ export const pullRequestCriteria: GitPullRequestSearchCriteria = {
 };
 
 export interface IPullRequestsTabState {
-  currentProject?: IProjectInfo | undefined;
+  projects: TeamProjectReference[];
+  currentProject?: IProjectInfo | TeamProjectReference | undefined;
   pullRequests: PullRequestModel[];
   repositories: GitRepository[];
   createdByList: IdentityRef[];

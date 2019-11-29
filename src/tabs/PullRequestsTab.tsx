@@ -1,3 +1,5 @@
+import "./PullRequestTab.scss";
+
 import * as React from "react";
 import { AZDEVOPS_API_ORGANIZATION } from "../models/constants";
 
@@ -15,6 +17,7 @@ import {
   IProjectPageService,
   getClient
 } from "azure-devops-extension-api";
+import { CoreRestClient } from "azure-devops-extension-api/Core/CoreClient";
 import { GitRestClient } from "azure-devops-extension-api/Git/GitClient";
 import {
   IdentityRefWithVote,
@@ -23,7 +26,6 @@ import {
 } from "azure-devops-extension-api/Git/Git";
 
 //Azure DevOps UI
-import { AgoFormat } from "azure-devops-ui/Utilities/Date";
 import { ListSelection } from "azure-devops-ui/List";
 import { VssPersona } from "azure-devops-ui/VssPersona";
 import { IHeaderCommandBarItem } from "azure-devops-ui/HeaderCommandBar";
@@ -36,7 +38,10 @@ import {
   FILTER_CHANGE_EVENT,
   IFilterItemState
 } from "azure-devops-ui/Utilities/Filter";
-import { DropdownMultiSelection } from "azure-devops-ui/Utilities/DropdownSelection";
+import {
+  DropdownMultiSelection,
+  DropdownSelection
+} from "azure-devops-ui/Utilities/DropdownSelection";
 import { DropdownFilterBarItem } from "azure-devops-ui/Dropdown";
 import {
   ObservableArray,
@@ -57,6 +62,8 @@ import { ZeroData, ZeroDataActionType } from "azure-devops-ui/ZeroData";
 import { IdentityRef } from "azure-devops-extension-api/WebApi/WebApi";
 import { Button } from "azure-devops-ui/Button";
 import { ObservableValue } from "azure-devops-ui/Core/Observable";
+import { IProjectInfo } from 'azure-devops-extension-api/Common/CommonServices';
+import { TeamProjectReference } from 'azure-devops-extension-api/Core/Core';
 
 export class PullRequestsTab extends React.Component<
   {},
@@ -69,6 +76,7 @@ export class PullRequestsTab extends React.Component<
   });
   private isDialogOpen = new ObservableValue<boolean>(false);
   private filter: Filter;
+  private selectedProject = new DropdownSelection();
   private selectedAuthors = new DropdownMultiSelection();
   private selectedRepos = new DropdownMultiSelection();
   private selectedSourceBranches = new DropdownMultiSelection();
@@ -99,13 +107,16 @@ export class PullRequestsTab extends React.Component<
     });
 
   private readonly gitClient: GitRestClient;
+  private readonly coreClient: CoreRestClient;
 
   constructor(props: {}) {
     super(props);
 
     this.gitClient = getClient(GitRestClient);
+    this.coreClient = getClient(CoreRestClient);
 
     this.state = {
+      projects: [],
       pullRequests: [],
       repositories: [],
       currentProject: { id: "", name: "" },
@@ -153,13 +164,27 @@ export class PullRequestsTab extends React.Component<
     );
 
     this.setState({
+      projects: await this.coreClient.getProjects(),
       currentProject: await projectService.getProject()
+    });
+
+    this.selectedProject.select(this.state.projects.findIndex((p, index) => {
+      return p.id === this.state.currentProject!.id
+    }));
+
+    await this.getRepositories(this.state.currentProject!);
+    this.getAllPullRequests();
+  }
+
+  private async getRepositories(project: IProjectInfo | TeamProjectReference) {
+    this.setState({
+      currentProject: project
     });
 
     this.setState({
       repositories: (
         await this.gitClient.getRepositories(
-          this.state.currentProject!.name,
+          project.name,
           true
         )
       ).sort((a: GitRepository, b: GitRepository) => {
@@ -173,7 +198,7 @@ export class PullRequestsTab extends React.Component<
       })
     });
 
-    this.getAllPullRequests();
+    console.log(this.state.repositories);
   }
 
   private async getOrganizationBaseUrl() {
@@ -525,6 +550,7 @@ export class PullRequestsTab extends React.Component<
 
   public render(): JSX.Element {
     const {
+      projects,
       repositories,
       createdByList,
       sourceBranchList,
@@ -550,6 +576,31 @@ export class PullRequestsTab extends React.Component<
             placeholder={"Search Pull Requests"}
             filter={this.filter}
           />
+
+          <React.Fragment>
+            <DropdownFilterBarItem
+              filterItemKey="selectedProject"
+              onSelect={async (element, value) => {
+                const projectIndex = this.state.projects.findIndex((p, index) => {
+                  return p.id === value.id;
+                });
+
+                await this.getRepositories(this.state.projects[projectIndex]);
+                this.refresh();
+              }}
+              filter={this.filter}
+              selection={this.selectedProject}
+              placeholder="Projects"
+              showFilterBox={true}
+              noItemsText="No project found"
+              items={projects.map(i => {
+                return {
+                  id: i.id,
+                  text: i.name
+                };
+              })}
+            />
+          </React.Fragment>
 
           <React.Fragment>
             <DropdownFilterBarItem
@@ -821,10 +872,6 @@ export class PullRequestsTab extends React.Component<
       name: "Pull Request",
       renderCell: this.renderTitleColumn,
       readonly: true,
-      sortProps: {
-        ariaLabelAscending: "Sorted A to Z",
-        ariaLabelDescending: "Sorted Z to A"
-      },
       width: -46
     },
     {
@@ -899,52 +946,40 @@ export class PullRequestsTab extends React.Component<
         tableColumn={tableColumn}
         line1={
           <span className="flex-row scroll-hidden">
-            <span className="flex-row scroll-hidden">
-              {PullRequestTypeIcon()}
-              <Tooltip text={tableItem.gitPullRequest.title}>
-                <Link
-                  className="fontSizeM font-size-m text-ellipsis bolt-table-link bolt-table-inline-link"
-                  excludeTabStop
-                  href={tableItem.pullRequestHref}
-                  target="_blank"
-                >
-                  {tableItem.title}
-                </Link>
-              </Tooltip>
-              {tableItem.gitPullRequest.isDraft ? (
+            <Button
+              className="branch-button"
+              text={tableItem.title}
+              iconProps={{ iconName: "BranchPullRequest" }}
+              onClick={() => {
+                window.open(tableItem.pullRequestHref, "_blank");
+              }}
+              tooltipProps={{ text: tooltip }}
+              subtle
+            />
+            {tableItem.gitPullRequest.isDraft ? (
+              <div className="flex-column" key={rowIndex}>
                 <Pill
                   color={Data.draftColor}
                   // @ts-ignore
-                  size={PillSize.regular}
+                  size={PillSize.large}
                 >
                   Draft
                 </Pill>
-              ) : (
-                ""
-              )}
-              {tableItem.gitPullRequest.autoCompleteSetBy !== undefined ? (
-                <Pill
-                  color={Data.autoCompleteColor}
-                  // @ts-ignore
-                  size={PillSize.regular}
-                >
-                  Auto-complete
-                </Pill>
-              ) : (
-                ""
-              )}
-              {hasPullRequestFailure(tableItem) ? (
-                <Pill
-                  color={Data.rejectedColor}
-                  // @ts-ignore
-                  size={PillSize.regular}
-                >
-                  {getPullRequestFailureDescription(tableItem)}
-                </Pill>
-              ) : (
-                ""
-              )}
-            </span>
+              </div>
+            ) : (
+              ""
+            )}
+            {hasPullRequestFailure(tableItem) ? (
+              <Pill
+                color={Data.rejectedColor}
+                // @ts-ignore
+                size={PillSize.large}
+              >
+                {getPullRequestFailureDescription(tableItem)}
+              </Pill>
+            ) : (
+              " "
+            )}
           </span>
         }
         line2={
@@ -972,7 +1007,7 @@ export class PullRequestsTab extends React.Component<
                 }}
                 subtle
               />
-              into
+              ->
               <Button
                 className="branch-button"
                 text={tableItem.targetBranch!.branchName}
@@ -1046,7 +1081,7 @@ export class PullRequestsTab extends React.Component<
             {" - "}
             <Observer startDate={lastCommitDate}>
               <Duration
-                startDate={lastCommitDate.value!!}
+                startDate={lastCommitDate.value!}
                 endDate={new Date(Date.now())}
               />
             </Observer>
@@ -1106,25 +1141,23 @@ export class PullRequestsTab extends React.Component<
                       </div>
                     )}
                   >
-                    <div className="tooltip-overflow-child">
-                      <Pill
-                        key={reviewer.id}
-                        color={Data.reviewerVoteToIColorLight(reviewer.vote)}
-                        // @ts-ignore
-                        variant={PillVariant.colored}
-                        // @ts-ignore
-                        size={PillSize.large}
-                      >
-                        <div className="flex-row rhythm-horizontal-8">
-                          {getReviewerVoteIconStatus(reviewer)}
-                          <VssPersona
-                            className="icon-margin"
-                            imageUrl={reviewer._links["avatar"].href}
-                            size={"small"}
-                          />
-                        </div>
-                      </Pill>
-                    </div>
+                    <Pill
+                      key={reviewer.id}
+                      color={Data.reviewerVoteToIColorLight(reviewer.vote)}
+                      // @ts-ignore
+                      variant={PillVariant.colored}
+                      // @ts-ignore
+                      size={PillSize.large}
+                    >
+                      <div className="flex-row rhythm-horizontal-8">
+                        {getReviewerVoteIconStatus(reviewer)}
+                        <VssPersona
+                          className="icon-margin"
+                          imageUrl={reviewer._links["avatar"].href}
+                          size={"small"}
+                        />
+                      </div>
+                    </Pill>
                   </Tooltip>
                 );
               })}
@@ -1148,13 +1181,7 @@ export class PullRequestsTab extends React.Component<
         line1={WithIcon({
           className: "fontSize font-size",
           iconProps: { iconName: "Calendar" },
-          children: (
-            <Ago
-              date={
-                tableItem.gitPullRequest.creationDate!
-              } /*format={AgoFormat.Extended}*/
-            />
-          )
+          children: <Ago date={tableItem.gitPullRequest.creationDate!} />
         })}
         line2={WithIcon({
           className: "fontSize font-size bolt-table-two-line-cell-item",
