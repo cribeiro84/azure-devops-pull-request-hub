@@ -1275,16 +1275,6 @@ function WithIcon(props: {
   );
 }
 
-function PullRequestTypeIcon() {
-  let iconName: string = "BranchPullRequest";
-
-  return Icon({
-    className: "bolt-table-inline-link-left-padding icon-margin",
-    iconName: iconName,
-    key: "release-type"
-  });
-}
-
 function sortMethod(
   a: Data.BranchDropDownItem | IdentityRef,
   b: Data.BranchDropDownItem | IdentityRef
