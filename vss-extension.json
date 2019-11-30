@@ -7,7 +7,7 @@
   "description": "A complete and friendly Pull Request Hub to manage all your repositories' PRs with must have filters at one simplified view.",
   "public": true,
   "categories": ["Azure Repos"],
-  "demands": ["api-version/5.2"],
+  "demands": ["api-version/5.1"],
   "scopes": [
     "vso.code"
   ],

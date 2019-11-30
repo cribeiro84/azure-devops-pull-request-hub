@@ -109,7 +109,9 @@ export class PullRequestModel {
   public lastCommitDetails: ObservableValue<
     GitCommitRef | undefined
   > = new ObservableValue(undefined);
-  public isAutoCompleteSet: ObservableValue<boolean> = new ObservableValue(false);
+  public isAutoCompleteSet: ObservableValue<boolean> = new ObservableValue(
+    false
+  );
 
   private gitClient: GitRestClient = getClient(GitRestClient);
 
@@ -153,12 +155,18 @@ export class PullRequestModel {
       8
     );
 
-    const pullRequestDetails = await this.gitClient.getPullRequestById(
-      this.gitPullRequest.pullRequestId
-    );
-
-    this.lastCommitDetails.value = pullRequestDetails.lastMergeCommit;
-    this.isAutoCompleteSet.value = pullRequestDetails.autoCompleteSetBy !== undefined;
+    this.gitClient
+      .getPullRequestById(this.gitPullRequest.pullRequestId)
+      .then(value => {
+        this.lastCommitDetails.value = value.lastMergeCommit;
+        this.isAutoCompleteSet.value = value.autoCompleteSetBy !== undefined;
+      })
+      .catch(error => {
+        console.log(
+          `There was an error calling the Pull Request details (method: getPullRequestById).`
+        );
+        console.log(error);
+      });
   }
 
   private getCurrentUserVoteStatus(

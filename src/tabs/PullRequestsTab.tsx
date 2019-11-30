@@ -209,7 +209,8 @@ export class PullRequestsTab extends React.Component<
       .then(result => {
         this.baseUrl = result.locationUrl;
       })
-      .catch(() => {
+      .catch((error) => {
+        console.log(error);
         console.log("trying to get onprem URL - " + document.referrer);
         const url = new URL(document.referrer);
         this.baseUrl = `${url.origin}/tfs/`;
