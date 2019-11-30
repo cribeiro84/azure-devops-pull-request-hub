@@ -40,6 +40,8 @@ Manage your Pull Requests of all your repositories at a single place without hav
 - Continue where you left - When you click to review a Pull Request (it always opens in a **new window**) the row will be kept highlighted
 - Easily identify the reviewers of that Pull Request
 - Last Commit push date
+- Filter by Team Projects
+  - You can now manage all Pull Requests across all projects you have access to
 
 ## Future releaes
 
@@ -51,7 +53,6 @@ Manage your Pull Requests of all your repositories at a single place without hav
 - Comments count + resolved ones (For instance: 1/2 resolved)
 - Where you left:
   - New badge (Pill) for your voted PRs with new changes
-- Filter by other projects
 
 ## Updates
 
