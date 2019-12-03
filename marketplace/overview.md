@@ -10,6 +10,8 @@ Manage your Pull Requests of all your repositories at a single place without hav
   - [Features](#features)
   - [Future releaes](#future-releaes)
   - [Updates](#updates)
+    - [02/12/2019](#02122019)
+    - [29/11/2019](#29112019)
     - [26/11/2019](#26112019)
     - [23/11/2019](#23112019)
     - [10/11/2019](#10112019)
@@ -30,6 +32,7 @@ Manage your Pull Requests of all your repositories at a single place without hav
 - Filter by:
   - Title
   - Pull Request ID
+  - By Team Project
   - One or multiple repositories
   - Source Branches
   - Target Branches
@@ -40,8 +43,7 @@ Manage your Pull Requests of all your repositories at a single place without hav
 - Continue where you left - When you click to review a Pull Request (it always opens in a **new window**) the row will be kept highlighted
 - Easily identify the reviewers of that Pull Request
 - Last Commit push date
-- Filter by Team Projects
-  - You can now manage all Pull Requests across all projects you have access to
+- You can now manage all Pull Requests across all projects you have access to
 
 ## Future releaes
 
@@ -55,6 +57,18 @@ Manage your Pull Requests of all your repositories at a single place without hav
   - New badge (Pill) for your voted PRs with new changes
 
 ## Updates
+
+### 02/12/2019
+
+- Minor fixes
+- Sort project list filter by name
+- TFS base URL fix
+
+### 29/11/2019
+
+- New filter: Project
+- UI tweaks
+- Minor fixes
 
 ### 26/11/2019
 
