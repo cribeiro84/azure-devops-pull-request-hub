@@ -1076,8 +1076,7 @@ export class PullRequestsTab extends React.Component<
             <Link
               className="fontSizeM font-size-m text-ellipsis bolt-table-link bolt-table-inline-link"
               excludeTabStop
-              href="#"
-              target="_blank"
+              disabled
             >
               {tableItem.gitPullRequest.createdBy.displayName}
             </Link>
