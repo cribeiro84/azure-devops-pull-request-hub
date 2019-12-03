@@ -1,7 +1,7 @@
 import "./PullRequestTab.scss";
 
 import * as React from "react";
-import { AZDEVOPS_API_ORGANIZATION } from "../models/constants";
+import { AZDEVOPS_CLOUD_API_ORGANIZATION, AZDEVOPS_API_ORGANIZATION_RESOURCE } from "../models/constants";
 
 import { Spinner, SpinnerSize } from "office-ui-fabric-react";
 
@@ -164,7 +164,7 @@ export class PullRequestsTab extends React.Component<
     );
 
     this.setState({
-      projects: await this.coreClient.getProjects(),
+      projects: await this.getTeamProjects(),
       currentProject: await projectService.getProject()
     });
 
@@ -200,26 +200,44 @@ export class PullRequestsTab extends React.Component<
   }
 
   private async getOrganizationBaseUrl() {
-    await fetch(
-      `${AZDEVOPS_API_ORGANIZATION}?accountName=${
+    const url = new URL(document.referrer);
+    if (DevOps.getHost().type != 4) { //4 - Azure DevOps Cloud
+      const collectionName = url.pathname.split('/')[1];
+      this.baseUrl = `${url.origin}/tfs/${collectionName}/`;
+    }
+    else {
+      let baseUrlFormat = `${AZDEVOPS_CLOUD_API_ORGANIZATION}/${AZDEVOPS_API_ORGANIZATION_RESOURCE}/?accountName=${
         DevOps.getHost().name
-      }&api-version=5.0-preview.1`
-    )
-      .then(res => res.json())
-      .then(result => {
-        this.baseUrl = result.locationUrl;
-      })
-      .catch((error) => {
-        console.log(error);
-        console.log("trying to get onprem URL - " + document.referrer);
-        const url = new URL(document.referrer);
-        this.baseUrl = `${url.origin}/tfs/`;
-      });
+      }&api-version=5.0-preview.1`;
+
+      await fetch(
+        baseUrlFormat
+      )
+        .then(res => res.json())
+        .then(result => {
+          this.baseUrl = result.locationUrl;
+        })
+        .catch((error) => {
+          console.log("Not able to fetch Organization's URL. Details: " + error);
+        });
+    }
   }
 
   private reloadPullRequestItemProvider(newList: Data.PullRequestModel[]) {
     this.pullRequestItemProvider.splice(0, this.pullRequestItemProvider.length);
     this.pullRequestItemProvider.push(...newList);
+  }
+
+  private async getTeamProjects(): Promise<TeamProjectReference[]> {
+    return (await this.coreClient.getProjects()).sort((a: TeamProjectReference, b: TeamProjectReference) => {
+      if (a.name < b.name) {
+        return -1;
+      }
+      if (a.name > b.name) {
+        return 1;
+      }
+      return 0;
+    });
   }
 
   private async getAllPullRequests() {

@@ -146,7 +146,7 @@ export class PullRequestModel {
       this.gitPullRequest.reviewers
     );
 
-    this.getPullRequestDetailsAsync();
+    await this.getPullRequestDetailsAsync();
   }
 
   private async getPullRequestDetailsAsync() {
