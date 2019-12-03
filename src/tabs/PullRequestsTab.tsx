@@ -202,7 +202,7 @@ export class PullRequestsTab extends React.Component<
   private async getOrganizationBaseUrl() {
     const url = new URL(document.referrer);
     if (DevOps.getHost().type != 4) { //4 - Azure DevOps Cloud
-      const collectionName = url.pathname.split('/')[1];
+      const collectionName = url.pathname.split('/')[2];
       this.baseUrl = `${url.origin}/tfs/${collectionName}/`;
     }
     else {
