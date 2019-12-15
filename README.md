@@ -39,6 +39,31 @@ HTTPS=true react-scripts start
 
 These above commands will trigger the compilation and will start a new browser instance pointing to <https://localhost:3000/>
 
+### Developing and Testing
+
+The extension supports two modes: DEV and Public. DEV Mode is meant for debugging also to be installed and to run over the https://localhost:3000/.
+Please follow the below commands to generate the extension for each mode.
+
+1. Run `npm run package-dev` and upload the package as a private extension to your  Azure DevOps publisher account
+
+  > Note: You may need to add a directory called `build` to the project root when running the script. The output of the `package-dev` script is there.
+
+- Be sure to update the `manifest.json` to use your publisher's ID before running the script.
+
+2. Install the private extension on your Azure DevOps oragnization and test your changes.
+
+DEV Mode
+
+```
+npm run package-dev
+```
+
+Public Mode (Production)
+
+```
+npm run package-release
+```
+
 ## Built With
 
 * [Visual Studio Code](https://code.visualstudio.com/) - IDE
