@@ -1,7 +1,7 @@
 import "./PullRequestTab.scss";
 
 import * as React from "react";
-import { AZDEVOPS_CLOUD_API_ORGANIZATION, AZDEVOPS_API_ORGANIZATION_RESOURCE } from "../models/constants";
+import { AZDEVOPS_CLOUD_API_ORGANIZATION, AZDEVOPS_API_ORGANIZATION_RESOURCE, AZDEVOPS_CLOUD_API_ORGANIZATION_OLD } from "../models/constants";
 
 import { Spinner, SpinnerSize } from "office-ui-fabric-react";
 
@@ -200,13 +200,24 @@ export class PullRequestsTab extends React.Component<
   }
 
   private async getOrganizationBaseUrl() {
+    const oldOrgUrlFormat = AZDEVOPS_CLOUD_API_ORGANIZATION_OLD.replace("[org]", DevOps.getHost().name);
     const url = new URL(document.referrer);
-    if (DevOps.getHost().type != 4) { //4 - Azure DevOps Cloud
-      const collectionName = url.pathname.split('/')[2];
-      this.baseUrl = `${url.origin}/tfs/${collectionName}/`;
+
+    console.log('Base URL reference: ' + url.toString());
+
+    if ((url.origin !== AZDEVOPS_CLOUD_API_ORGANIZATION
+      && url.origin !== oldOrgUrlFormat)) {
+
+        if (url.pathname.split('/')[1] === "tfs") {
+          const collectionName = url.pathname.split('/')[2];
+          this.baseUrl = `${url.origin}/tfs/${collectionName}/`;
+        } else {
+          const collectionName = url.pathname.split('/')[1];
+          this.baseUrl = `${url.origin}/${collectionName}/`;
+        }
     }
     else {
-      let baseUrlFormat = `${AZDEVOPS_CLOUD_API_ORGANIZATION}/${AZDEVOPS_API_ORGANIZATION_RESOURCE}/?accountName=${
+      const baseUrlFormat = `${AZDEVOPS_CLOUD_API_ORGANIZATION}/${AZDEVOPS_API_ORGANIZATION_RESOURCE}/?accountName=${
         DevOps.getHost().name
       }&api-version=5.0-preview.1`;
 
@@ -218,9 +229,11 @@ export class PullRequestsTab extends React.Component<
           this.baseUrl = result.locationUrl;
         })
         .catch((error) => {
-          console.log("Not able to fetch Organization's URL. Details: " + error);
+          console.log("Unable to fetch Organization's URL. Details: " + error);
         });
     }
+
+    console.log("Set base URL: " + this.baseUrl);
   }
 
   private reloadPullRequestItemProvider(newList: Data.PullRequestModel[]) {

@@ -1,138 +1,91 @@
-# Pull Request Manager Hub
+# Azure DevOps Pull Request Manager Hub
 
 [![Build Status](https://dev.azure.com/caixaazul/Pull%20Request%20Manager%20Hub/_apis/build/status/cribeiro84.azure-devops-pull-request-hub?branchName=master)](https://dev.azure.com/caixaazul/Pull%20Request%20Manager%20Hub/_build/latest?definitionId=11&branchName=master)
 
-Please report any feedback/issue, feel free to open an issue or submit your PR.
+Please report any feedback/issue [here](https://github.com/cribeiro84/azure-devops-pull-request-hub):
 
 ------
 
-Manage your Pull Requests of all your repositories at a single place without having to switch between each repository. Track its status and what's most important to focus on your code review process.
+Manage your Pull Requests of all your projects and repositories at a single place without having to switch between each repository. Track its status and what's most important to focus on your code review process.
 
-- [Pull Request Manager Hub](#pull-request-manager-hub)
-  - [Features](#features)
-  - [Future releaes](#future-releaes)
-  - [Updates](#updates)
-    - [02/12/2019](#02122019)
-    - [29/11/2019](#29112019)
-    - [26/11/2019](#26112019)
-    - [23/11/2019](#23112019)
-    - [10/11/2019](#10112019)
-    - [08/11/2019](#08112019)
-    - [06/11/2019](#06112019)
-    - [02/10/2019](#02102019)
-    - [28/09/2019](#28092019)
-    - [09/09/2019](#09092019)
-    - [21/08/2019](#21082019)
-  - [Screenshots](#screenshots)
-    - [Pull Request Manager Hub home](#pull-request-manager-hub-home)
-    - [...using filters](#using-filters)
-    - [...and light theme](#and-light-theme)
+## Getting Started
 
-## Features
+These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
 
-- Lists all Pull Requests across your repositories of your current project
-- Filter by:
-  - Title
-  - Pull Request ID
-  - By Team Project
-  - One or multiple repositories
-  - Source Branches
-  - Target Branches
-  - Requestor
-  - Reviewers
-  - Your vote status
-  - Draft
-- Continue where you left - When you click to review a Pull Request (it always opens in a **new window**) the row will be kept highlighted
-- Easily identify the reviewers of that Pull Request
-- Last Commit push date
-- You can now manage all Pull Requests across all projects you have access to
+### Prerequisites
 
-## Future releaes
+Please make sure you have the following tools installed to proceed
 
-- Create New Pull Request button
-- Save current state
-  - Selected search filters
-  - Last PR reviewed (highlight)
-- Work Items count
-- Comments count + resolved ones (For instance: 1/2 resolved)
-- Where you left:
-  - New badge (Pill) for your voted PRs with new changes
+```csharp
+- Git
+- Visual Studio Code (or any other editor with TypeScript support)
+- TypeScript
+- NodeJS
+```
 
-## Updates
+### Installing
 
-### 02/12/2019
+First step is to clone this repo locally on your workspace and then:
 
-- Minor fixes
-- Sort project list filter by name
-- TFS base URL fix
+```bash
+npm install
+```
 
-### 29/11/2019
+And then
 
-- New filter: Project
-- UI tweaks
-- Minor fixes
+```bash
+HTTPS=true react-scripts start
+```
 
-### 26/11/2019
+These above commands will trigger the compilation and will start a new browser instance pointing to <https://localhost:3000/>
 
-- Minor fixes
-- UI tweaks
-- Last Commit push date
+### Developing and Testing
 
-### 23/11/2019
+The extension supports two modes: DEV and Public. DEV Mode is meant for debugging also to be installed and to run over the https://localhost:3000/.
+Please follow the below commands to generate the extension for each mode.
 
-- Minor fixes
-- UI tweaks
+1. Run `npm run package-dev` and upload the package as a private extension to your  Azure DevOps publisher account
 
-### 10/11/2019
+  > Note: You may need to add a directory called `build` to the project root when running the script. The output of the `package-dev` script is there.
 
-- Minor fixes
-- Added feature to highlight the row when it's clicked
-- Added a help button to indicate what each PR status icon represents
+- Be sure to update the `manifest.json` to use your publisher's ID before running the script.
 
-### 08/11/2019
+2. Install the private extension on your Azure DevOps oragnization and test your changes.
 
-- Filter fixes
+DEV Mode
 
-### 06/11/2019
+```
+npm run package-dev
+```
 
-- Filter fixes
-- UI tweaks
-- Code cleanup
+Public Mode (Production)
 
-### 02/10/2019
+```
+npm run package-release
+```
 
-- Filter fixes
-- New filter: Is Draft
-- UI tweaks
-- Code cleanup
-- Removed support for TFS
+## Built With
 
-### 28/09/2019
+* [Visual Studio Code](https://code.visualstudio.com/) - IDE
+* [Git](https://git-scm.com/) - Repository
+* [NodeJS](https://nodejs.org/en/) - Local server
+* [TypeScript](https://www.typescriptlang.org/) - Language
+* [ReactJS](https://reactjs.org/) - Web framework
 
-- Filter fixes
-- Sort filter dropdown lists
-- Filter by Pull Request ID
-- Code cleanup
+## Contributing
 
-### 09/09/2019
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us.
 
-- Minor fixes
-- Screenshots
+## Versioning
 
-### 21/08/2019
+We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/your/project/tags). 
 
-- Public release of **Pull Request Manager Hub**
+## Authors
 
-## Screenshots
+* **Carlos Alessandro Ribeiro** - [cribeiro84](https://github.com/cribeiro84)
 
-### Pull Request Manager Hub home
+See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
 
-![Pull Request Manager Hub - No filter](marketplace/screenshots/screenshot-01.png)
+## License
 
-### ...using filters
-
-![Pull Request Manager Hub - Filtering](marketplace/screenshots/screenshot-02.png)
-
-### ...and light theme
-
-![Pull Request Manager Hub - Light Theme](marketplace/screenshots/screenshot-03.png)
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details

@@ -4,12 +4,13 @@ Please report any feedback/issue [here](https://github.com/cribeiro84/azure-devo
 
 ------
 
-Manage your Pull Requests of all your repositories at a single place without having to switch between each repository. Track its status and what's most important to focus on your code review process.
+Manage your Pull Requests of all your projects and repositories at a single place without having to switch between each repository. Track its status and what's most important to focus on your code review process.w
 
 - [Pull Request Manager Hub](#pull-request-manager-hub)
   - [Features](#features)
   - [Future releaes](#future-releaes)
   - [Updates](#updates)
+    - [14/12/2019](#14122019)
     - [02/12/2019](#02122019)
     - [29/11/2019](#29112019)
     - [26/11/2019](#26112019)
@@ -57,6 +58,11 @@ Manage your Pull Requests of all your repositories at a single place without hav
   - New badge (Pill) for your voted PRs with new changes
 
 ## Updates
+
+### 14/12/2019
+
+- TFS/Azure DevOps Server url fixes
+- Minor improvements
 
 ### 02/12/2019
 
