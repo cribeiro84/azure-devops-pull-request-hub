@@ -173,24 +173,24 @@ export class PullRequestsTab extends React.Component<
 
         this.getTeamProjects().then(projects => {
           this.setState({
-            projects: projects,
-            currentProject: currentProject
+            projects: projects
           });
 
           this.selectedProject.select(
             this.state.projects.findIndex((p, index) => {
-              return p.id === this.state.currentProject!.id;
+              return p.id === currentProject!.id;
             })
           );
 
           this.getRepositories(currentProject!)
             .then(() => {
-              this.getAllPullRequests()
-                .catch(error => this.handleError(error));
+              this.getAllPullRequests().catch(error => this.handleError(error));
             })
             .catch(error => {
               this.handleError(error);
             });
+        }).catch(error => {
+          this.handleError(error);
         });
       })
       .catch(error => {
@@ -202,7 +202,7 @@ export class PullRequestsTab extends React.Component<
     console.log(error);
     this.setState({
       loading: false,
-      errorMessage: error
+      errorMessage: "There was an error during the extension load: " + error
     });
   }
 
@@ -321,6 +321,8 @@ export class PullRequestsTab extends React.Component<
           );
           return pr;
         });
+      }).catch(error => {
+        this.handleError(error);
       })
       .finally(() => {
         if (pullRequests.length > 0) {
@@ -773,12 +775,16 @@ export class PullRequestsTab extends React.Component<
           </React.Fragment>
         </FilterBar>
 
-
-        {errorMessage.length > 0 ? <ShowErrorMessage errorMessage={errorMessage} onDismiss={() => {
-          this.setState({
-            errorMessage: ""
-          });
-        }} /> : null}
+        {errorMessage.length > 0 ? (
+          <ShowErrorMessage
+            errorMessage={errorMessage}
+            onDismiss={() => {
+              this.setState({
+                errorMessage: ""
+              });
+            }}
+          />
+        ) : null}
 
         <div className="margin-top-8">
           <br />
@@ -1360,7 +1366,7 @@ function sortMethod(
   return 0;
 }
 
-function ShowErrorMessage (props: any) {
+function ShowErrorMessage(props: any) {
   return (
     <div className="flex-grow margin-top-8">
       <br />
@@ -1368,7 +1374,6 @@ function ShowErrorMessage (props: any) {
         className="flex-self-stretch"
         // @ts-ignore
         severity={MessageCardSeverity.Error}
-
         onDismiss={() => {
           props.onDismiss();
         }}
