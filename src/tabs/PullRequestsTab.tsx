@@ -1,7 +1,11 @@
 import "./PullRequestTab.scss";
 
 import * as React from "react";
-import { AZDEVOPS_CLOUD_API_ORGANIZATION, AZDEVOPS_API_ORGANIZATION_RESOURCE, AZDEVOPS_CLOUD_API_ORGANIZATION_OLD } from "../models/constants";
+import {
+  AZDEVOPS_CLOUD_API_ORGANIZATION,
+  AZDEVOPS_API_ORGANIZATION_RESOURCE,
+  AZDEVOPS_CLOUD_API_ORGANIZATION_OLD
+} from "../models/constants";
 
 import { Spinner, SpinnerSize } from "office-ui-fabric-react";
 
@@ -26,6 +30,7 @@ import {
 } from "azure-devops-extension-api/Git/Git";
 
 //Azure DevOps UI
+import { MessageCard, MessageCardSeverity } from "azure-devops-ui/MessageCard";
 import { ListSelection } from "azure-devops-ui/List";
 import { VssPersona } from "azure-devops-ui/VssPersona";
 import { IHeaderCommandBarItem } from "azure-devops-ui/HeaderCommandBar";
@@ -62,8 +67,8 @@ import { ZeroData, ZeroDataActionType } from "azure-devops-ui/ZeroData";
 import { IdentityRef } from "azure-devops-extension-api/WebApi/WebApi";
 import { Button } from "azure-devops-ui/Button";
 import { ObservableValue } from "azure-devops-ui/Core/Observable";
-import { IProjectInfo } from 'azure-devops-extension-api/Common/CommonServices';
-import { TeamProjectReference } from 'azure-devops-extension-api/Core/Core';
+import { IProjectInfo } from "azure-devops-extension-api/Common/CommonServices";
+import { TeamProjectReference } from "azure-devops-extension-api/Core/Core";
 
 export class PullRequestsTab extends React.Component<
   {},
@@ -124,7 +129,8 @@ export class PullRequestsTab extends React.Component<
       sourceBranchList: [],
       targetBranchList: [],
       reviewerList: [],
-      loading: true
+      loading: true,
+      errorMessage: ""
     };
 
     this.filter = new Filter();
@@ -156,24 +162,48 @@ export class PullRequestsTab extends React.Component<
       pullRequests: []
     });
 
-    await this.getOrganizationBaseUrl();
+    this.getOrganizationBaseUrl()
+      .then(async () => {
+        const projectService = await DevOps.getService<IProjectPageService>(
+          // @ts-ignore
+          CommonServiceIds.ProjectPageService
+        );
 
-    const projectService = await DevOps.getService<IProjectPageService>(
-      // @ts-ignore
-      CommonServiceIds.ProjectPageService
-    );
+        const currentProject = await projectService.getProject();
 
+        this.getTeamProjects().then(projects => {
+          this.setState({
+            projects: projects,
+            currentProject: currentProject
+          });
+
+          this.selectedProject.select(
+            this.state.projects.findIndex((p, index) => {
+              return p.id === this.state.currentProject!.id;
+            })
+          );
+
+          this.getRepositories(currentProject!)
+            .then(() => {
+              this.getAllPullRequests()
+                .catch(error => this.handleError(error));
+            })
+            .catch(error => {
+              this.handleError(error);
+            });
+        });
+      })
+      .catch(error => {
+        this.handleError(error);
+      });
+  }
+
+  private handleError(error: any): void {
+    console.log(error);
     this.setState({
-      projects: await this.getTeamProjects(),
-      currentProject: await projectService.getProject()
+      loading: false,
+      errorMessage: error
     });
-
-    this.selectedProject.select(this.state.projects.findIndex((p, index) => {
-      return p.id === this.state.currentProject!.id
-    }));
-
-    await this.getRepositories(this.state.currentProject!);
-    this.getAllPullRequests();
   }
 
   private async getRepositories(project: IProjectInfo | TeamProjectReference) {
@@ -183,10 +213,7 @@ export class PullRequestsTab extends React.Component<
 
     this.setState({
       repositories: (
-        await this.gitClient.getRepositories(
-          project.name,
-          true
-        )
+        await this.gitClient.getRepositories(project.name, true)
       ).sort((a: GitRepository, b: GitRepository) => {
         if (a.name < b.name) {
           return -1;
@@ -200,36 +227,39 @@ export class PullRequestsTab extends React.Component<
   }
 
   private async getOrganizationBaseUrl() {
-    const oldOrgUrlFormat = AZDEVOPS_CLOUD_API_ORGANIZATION_OLD.replace("[org]", DevOps.getHost().name);
+    const oldOrgUrlFormat = AZDEVOPS_CLOUD_API_ORGANIZATION_OLD.replace(
+      "[org]",
+      DevOps.getHost().name
+    );
     const url = new URL(document.referrer);
 
-    console.log('Base URL reference: ' + url.toString());
+    console.log("Base URL reference: " + url.toString());
 
-    if ((url.origin !== AZDEVOPS_CLOUD_API_ORGANIZATION
-      && url.origin !== oldOrgUrlFormat)) {
-
-        if (url.pathname.split('/')[1] === "tfs") {
-          const collectionName = url.pathname.split('/')[2];
-          this.baseUrl = `${url.origin}/tfs/${collectionName}/`;
-        } else {
-          const collectionName = url.pathname.split('/')[1];
-          this.baseUrl = `${url.origin}/${collectionName}/`;
-        }
-    }
-    else {
+    if (
+      url.origin !== AZDEVOPS_CLOUD_API_ORGANIZATION &&
+      url.origin !== oldOrgUrlFormat
+    ) {
+      if (url.pathname.split("/")[1] === "tfs") {
+        const collectionName = url.pathname.split("/")[2];
+        this.baseUrl = `${url.origin}/tfs/${collectionName}/`;
+      } else {
+        const collectionName = url.pathname.split("/")[1];
+        this.baseUrl = `${url.origin}/${collectionName}/`;
+      }
+    } else {
       const baseUrlFormat = `${AZDEVOPS_CLOUD_API_ORGANIZATION}/${AZDEVOPS_API_ORGANIZATION_RESOURCE}/?accountName=${
         DevOps.getHost().name
       }&api-version=5.0-preview.1`;
 
-      await fetch(
-        baseUrlFormat
-      )
+      await fetch(baseUrlFormat)
         .then(res => res.json())
         .then(result => {
           this.baseUrl = result.locationUrl;
         })
-        .catch((error) => {
-          console.log("Unable to fetch Organization's URL. Details: " + error);
+        .catch(error => {
+          this.handleError(
+            "Unable to fetch Organization's URL. Details: " + error
+          );
         });
     }
 
@@ -242,15 +272,17 @@ export class PullRequestsTab extends React.Component<
   }
 
   private async getTeamProjects(): Promise<TeamProjectReference[]> {
-    return (await this.coreClient.getProjects()).sort((a: TeamProjectReference, b: TeamProjectReference) => {
-      if (a.name < b.name) {
-        return -1;
+    return (await this.coreClient.getProjects()).sort(
+      (a: TeamProjectReference, b: TeamProjectReference) => {
+        if (a.name < b.name) {
+          return -1;
+        }
+        if (a.name > b.name) {
+          return 1;
+        }
+        return 0;
       }
-      if (a.name > b.name) {
-        return 1;
-      }
-      return 0;
-    });
+    );
   }
 
   private async getAllPullRequests() {
@@ -571,7 +603,7 @@ export class PullRequestsTab extends React.Component<
   };
 
   refresh = async () => {
-    await this.getAllPullRequests();
+    await this.getAllPullRequests().catch(error => this.handleError(error));
   };
 
   onHelpDismiss = () => {
@@ -586,7 +618,8 @@ export class PullRequestsTab extends React.Component<
       sourceBranchList,
       targetBranchList,
       reviewerList,
-      loading
+      loading,
+      errorMessage
     } = this.state;
 
     if (loading === true) {
@@ -611,9 +644,11 @@ export class PullRequestsTab extends React.Component<
             <DropdownFilterBarItem
               filterItemKey="selectedProject"
               onSelect={async (element, value) => {
-                const projectIndex = this.state.projects.findIndex((p, index) => {
-                  return p.id === value.id;
-                });
+                const projectIndex = this.state.projects.findIndex(
+                  (p, index) => {
+                    return p.id === value.id;
+                  }
+                );
 
                 await this.getRepositories(this.state.projects[projectIndex]);
                 this.refresh();
@@ -737,6 +772,13 @@ export class PullRequestsTab extends React.Component<
             />
           </React.Fragment>
         </FilterBar>
+
+
+        {errorMessage.length > 0 ? <ShowErrorMessage errorMessage={errorMessage} onDismiss={() => {
+          this.setState({
+            errorMessage: ""
+          });
+        }} /> : null}
 
         <div className="margin-top-8">
           <br />
@@ -1316,4 +1358,23 @@ function sortMethod(
     return 1;
   }
   return 0;
+}
+
+function ShowErrorMessage (props: any) {
+  return (
+    <div className="flex-grow margin-top-8">
+      <br />
+      <MessageCard
+        className="flex-self-stretch"
+        // @ts-ignore
+        severity={MessageCardSeverity.Error}
+
+        onDismiss={() => {
+          props.onDismiss();
+        }}
+      >
+        {props.errorMessage}
+      </MessageCard>
+    </div>
+  );
 }

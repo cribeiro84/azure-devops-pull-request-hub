@@ -315,4 +315,5 @@ export interface IPullRequestsTabState {
   targetBranchList: BranchDropDownItem[];
   reviewerList: IdentityRefWithVote[];
   loading: boolean;
+  errorMessage: string;
 }
