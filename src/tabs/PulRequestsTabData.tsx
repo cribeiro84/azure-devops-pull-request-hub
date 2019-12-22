@@ -93,6 +93,7 @@ export class BranchDropDownItem {
 }
 
 export class PullRequestModel {
+  private baseHostUrl: string = "";
   public title?: string;
   public pullRequestHref?: string;
   public repositoryHref?: string;
@@ -124,7 +125,7 @@ export class PullRequestModel {
   }
 
   private async setupPullRequest() {
-    const baseHostUrl = `${this.baseUrl}${this.projectName}`;
+    this.baseHostUrl = `${this.baseUrl}${this.projectName}`;
     this.title = `${this.gitPullRequest.pullRequestId} - ${this.gitPullRequest.title}`;
     this.sourceBranch = new BranchDropDownItem(
       this.gitPullRequest.repository.name,
@@ -134,14 +135,13 @@ export class PullRequestModel {
       this.gitPullRequest.repository.name,
       this.gitPullRequest.targetRefName
     );
-    this.repositoryHref = `${baseHostUrl}/_git/${this.gitPullRequest.repository.name}/`;
-    this.pullRequestHref = `${baseHostUrl}/_git/${this.gitPullRequest.repository.name}/pullrequest/${this.gitPullRequest.pullRequestId}`;
-    this.sourceBranchHref = `${baseHostUrl}/_git/${this.gitPullRequest.repository.name}?version=GB${this.sourceBranch.branchName}`;
-    this.targetBranchHref = `${baseHostUrl}/_git/${this.gitPullRequest.repository.name}?version=GB${this.targetBranch.branchName}`;
+    this.repositoryHref = `${this.baseHostUrl}/_git/${this.gitPullRequest.repository.name}/`;
+    this.pullRequestHref = `${this.baseHostUrl}/_git/${this.gitPullRequest.repository.name}/pullrequest/${this.gitPullRequest.pullRequestId}`;
+    this.sourceBranchHref = `${this.baseHostUrl}/_git/${this.gitPullRequest.repository.name}?version=GB${this.sourceBranch.branchName}`;
+    this.targetBranchHref = `${this.baseHostUrl}/_git/${this.gitPullRequest.repository.name}?version=GB${this.targetBranch.branchName}`;
     this.myApprovalStatus = this.getCurrentUserVoteStatus(
       this.gitPullRequest.reviewers
     );
-    this.lastCommitUrl = `${baseHostUrl}/_git/${this.gitPullRequest.repository.name}/commit/${this.lastCommitId}?refName=GB${this.gitPullRequest.sourceRefName}`;
     this.pullRequestProgressStatus = this.getStatusIndicatorData(
       this.gitPullRequest.reviewers
     );
@@ -154,6 +154,8 @@ export class PullRequestModel {
       0,
       8
     );
+
+    this.lastCommitUrl = `${this.baseHostUrl}/_git/${this.gitPullRequest.repository.name}/commit/${this.gitPullRequest.lastMergeSourceCommit.commitId}?refName=GB${this.gitPullRequest.sourceRefName}`;
 
     this.gitClient
       .getPullRequestById(this.gitPullRequest.pullRequestId)
