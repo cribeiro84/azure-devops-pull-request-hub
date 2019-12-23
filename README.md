@@ -1,4 +1,8 @@
-# Azure DevOps Pull Request Manager Hub
+<p align="center">
+  <img src="marketplace/logo.png?raw=true" />
+</p>
+
+# Azure DevOps Pull Request Manager Hub <img style="max-width: 32px;max-height: 32px;" src="marketplace/icon-light.png?raw=true" />
 
 [![Build Status](https://dev.azure.com/caixaazul/Pull%20Request%20Manager%20Hub/_apis/build/status/cribeiro84.azure-devops-pull-request-hub?branchName=master)](https://dev.azure.com/caixaazul/Pull%20Request%20Manager%20Hub/_build/latest?definitionId=11&branchName=master)
 

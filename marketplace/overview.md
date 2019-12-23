@@ -1,4 +1,8 @@
-# Pull Request Manager Hub
+<p align="center">
+  <img src="marketplace/logo.png" />
+</p>
+
+# Azure DevOps Pull Request Manager Hub
 
 Please report any feedback/issue [here](https://github.com/cribeiro84/azure-devops-pull-request-hub):
 
@@ -6,7 +10,7 @@ Please report any feedback/issue [here](https://github.com/cribeiro84/azure-devo
 
 Manage your Pull Requests of all your projects and repositories at a single place without having to switch between each repository. Track its status and what's most important to focus on your code review process.w
 
-- [Pull Request Manager Hub](#pull-request-manager-hub)
+- [Azure DevOps Pull Request Manager Hub](#azure-devops-pull-request-manager-hub)
   - [Features](#features)
   - [Future releaes](#future-releaes)
   - [Updates](#updates)
