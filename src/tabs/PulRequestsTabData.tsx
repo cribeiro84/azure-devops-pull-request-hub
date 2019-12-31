@@ -16,6 +16,8 @@ import { ObservableValue } from "azure-devops-ui/Core/Observable";
 import { getClient } from "azure-devops-extension-api";
 import { GitRestClient } from "azure-devops-extension-api/Git/GitClient";
 import { TeamProjectReference } from "azure-devops-extension-api/Core/Core";
+import { ITableColumn } from "azure-devops-ui/Table";
+import { StatusColumn, TitleColumn, DetailsColumn, ReviewersColumn, DateColumn } from "../components/Columns";
 
 export const refsPreffix = "refs/heads/";
 
@@ -91,6 +93,43 @@ export class BranchDropDownItem {
     return this._displayName;
   }
 }
+
+export const columns: ITableColumn<PullRequestModel>[] = [
+  {
+    id: "status",
+    name: "",
+    renderCell: StatusColumn,
+    readonly: true,
+    width: -4
+  },
+  {
+    id: "title",
+    name: "Pull Request",
+    renderCell: TitleColumn,
+    readonly: true,
+    width: -46
+  },
+  {
+    className: "pipelines-two-line-cell",
+    id: "details",
+    name: "Details",
+    renderCell: DetailsColumn,
+    width: -20
+  },
+  {
+    id: "reviewers",
+    name: "Reviewers",
+    renderCell: ReviewersColumn,
+    width: -20
+  },
+  {
+    id: "time",
+    name: "When",
+    readonly: true,
+    renderCell: DateColumn,
+    width: -10
+  }
+];
 
 export class PullRequestModel {
   private baseHostUrl: string = "";
@@ -318,4 +357,17 @@ export interface IPullRequestsTabState {
   reviewerList: IdentityRefWithVote[];
   loading: boolean;
   errorMessage: string;
+}
+
+export function sortMethod(
+  a: BranchDropDownItem | IdentityRef,
+  b: BranchDropDownItem | IdentityRef
+) {
+  if (a.displayName! < b.displayName!) {
+    return -1;
+  }
+  if (a.displayName! > b.displayName!) {
+    return 1;
+  }
+  return 0;
 }

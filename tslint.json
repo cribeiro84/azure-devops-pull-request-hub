@@ -17,7 +17,11 @@
       "ordered-imports": false,
       "no-shadowed-variable": false,
       "no-console": false,
-      "max-classes-per-file": false
+      "max-classes-per-file": false,
+      "member-ordering": [
+        false
+      ],
+      "jsx-no-lambda": false
     },
     "linterOptions": {
       "exclude": [
