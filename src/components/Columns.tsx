@@ -1,3 +1,5 @@
+import "./Columns.scss";
+
 import * as React from "react";
 import * as Data from "../tabs/PulRequestsTabData";
 
@@ -15,8 +17,6 @@ import { Tooltip } from "azure-devops-ui/TooltipEx";
 import { PillGroup } from "azure-devops-ui/PillGroup";
 import { ReviewerVoteIconStatus } from "./ReviewerVoteIconStatus";
 import { VssPersona } from "azure-devops-ui/VssPersona";
-import { IdentityRef } from "azure-devops-extension-api/WebApi/WebApi";
-import { Link, ColorPicker } from "office-ui-fabric-react";
 import { Observer } from "azure-devops-ui/Observer";
 import {
   getStatusSizeValue,
@@ -181,6 +181,13 @@ export function DetailsColumn(
   tableItem.lastCommitDetails.subscribe(value => {
     lastCommitDate.value = value!.committer.date;
   });
+
+  const onClickLastCommitHandler = (
+    event: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>
+  ) => {
+    openNewWindowTab(tableItem.lastCommitUrl!);
+  };
+
   return (
     <TwoLineTableCell
       className="bolt-table-cell-content-with-inline-link no-v-padding"
@@ -188,7 +195,7 @@ export function DetailsColumn(
       columnIndex={columnIndex}
       tableColumn={tableColumn}
       line1={
-        <span className="flex-row scroll-hidden">
+        <div>
           <Button
             className="branch-button text-ellipsis"
             text={tableItem.gitPullRequest.createdBy.displayName}
@@ -212,25 +219,42 @@ export function DetailsColumn(
             }}
             subtle={true}
           />
-        </span>
+        </div>
       }
       line2={
         <div>
-          <br />
-          <strong>Last commit:</strong> <Icon iconName="BranchCommit" />
-          <Link
-            className="fontSizeMS font-size-ms secondary-text bolt-table-link bolt-table-inline-link"
-            href={tableItem.lastCommitUrl}
-            target="_blank"
+          <Button
+            iconProps={{ iconName: "BranchCommit" }}
+            onClick={onClickLastCommitHandler}
+            subtle={true}
+            tooltipProps={{
+              text: `Last commit`,
+              delayMs: 500
+            }}
           >
             {tableItem.lastShortCommitId}
-          </Link>
+          </Button>
           {" - "}
           <Observer startDate={lastCommitDate}>
-            <Duration
-              startDate={lastCommitDate.value!}
-              endDate={new Date(Date.now())}
-            />
+            <Button
+              iconProps={{ iconName: "Clock" }}
+              onClick={onClickLastCommitHandler}
+              subtle={true}
+              tooltipProps={{
+                text: `Last commit date and time`,
+                delayMs: 500
+              }}
+              disabled={true}
+            >
+              <Duration
+                tooltipProps={{
+                  text: `When the last commit was done`,
+                  delayMs: 500
+                }}
+                startDate={lastCommitDate.value!}
+                endDate={new Date(Date.now())}
+              />
+            </Button>
           </Observer>
         </div>
       }
@@ -254,10 +278,7 @@ export function ReviewersColumn(
         <span className="fontSize font-size secondary-text flex-row flex-center text-ellipsis" />
       }
       line2={
-        <PillGroup
-          className="flex-row"
-          overflow={getPillGroupOverflowValue("wrap")}
-        >
+        <div className="flex-row">
           {tableItem.gitPullRequest.reviewers
             .sort(Data.sortMethod)
             .map((reviewer, i) => {
@@ -289,25 +310,21 @@ export function ReviewersColumn(
                     </div>
                   )}
                 >
-                  <Pill
-                    key={reviewer.id}
-                    color={Data.reviewerVoteToIColorLight(reviewer.vote)}
-                    variant={getPillVariantValue(")colored")}
-                    size={getPillSizeValue("large")}
-                  >
-                    <div className="flex-row rhythm-horizontal-8">
-                      <ReviewerVoteIconStatus reviewer={reviewer} />
-                      <VssPersona
-                        className="icon-margin"
-                        imageUrl={reviewer._links.avatar.href}
-                        size={"small"}
-                      />
-                    </div>
-                  </Pill>
+                  <div className="relative reviewer-vote-item">
+                    <VssPersona
+                      className="icon-margin"
+                      imageUrl={reviewer._links.avatar.href}
+                      size={"small"}
+                    />
+                    <ReviewerVoteIconStatus
+                      className="repos-pr-reviewer-vote absolute"
+                      reviewer={reviewer}
+                    />
+                  </div>
                 </Tooltip>
               );
             })}
-        </PillGroup>
+        </div>
       }
     />
   );

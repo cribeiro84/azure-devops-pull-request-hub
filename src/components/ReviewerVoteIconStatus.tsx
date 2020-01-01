@@ -29,7 +29,7 @@ export function ReviewerVoteIconStatus(props: any): JSX.Element {
       {...voteStatusIcon}
       key="success"
       size={getStatusSizeValue("m")}
-      className="status-example flex-self-center"
+      className={props.className}
     />
   );
 }
