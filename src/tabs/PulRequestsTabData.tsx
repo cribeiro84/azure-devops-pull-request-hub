@@ -358,6 +358,7 @@ export interface IPullRequestsTabState {
   reviewerList: IdentityRefWithVote[];
   loading: boolean;
   errorMessage: string;
+  pullRequestCount: number;
 }
 
 export function sortMethod(

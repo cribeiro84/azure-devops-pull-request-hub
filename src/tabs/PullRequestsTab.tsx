@@ -128,7 +128,8 @@ export class PullRequestsTab extends React.Component<
       targetBranchList: [],
       reviewerList: [],
       loading: true,
-      errorMessage: ""
+      errorMessage: "",
+      pullRequestCount: 0
     };
 
     this.filter = new Filter();
@@ -270,6 +271,9 @@ export class PullRequestsTab extends React.Component<
   private reloadPullRequestItemProvider(newList: Data.PullRequestModel[]) {
     this.pullRequestItemProvider.splice(0, this.pullRequestItemProvider.length);
     this.pullRequestItemProvider.push(...newList);
+    this.setState({
+      pullRequestCount: newList.length
+    });
   }
 
   private async getTeamProjects(): Promise<TeamProjectReference[]> {
@@ -807,7 +811,8 @@ export class PullRequestsTab extends React.Component<
   }
 
   getRenderContent() {
-    if (this.pullRequestItemProvider.value.length === 0) {
+    const { pullRequestCount } = this.state;
+    if (pullRequestCount === 0) {
       return (
         <ZeroData
           primaryText="Yeah! No Pull Request to be reviewed. Well done!"
@@ -829,7 +834,7 @@ export class PullRequestsTab extends React.Component<
           className="flex-grow bolt-table-card"
           contentProps={{ contentPadding: false }}
           titleProps={{
-            text: `Pull Requests (${this.pullRequestItemProvider.length})`
+            text: `Pull Requests (${this.pullRequestItemProvider.value.length})`
           }}
           headerCommandBarItems={this.listHeaderColumns}
         >
