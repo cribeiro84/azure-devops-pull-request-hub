@@ -4,20 +4,22 @@ import * as React from "react";
 import {
   AZDEVOPS_CLOUD_API_ORGANIZATION,
   AZDEVOPS_API_ORGANIZATION_RESOURCE,
-  AZDEVOPS_CLOUD_API_ORGANIZATION_OLD
+  AZDEVOPS_CLOUD_API_ORGANIZATION_OLD,
+  getCommonServiceIdsValue,
+  getZeroDataActionTypeValue,
+  getStatusSizeValue
 } from "../models/constants";
 
 import { Spinner, SpinnerSize } from "office-ui-fabric-react";
 
-//Custom
+// Custom
 import * as Data from "./PulRequestsTabData";
 
-//Azure DevOps SDK
+// Azure DevOps SDK
 import * as DevOps from "azure-devops-extension-sdk";
 
-//Azure DevOps API
+// Azure DevOps API
 import {
-  CommonServiceIds,
   IProjectPageService,
   getClient
 } from "azure-devops-extension-api";
@@ -25,14 +27,12 @@ import { CoreRestClient } from "azure-devops-extension-api/Core/CoreClient";
 import { GitRestClient } from "azure-devops-extension-api/Git/GitClient";
 import {
   IdentityRefWithVote,
-  PullRequestAsyncStatus,
   GitRepository
 } from "azure-devops-extension-api/Git/Git";
 
-//Azure DevOps UI
+// Azure DevOps UI
 import { MessageCard, MessageCardSeverity } from "azure-devops-ui/MessageCard";
 import { ListSelection } from "azure-devops-ui/List";
-import { VssPersona } from "azure-devops-ui/VssPersona";
 import { IHeaderCommandBarItem } from "azure-devops-ui/HeaderCommandBar";
 import { FilterBar } from "azure-devops-ui/FilterBar";
 import { KeywordFilterBarItem } from "azure-devops-ui/TextFilterBarItem";
@@ -53,22 +53,18 @@ import {
   IReadonlyObservableValue
 } from "azure-devops-ui/Core/Observable";
 import { Card } from "azure-devops-ui/Card";
-import { Icon, IIconProps } from "azure-devops-ui/Icon";
-import { Link } from "azure-devops-ui/Link";
-import { Status, StatusSize, Statuses } from "azure-devops-ui/Status";
-import { ITableColumn, Table, TwoLineTableCell } from "azure-devops-ui/Table";
-import { Ago } from "azure-devops-ui/Ago";
-import { Duration } from "azure-devops-ui/Duration";
-import { Tooltip } from "azure-devops-ui/TooltipEx";
-import { css } from "azure-devops-ui/Util";
-import { Pill, PillSize, PillVariant } from "azure-devops-ui/Pill";
-import { PillGroup, PillGroupOverflow } from "azure-devops-ui/PillGroup";
-import { ZeroData, ZeroDataActionType } from "azure-devops-ui/ZeroData";
+import { Status, Statuses } from "azure-devops-ui/Status";
+import { Table } from "azure-devops-ui/Table";
+import { ZeroData } from "azure-devops-ui/ZeroData";
 import { IdentityRef } from "azure-devops-extension-api/WebApi/WebApi";
-import { Button } from "azure-devops-ui/Button";
 import { ObservableValue } from "azure-devops-ui/Core/Observable";
 import { IProjectInfo } from "azure-devops-extension-api/Common/CommonServices";
-import { TeamProjectReference } from "azure-devops-extension-api/Core/Core";
+import {
+  TeamProjectReference,
+  ProjectInfo
+} from "azure-devops-extension-api/Core/Core";
+import { getVoteDescription } from "../components/Columns";
+import { IListBoxItem } from "azure-devops-ui/ListBox";
 
 export class PullRequestsTab extends React.Component<
   {},
@@ -98,7 +94,7 @@ export class PullRequestsTab extends React.Component<
     .map(item => {
       return {
         id: item,
-        text: getVoteDescription(parseInt(item))
+        text: getVoteDescription(parseInt(item, 10))
       };
     });
 
@@ -107,7 +103,7 @@ export class PullRequestsTab extends React.Component<
     .map(item => {
       return {
         id: item,
-        text: Object.values(Data.YesOrNo)[parseInt(item)].toString()
+        text: Object.values(Data.YesOrNo)[parseInt(item, 10)].toString()
       };
     });
 
@@ -116,6 +112,8 @@ export class PullRequestsTab extends React.Component<
 
   constructor(props: {}) {
     super(props);
+
+    this.selectedProjectChanged = this.selectedProjectChanged.bind(this);
 
     this.gitClient = getClient(GitRestClient);
     this.coreClient = getClient(CoreRestClient);
@@ -130,7 +128,8 @@ export class PullRequestsTab extends React.Component<
       targetBranchList: [],
       reviewerList: [],
       loading: true,
-      errorMessage: ""
+      errorMessage: "",
+      pullRequestCount: 0
     };
 
     this.filter = new Filter();
@@ -165,33 +164,36 @@ export class PullRequestsTab extends React.Component<
     this.getOrganizationBaseUrl()
       .then(async () => {
         const projectService = await DevOps.getService<IProjectPageService>(
-          // @ts-ignore
-          CommonServiceIds.ProjectPageService
+          getCommonServiceIdsValue("ProjectPageService")
         );
 
         const currentProject = await projectService.getProject();
 
-        this.getTeamProjects().then(projects => {
-          this.setState({
-            projects: projects
-          });
-
-          this.selectedProject.select(
-            this.state.projects.findIndex((p, index) => {
-              return p.id === currentProject!.id;
-            })
-          );
-
-          this.getRepositories(currentProject!)
-            .then(() => {
-              this.getAllPullRequests().catch(error => this.handleError(error));
-            })
-            .catch(error => {
-              this.handleError(error);
+        this.getTeamProjects()
+          .then(projects => {
+            this.setState({
+              projects
             });
-        }).catch(error => {
-          this.handleError(error);
-        });
+
+            this.selectedProject.select(
+              projects.findIndex(p => {
+                return p.id === currentProject!.id;
+              })
+            );
+
+            this.getRepositories(currentProject!)
+              .then(() => {
+                this.getAllPullRequests().catch(error =>
+                  this.handleError(error)
+                );
+              })
+              .catch(error => {
+                this.handleError(error);
+              });
+          })
+          .catch(error => {
+            this.handleError(error);
+          });
       })
       .catch(error => {
         this.handleError(error);
@@ -269,6 +271,9 @@ export class PullRequestsTab extends React.Component<
   private reloadPullRequestItemProvider(newList: Data.PullRequestModel[]) {
     this.pullRequestItemProvider.splice(0, this.pullRequestItemProvider.length);
     this.pullRequestItemProvider.push(...newList);
+    this.setState({
+      pullRequestCount: newList.length
+    });
   }
 
   private async getTeamProjects(): Promise<TeamProjectReference[]> {
@@ -287,9 +292,9 @@ export class PullRequestsTab extends React.Component<
 
   private async getAllPullRequests() {
     this.setState({ loading: true });
-    let { repositories, pullRequests } = this.state;
+    const { repositories, pullRequests } = this.state;
 
-    //clear the pull request list to be reloaded...
+    // clear the pull request list to be reloaded...
     pullRequests.splice(0, pullRequests.length);
     this.pullRequestItemProvider = new ObservableArray<
       | Data.PullRequestModel
@@ -298,7 +303,7 @@ export class PullRequestsTab extends React.Component<
 
     Promise.all(
       repositories.map(async r => {
-        let criteria = Object.assign({}, Data.pullRequestCriteria);
+        const criteria = Object.assign({}, Data.pullRequestCriteria);
 
         const loadedPullRequests = await this.gitClient.getPullRequests(
           r.id,
@@ -310,7 +315,9 @@ export class PullRequestsTab extends React.Component<
     )
       .then(loadedPullRequests => {
         loadedPullRequests.map(pr => {
-          if (!pr || pr.length === 0) return pr;
+          if (!pr || pr.length === 0) {
+            return pr;
+          }
 
           pullRequests.push(
             ...Data.PullRequestModel.getModels(
@@ -321,7 +328,8 @@ export class PullRequestsTab extends React.Component<
           );
           return pr;
         });
-      }).catch(error => {
+      })
+      .catch(error => {
         this.handleError(error);
       })
       .finally(() => {
@@ -453,7 +461,8 @@ export class PullRequestsTab extends React.Component<
       filteredPullRequest = filteredPullRequest.filter(pr => {
         const found = myApprovalStatusFilter.some(vote => {
           return (
-            pr.myApprovalStatus === (parseInt(vote) as Data.ReviewerVoteOption)
+            pr.myApprovalStatus ===
+            (parseInt(vote, 10) as Data.ReviewerVoteOption)
           );
         });
         return found;
@@ -463,6 +472,7 @@ export class PullRequestsTab extends React.Component<
     if (isDraftFilter && isDraftFilter.length > 0) {
       filteredPullRequest = filteredPullRequest.filter(pr => {
         const found = isDraftFilter.some(item => {
+          // tslint:disable-next-line:triple-equals
           return pr.gitPullRequest.isDraft === (item == 1);
         });
         return found;
@@ -475,7 +485,7 @@ export class PullRequestsTab extends React.Component<
   private hasFilterValue(
     list: Array<Data.BranchDropDownItem | IdentityRef | IdentityRefWithVote>,
     value: any
-  ): Boolean {
+  ): boolean {
     return list.some(item => {
       if (item.hasOwnProperty("id")) {
         const convertedValue = item as IdentityRef;
@@ -548,10 +558,10 @@ export class PullRequestsTab extends React.Component<
       return pr;
     });
 
-    sourceBranchList = sourceBranchList.sort(sortMethod);
-    targetBranchList = targetBranchList.sort(sortMethod);
-    createdByList = createdByList.sort(sortMethod);
-    reviewerList = reviewerList.sort(sortMethod);
+    sourceBranchList = sourceBranchList.sort(Data.sortMethod);
+    targetBranchList = targetBranchList.sort(Data.sortMethod);
+    createdByList = createdByList.sort(Data.sortMethod);
+    reviewerList = reviewerList.sort(Data.sortMethod);
 
     const selectionObjectList = [
       "selectedAuthors",
@@ -645,16 +655,7 @@ export class PullRequestsTab extends React.Component<
           <React.Fragment>
             <DropdownFilterBarItem
               filterItemKey="selectedProject"
-              onSelect={async (element, value) => {
-                const projectIndex = this.state.projects.findIndex(
-                  (p, index) => {
-                    return p.id === value.id;
-                  }
-                );
-
-                await this.getRepositories(this.state.projects[projectIndex]);
-                this.refresh();
-              }}
+              onSelect={this.selectedProjectChanged}
               filter={this.filter}
               selection={this.selectedProject}
               placeholder="Projects"
@@ -778,11 +779,7 @@ export class PullRequestsTab extends React.Component<
         {errorMessage.length > 0 ? (
           <ShowErrorMessage
             errorMessage={errorMessage}
-            onDismiss={() => {
-              this.setState({
-                errorMessage: ""
-              });
-            }}
+            onDismiss={this.resetErrorMessage()}
           />
         ) : null}
 
@@ -794,11 +791,31 @@ export class PullRequestsTab extends React.Component<
     );
   }
 
+  resetErrorMessage() {
+    this.setState({
+      errorMessage: ""
+    });
+  }
+
+  async selectedProjectChanged(
+    element: React.SyntheticEvent<HTMLElement>,
+    item: IListBoxItem<ProjectInfo | TeamProjectReference>
+  ) {
+    const { projects } = this.state;
+    const projectIndex = projects.findIndex(p => {
+      return p.id === item.id;
+    });
+
+    await this.getRepositories(projects[projectIndex]);
+    this.refresh();
+  }
+
   getRenderContent() {
-    if (this.pullRequestItemProvider.value.length === 0) {
+    const { pullRequestCount } = this.state;
+    if (pullRequestCount === 0) {
       return (
         <ZeroData
-          primaryText="Yeah! No Pull Request to be reviewed. "
+          primaryText="Yeah! No Pull Request to be reviewed. Well done!"
           secondaryText={
             <span>
               Enjoy your free time to code and raise PRs for your team/project!
@@ -807,9 +824,8 @@ export class PullRequestsTab extends React.Component<
           imageAltText="No PRs!"
           imagePath={require("../images/emptyPRList.png")}
           actionText="Refresh"
-          // @ts-ignore
-          actionType={ZeroDataActionType.ctaButton}
-          onActionClick={(event, item) => this.refresh()}
+          actionType={getZeroDataActionTypeValue("ctaButton")}
+          onActionClick={this.refresh}
         />
       );
     } else {
@@ -818,21 +834,18 @@ export class PullRequestsTab extends React.Component<
           className="flex-grow bolt-table-card"
           contentProps={{ contentPadding: false }}
           titleProps={{
-            text: `Pull Requests (${this.pullRequestItemProvider.length})`
+            text: `Pull Requests (${this.pullRequestItemProvider.value.length})`
           }}
           headerCommandBarItems={this.listHeaderColumns}
         >
           <React.Fragment>
             <Table<Data.PullRequestModel>
-              columns={this.columns}
+              columns={Data.columns}
               itemProvider={this.pullRequestItemProvider}
               showLines={true}
               selection={this.prRowSelecion}
               singleClickActivation={true}
               role="table"
-              onFocus={(event, data) => {
-                this.prRowSelecion.select(data.index, 1, true);
-              }}
             />
           </React.Fragment>
 
@@ -855,8 +868,7 @@ export class PullRequestsTab extends React.Component<
                       <Status
                         {...Statuses.Waiting}
                         key="waiting"
-                        // @ts-ignore
-                        size={StatusSize.m}
+                        size={getStatusSizeValue("m")}
                         className="status-example flex-self-center "
                       />
                       &nbsp;No one has voted yet.
@@ -865,8 +877,7 @@ export class PullRequestsTab extends React.Component<
                       <Status
                         {...Statuses.Running}
                         key="running"
-                        // @ts-ignore
-                        size={StatusSize.m}
+                        size={getStatusSizeValue("m")}
                         className="status-example flex-self-center "
                       />
                       &nbsp;Review in progress, not all required reviwers have
@@ -876,8 +887,7 @@ export class PullRequestsTab extends React.Component<
                       <Status
                         {...Statuses.Success}
                         key="success"
-                        // @ts-ignore
-                        size={StatusSize.m}
+                        size={getStatusSizeValue("m")}
                         className="status-example flex-self-center "
                       />
                       &nbsp;Ready for completion.
@@ -886,8 +896,7 @@ export class PullRequestsTab extends React.Component<
                       <Status
                         {...Statuses.Warning}
                         key="warning"
-                        // @ts-ignore
-                        size={StatusSize.m}
+                        size={getStatusSizeValue("m")}
                         className="status-example flex-self-center "
                       />
                       &nbsp;At least one reviewer is Waiting For Author.
@@ -896,8 +905,7 @@ export class PullRequestsTab extends React.Component<
                       <Status
                         {...Statuses.Failed}
                         key="failed"
-                        // @ts-ignore
-                        size={StatusSize.m}
+                        size={getStatusSizeValue("m")}
                         className="status-example flex-self-center "
                       />
                       &nbsp;One or more members has rejected.
@@ -936,434 +944,6 @@ export class PullRequestsTab extends React.Component<
       }
     }
   ];
-
-  private columns: ITableColumn<Data.PullRequestModel>[] = [
-    {
-      id: "status",
-      name: "",
-      renderCell: this.renderStatusColumn,
-      readonly: true,
-      width: -4
-    },
-    {
-      id: "title",
-      name: "Pull Request",
-      renderCell: this.renderTitleColumn,
-      readonly: true,
-      width: -46
-    },
-    {
-      className: "pipelines-two-line-cell",
-      id: "details",
-      name: "Details",
-      renderCell: this.renderDetailsColumn,
-      width: -20
-    },
-    {
-      id: "reviewers",
-      name: "Reviewers",
-      renderCell: this.renderReviewersColumn,
-      width: -20
-    },
-    {
-      id: "time",
-      name: "When",
-      readonly: true,
-      renderCell: this.renderDateColumn,
-      width: -10
-    }
-  ];
-
-  private renderStatusColumn(
-    rowIndex: number,
-    columnIndex: number,
-    tableColumn: ITableColumn<Data.PullRequestModel>,
-    tableItem: Data.PullRequestModel
-  ): JSX.Element {
-    return (
-      <TwoLineTableCell
-        className="bolt-table-cell-content-with-inline-link no-v-padding"
-        key={"col-" + columnIndex}
-        columnIndex={columnIndex}
-        tableColumn={tableColumn}
-        line1={
-          <Button
-            tooltipProps={{
-              text: tableItem.pullRequestProgressStatus!.statusProps.ariaLabel
-            }}
-            disabled={true}
-            subtle={true}
-          >
-            <Status
-              {...tableItem.pullRequestProgressStatus!.statusProps}
-              className="icon-large-margin"
-              // @ts-ignore
-              size={StatusSize.l}
-            />
-          </Button>
-        }
-        line2={<div></div>}
-      />
-    );
-  }
-
-  private renderTitleColumn(
-    rowIndex: number,
-    columnIndex: number,
-    tableColumn: ITableColumn<Data.PullRequestModel>,
-    tableItem: Data.PullRequestModel
-  ): JSX.Element {
-    const tooltip = `from ${tableItem.sourceBranch!.branchName} into ${
-      tableItem.targetBranch!.branchName
-    }`;
-    return (
-      <TwoLineTableCell
-        className="bolt-table-cell-content-with-inline-link no-v-padding"
-        key={"col-" + columnIndex}
-        columnIndex={columnIndex}
-        tableColumn={tableColumn}
-        line1={
-          <span className="flex-row scroll-hidden">
-            <Button
-              className="branch-button"
-              text={tableItem.title}
-              iconProps={{ iconName: "BranchPullRequest" }}
-              onClick={() => {
-                window.open(tableItem.pullRequestHref, "_blank");
-              }}
-              tooltipProps={{ text: tooltip }}
-              subtle
-            />
-            {tableItem.gitPullRequest.isDraft ? (
-              <div className="flex-column" key={rowIndex}>
-                <Pill
-                  color={Data.draftColor}
-                  // @ts-ignore
-                  size={PillSize.large}
-                >
-                  Draft
-                </Pill>
-              </div>
-            ) : (
-              ""
-            )}
-            {hasPullRequestFailure(tableItem) ? (
-              <Pill
-                color={Data.rejectedColor}
-                // @ts-ignore
-                size={PillSize.large}
-              >
-                {getPullRequestFailureDescription(tableItem)}
-              </Pill>
-            ) : (
-              " "
-            )}
-          </span>
-        }
-        line2={
-          <Tooltip text={tooltip}>
-            <span className="fontSize font-size secondary-text flex-row flex-center text-ellipsis">
-              <Button
-                className="branch-button"
-                text={tableItem.gitPullRequest.repository.name}
-                iconProps={{ iconName: "Repo" }}
-                onClick={() => {
-                  window.open(tableItem.repositoryHref!, "_blank");
-                }}
-                subtle
-              />
-              <Button
-                className="branch-button text-ellipsis"
-                text={tableItem.sourceBranch!.branchName}
-                iconProps={{ iconName: "BranchMerge" }}
-                tooltipProps={{
-                  text: tableItem.sourceBranch!.branchName,
-                  delayMs: 500
-                }}
-                onClick={() => {
-                  window.open(tableItem.sourceBranchHref!, "_blank");
-                }}
-                subtle
-              />
-              ->
-              <Button
-                className="branch-button"
-                text={tableItem.targetBranch!.branchName}
-                iconProps={{ iconName: "BranchMerge" }}
-                tooltipProps={{
-                  text: tableItem.targetBranch!.branchName,
-                  delayMs: 500
-                }}
-                onClick={() => {
-                  window.open(tableItem.targetBranchHref!, "_blank");
-                }}
-                subtle
-              />
-            </span>
-          </Tooltip>
-        }
-      />
-    );
-  }
-
-  private renderDetailsColumn(
-    rowIndex: number,
-    columnIndex: number,
-    tableColumn: ITableColumn<Data.PullRequestModel>,
-    tableItem: Data.PullRequestModel
-  ): JSX.Element {
-    const lastCommitDate: ObservableValue<Date> = new ObservableValue<Date>(
-      tableItem.gitPullRequest.creationDate
-    );
-    tableItem.lastCommitDetails.subscribe(value => {
-      lastCommitDate.value = value!.committer.date;
-    });
-    return (
-      <TwoLineTableCell
-        className="bolt-table-cell-content-with-inline-link no-v-padding"
-        key={"col-" + columnIndex}
-        columnIndex={columnIndex}
-        tableColumn={tableColumn}
-        line1={
-          <span className="flex-row scroll-hidden">
-            <VssPersona
-              className="icon-margin"
-              imageUrl={
-                tableItem.gitPullRequest.createdBy._links["avatar"].href
-              }
-              size={"small"}
-              displayName={tableItem.gitPullRequest.createdBy.displayName}
-            />
-            <Link
-              className="fontSizeM font-size-m text-ellipsis bolt-table-link bolt-table-inline-link"
-              excludeTabStop
-              disabled
-            >
-              {tableItem.gitPullRequest.createdBy.displayName}
-            </Link>
-          </span>
-        }
-        line2={
-          <div>
-            <br />
-            <strong>Last commit:</strong> <Icon iconName="BranchCommit" />
-            <Link
-              className="fontSizeM font-size-m text-ellipsis bolt-table-link bolt-table-inline-link"
-              excludeTabStop
-              href={tableItem.lastCommitUrl}
-              target="_blank"
-            >
-              {tableItem.lastShortCommitId}
-            </Link>
-            {" - "}
-            <Observer startDate={lastCommitDate}>
-              <Duration
-                startDate={lastCommitDate.value!}
-                endDate={new Date(Date.now())}
-              />
-            </Observer>
-          </div>
-        }
-      />
-    );
-  }
-
-  private renderReviewersColumn(
-    rowIndex: number,
-    columnIndex: number,
-    tableColumn: ITableColumn<Data.PullRequestModel>,
-    tableItem: Data.PullRequestModel
-  ): JSX.Element {
-    return (
-      <TwoLineTableCell
-        className="bolt-table-cell-content-with-inline-link no-v-padding"
-        key={"col-" + columnIndex}
-        columnIndex={columnIndex}
-        tableColumn={tableColumn}
-        line1={
-          <span className="fontSize font-size secondary-text flex-row flex-center text-ellipsis"></span>
-        }
-        line2={
-          <PillGroup
-            className="flex-row"
-            // @ts-ignore
-            overflow={PillGroupOverflow.wrap}
-          >
-            {tableItem.gitPullRequest.reviewers
-              .sort(sortMethod)
-              .map((reviewer, i) => {
-                return (
-                  <Tooltip
-                    key={i}
-                    renderContent={() => (
-                      <div className="flex-row rhythm-horizontal-4">
-                        <div className="flex-column">
-                          <div className="flex-row flex-center justify-center">
-                            <VssPersona
-                              className="icon-margin"
-                              imageUrl={reviewer._links["avatar"].href}
-                              size={"small"}
-                              displayName={reviewer.displayName}
-                            />
-                            <span>{reviewer.displayName}</span>
-                          </div>
-                          <br />
-                          <div className="flex-row flex-center justify-start margin-top-8">
-                            {getReviewerVoteIconStatus(reviewer)}&nbsp;
-                            <span className="font-weight-semibold">
-                              {getVoteDescription(reviewer.vote)}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  >
-                    <Pill
-                      key={reviewer.id}
-                      color={Data.reviewerVoteToIColorLight(reviewer.vote)}
-                      // @ts-ignore
-                      variant={PillVariant.colored}
-                      // @ts-ignore
-                      size={PillSize.large}
-                    >
-                      <div className="flex-row rhythm-horizontal-8">
-                        {getReviewerVoteIconStatus(reviewer)}
-                        <VssPersona
-                          className="icon-margin"
-                          imageUrl={reviewer._links["avatar"].href}
-                          size={"small"}
-                        />
-                      </div>
-                    </Pill>
-                  </Tooltip>
-                );
-              })}
-          </PillGroup>
-        }
-      />
-    );
-  }
-
-  private renderDateColumn(
-    rowIndex: number,
-    columnIndex: number,
-    tableColumn: ITableColumn<Data.PullRequestModel>,
-    tableItem: Data.PullRequestModel
-  ): JSX.Element {
-    return (
-      <TwoLineTableCell
-        key={"col-" + columnIndex}
-        columnIndex={columnIndex}
-        tableColumn={tableColumn}
-        line1={WithIcon({
-          className: "fontSize font-size",
-          iconProps: { iconName: "Calendar" },
-          children: <Ago date={tableItem.gitPullRequest.creationDate!} />
-        })}
-        line2={WithIcon({
-          className: "fontSize font-size bolt-table-two-line-cell-item",
-          iconProps: { iconName: "Clock" },
-          children: (
-            <Duration
-              startDate={tableItem.gitPullRequest.creationDate!}
-              endDate={new Date(Date.now())}
-            />
-          )
-        })}
-      />
-    );
-  }
-}
-
-function hasPullRequestFailure(pullRequest: Data.PullRequestModel): boolean {
-  const prMergeStatus = pullRequest.gitPullRequest.mergeStatus;
-  return (
-    prMergeStatus === PullRequestAsyncStatus.Conflicts ||
-    prMergeStatus === PullRequestAsyncStatus.Failure ||
-    prMergeStatus === PullRequestAsyncStatus.RejectedByPolicy
-  );
-}
-
-function getPullRequestFailureDescription(
-  pullRequest: Data.PullRequestModel
-): string {
-  const prMergeStatus = pullRequest.gitPullRequest.mergeStatus;
-  switch (prMergeStatus) {
-    case PullRequestAsyncStatus.RejectedByPolicy:
-      return "Rejected by Policy";
-    default:
-      return PullRequestAsyncStatus[prMergeStatus];
-  }
-}
-
-function getVoteDescription(vote: number): string {
-  switch (vote) {
-    case 10:
-      return "Approved";
-    case 5:
-      return "Approved with Suggestions";
-    case -10:
-      return "Rejected";
-    case -5:
-      return "Waiting for Author";
-  }
-
-  return "No Vote";
-}
-
-function getReviewerVoteIconStatus(reviewer: IdentityRefWithVote): JSX.Element {
-  let voteStatusIcon = Statuses.Waiting;
-
-  switch (Data.ReviewerVoteOption[reviewer.vote]) {
-    case "Approved":
-      voteStatusIcon = Statuses.Success;
-      break;
-    case "ApprovedWithSuggestions":
-      voteStatusIcon = Statuses.Success;
-      break;
-    case "Rejected":
-      voteStatusIcon = Statuses.Failed;
-      break;
-    case "WaitingForAuthor":
-      voteStatusIcon = Statuses.Warning;
-      break;
-  }
-
-  return (
-    <Status
-      {...voteStatusIcon}
-      key="success"
-      // @ts-ignore
-      size={StatusSize.m}
-      className="status-example flex-self-center"
-    />
-  );
-}
-
-function WithIcon(props: {
-  className?: string;
-  iconProps: IIconProps;
-  children?: React.ReactNode;
-}) {
-  return (
-    <div className={css(props.className, "flex-row flex-center")}>
-      {Icon({ ...props.iconProps, className: "icon-margin" })}
-      {props.children}
-    </div>
-  );
-}
-
-function sortMethod(
-  a: Data.BranchDropDownItem | IdentityRef,
-  b: Data.BranchDropDownItem | IdentityRef
-) {
-  if (a.displayName! < b.displayName!) {
-    return -1;
-  }
-  if (a.displayName! > b.displayName!) {
-    return 1;
-  }
-  return 0;
 }
 
 function ShowErrorMessage(props: any) {
@@ -1372,11 +952,8 @@ function ShowErrorMessage(props: any) {
       <br />
       <MessageCard
         className="flex-self-stretch"
-        // @ts-ignore
-        severity={MessageCardSeverity.Error}
-        onDismiss={() => {
-          props.onDismiss();
-        }}
+        severity={"Error" as MessageCardSeverity}
+        onDismiss={props.onDismiss()}
       >
         {props.errorMessage}
       </MessageCard>

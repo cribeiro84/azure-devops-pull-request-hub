@@ -1,0 +1,23 @@
+@import "azure-devops-ui/Core/_platformCommon.scss";
+
+.repos-pr-reviewer-vote {
+  bottom: -3px;
+  right: -2px;
+}
+
+.reviewer-vote-item {
+  margin: 5px;
+}
+
+
+.pill-draft.outlined {
+  background-color: transparent;
+  border-color: rgb(152, 198, 255);
+  color: rgb(152, 198, 255);
+}
+
+.pill-conflicts.outlined {
+  background-color: transparent;
+  border-color: rgb(241, 112, 123);
+  color: rgb(241, 112, 123);
+}

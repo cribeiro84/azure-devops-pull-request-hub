@@ -16,6 +16,8 @@ import { ObservableValue } from "azure-devops-ui/Core/Observable";
 import { getClient } from "azure-devops-extension-api";
 import { GitRestClient } from "azure-devops-extension-api/Git/GitClient";
 import { TeamProjectReference } from "azure-devops-extension-api/Core/Core";
+import { ITableColumn } from "azure-devops-ui/Table";
+import { StatusColumn, TitleColumn, DetailsColumn, ReviewersColumn, DateColumn } from "../components/Columns";
 
 export const refsPreffix = "refs/heads/";
 
@@ -92,6 +94,43 @@ export class BranchDropDownItem {
   }
 }
 
+export const columns: ITableColumn<PullRequestModel>[] = [
+  {
+    id: "status",
+    name: "",
+    renderCell: StatusColumn,
+    readonly: true,
+    width: -4
+  },
+  {
+    id: "title",
+    name: "Pull Request",
+    renderCell: TitleColumn,
+    readonly: true,
+    width: -46
+  },
+  {
+    id: "time",
+    name: "When",
+    readonly: true,
+    renderCell: DateColumn,
+    width: -10
+  },
+  {
+    className: "pipelines-two-line-cell",
+    id: "details",
+    name: "Details",
+    renderCell: DetailsColumn,
+    width: -20
+  },
+  {
+    id: "reviewers",
+    name: "Reviewers",
+    renderCell: ReviewersColumn,
+    width: -20
+  }
+];
+
 export class PullRequestModel {
   private baseHostUrl: string = "";
   public title?: string;
@@ -160,6 +199,7 @@ export class PullRequestModel {
     this.gitClient
       .getPullRequestById(this.gitPullRequest.pullRequestId)
       .then(value => {
+        if (value.lastMergeCommit === undefined) { return; }
         this.lastCommitDetails.value = value.lastMergeCommit;
         this.isAutoCompleteSet.value = value.autoCompleteSetBy !== undefined;
       })
@@ -196,7 +236,7 @@ export class PullRequestModel {
       statusProps: { ...Statuses.Waiting, ariaLabel: "Waiting Review" }
     };
 
-    if (!reviewers || reviewers.length === 0) return indicatorData;
+    if (!reviewers || reviewers.length === 0) { return indicatorData; }
 
     if (reviewers.some(r => r.vote === -10)) {
       indicatorData.statusProps = {
@@ -318,4 +358,18 @@ export interface IPullRequestsTabState {
   reviewerList: IdentityRefWithVote[];
   loading: boolean;
   errorMessage: string;
+  pullRequestCount: number;
+}
+
+export function sortMethod(
+  a: BranchDropDownItem | IdentityRef,
+  b: BranchDropDownItem | IdentityRef
+) {
+  if (a.displayName! < b.displayName!) {
+    return -1;
+  }
+  if (a.displayName! > b.displayName!) {
+    return 1;
+  }
+  return 0;
 }
