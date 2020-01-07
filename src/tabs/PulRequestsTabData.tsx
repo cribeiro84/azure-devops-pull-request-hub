@@ -110,6 +110,13 @@ export const columns: ITableColumn<PullRequestModel>[] = [
     width: -46
   },
   {
+    id: "time",
+    name: "When",
+    readonly: true,
+    renderCell: DateColumn,
+    width: -10
+  },
+  {
     className: "pipelines-two-line-cell",
     id: "details",
     name: "Details",
@@ -121,13 +128,6 @@ export const columns: ITableColumn<PullRequestModel>[] = [
     name: "Reviewers",
     renderCell: ReviewersColumn,
     width: -20
-  },
-  {
-    id: "time",
-    name: "When",
-    readonly: true,
-    renderCell: DateColumn,
-    width: -10
   }
 ];
 
@@ -199,6 +199,7 @@ export class PullRequestModel {
     this.gitClient
       .getPullRequestById(this.gitPullRequest.pullRequestId)
       .then(value => {
+        if (value.lastMergeCommit === undefined) { return; }
         this.lastCommitDetails.value = value.lastMergeCommit;
         this.isAutoCompleteSet.value = value.autoCompleteSetBy !== undefined;
       })
@@ -235,7 +236,7 @@ export class PullRequestModel {
       statusProps: { ...Statuses.Waiting, ariaLabel: "Waiting Review" }
     };
 
-    if (!reviewers || reviewers.length === 0) return indicatorData;
+    if (!reviewers || reviewers.length === 0) { return indicatorData; }
 
     if (reviewers.some(r => r.vote === -10)) {
       indicatorData.statusProps = {

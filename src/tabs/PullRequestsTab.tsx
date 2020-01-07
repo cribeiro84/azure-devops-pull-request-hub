@@ -54,7 +54,7 @@ import {
 } from "azure-devops-ui/Core/Observable";
 import { Card } from "azure-devops-ui/Card";
 import { Status, Statuses } from "azure-devops-ui/Status";
-import { Table, ITableRow } from "azure-devops-ui/Table";
+import { Table } from "azure-devops-ui/Table";
 import { ZeroData } from "azure-devops-ui/ZeroData";
 import { IdentityRef } from "azure-devops-extension-api/WebApi/WebApi";
 import { ObservableValue } from "azure-devops-ui/Core/Observable";
@@ -112,6 +112,8 @@ export class PullRequestsTab extends React.Component<
 
   constructor(props: {}) {
     super(props);
+
+    this.selectedProjectChanged = this.selectedProjectChanged.bind(this);
 
     this.gitClient = getClient(GitRestClient);
     this.coreClient = getClient(CoreRestClient);
@@ -173,7 +175,7 @@ export class PullRequestsTab extends React.Component<
             });
 
             this.selectedProject.select(
-              this.state.projects.findIndex(p => {
+              projects.findIndex(p => {
                 return p.id === currentProject!.id;
               })
             );
@@ -795,11 +797,12 @@ export class PullRequestsTab extends React.Component<
     element: React.SyntheticEvent<HTMLElement>,
     item: IListBoxItem<ProjectInfo | TeamProjectReference>
   ) {
-    const projectIndex = this.state.projects.findIndex(p => {
+    const { projects } = this.state;
+    const projectIndex = projects.findIndex(p => {
       return p.id === item.id;
     });
 
-    await this.getRepositories(this.state.projects[projectIndex]);
+    await this.getRepositories(projects[projectIndex]);
     this.refresh();
   }
 
@@ -807,7 +810,7 @@ export class PullRequestsTab extends React.Component<
     if (this.pullRequestItemProvider.value.length === 0) {
       return (
         <ZeroData
-          primaryText="Yeah! No Pull Request to be reviewed. "
+          primaryText="Yeah! No Pull Request to be reviewed. Well done!"
           secondaryText={
             <span>
               Enjoy your free time to code and raise PRs for your team/project!

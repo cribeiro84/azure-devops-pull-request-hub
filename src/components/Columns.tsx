@@ -6,24 +6,17 @@ import * as Data from "../tabs/PulRequestsTabData";
 import { ITableColumn, TwoLineTableCell } from "azure-devops-ui/Table";
 import { Button } from "azure-devops-ui/Button";
 import { Status } from "azure-devops-ui/Status";
-import { Pill } from "azure-devops-ui/Pill";
-import { PullRequestAsyncStatus } from "azure-devops-extension-api/Git/Git";
 import { IIconProps, Icon } from "azure-devops-ui/Icon";
 import { css } from "azure-devops-ui/Util";
 import { Ago } from "azure-devops-ui/Ago";
 import { Duration } from "azure-devops-ui/Duration";
 import { ObservableValue } from "azure-devops-ui/Core/Observable";
 import { Tooltip } from "azure-devops-ui/TooltipEx";
-import { PillGroup } from "azure-devops-ui/PillGroup";
 import { ReviewerVoteIconStatus } from "./ReviewerVoteIconStatus";
 import { VssPersona } from "azure-devops-ui/VssPersona";
 import { Observer } from "azure-devops-ui/Observer";
-import {
-  getStatusSizeValue,
-  getPillSizeValue,
-  getPillGroupOverflowValue,
-  getPillVariantValue
-} from "../models/constants";
+import { getStatusSizeValue } from "../models/constants";
+import { PullRequestPillInfo } from "./PullRequestPillInfo";
 
 export function openNewWindowTab(targetUrl: string): void {
   window.open(targetUrl, "_blank");
@@ -102,7 +95,7 @@ export function TitleColumn(
       columnIndex={columnIndex}
       tableColumn={tableColumn}
       line1={
-        <span className="flex-row scroll-hidden">
+        <div className="flex-row scroll-hidden">
           <Button
             className="branch-button"
             text={tableItem.title}
@@ -111,23 +104,8 @@ export function TitleColumn(
             tooltipProps={{ text: tooltip }}
             subtle={true}
           />
-          {tableItem.gitPullRequest.isDraft ? (
-            <div className="flex-column" key={rowIndex}>
-              <Pill color={Data.draftColor} size={getPillSizeValue("large")}>
-                Draft
-              </Pill>
-            </div>
-          ) : (
-            ""
-          )}
-          {hasPullRequestFailure(tableItem) ? (
-            <Pill color={Data.rejectedColor} size={getPillSizeValue("large")}>
-              {getPullRequestFailureDescription(tableItem)}
-            </Pill>
-          ) : (
-            " "
-          )}
-        </span>
+          <PullRequestPillInfo pullRequest={tableItem} />
+        </div>
       }
       line2={
         <Tooltip text={tooltip}>
@@ -135,7 +113,7 @@ export function TitleColumn(
             <Button
               className="branch-button"
               text={tableItem.gitPullRequest.repository.name}
-              iconProps={{ iconName: "Repo" }}
+              iconProps={{ iconName: "GitLogo" }}
               onClick={onClickRepoTitleHandler}
               subtle={true}
             />
@@ -150,7 +128,7 @@ export function TitleColumn(
               onClick={onClickSourceBranchHandler}
               subtle={true}
             />
-            ->
+            into
             <Button
               className="branch-button"
               text={tableItem.targetBranch!.branchName}
@@ -278,7 +256,7 @@ export function ReviewersColumn(
         <span className="fontSize font-size secondary-text flex-row flex-center text-ellipsis" />
       }
       line2={
-        <div className="flex-row">
+        <div className="flex-row flex-wrap">
           {tableItem.gitPullRequest.reviewers
             .sort(Data.sortMethod)
             .map((reviewer, i) => {
@@ -360,15 +338,6 @@ export function DateColumn(
   );
 }
 
-function hasPullRequestFailure(pullRequest: Data.PullRequestModel): boolean {
-  const prMergeStatus = pullRequest.gitPullRequest.mergeStatus;
-  return (
-    prMergeStatus === PullRequestAsyncStatus.Conflicts ||
-    prMergeStatus === PullRequestAsyncStatus.Failure ||
-    prMergeStatus === PullRequestAsyncStatus.RejectedByPolicy
-  );
-}
-
 function WithIcon(props: {
   className?: string;
   iconProps: IIconProps;
@@ -380,18 +349,6 @@ function WithIcon(props: {
       {props.children}
     </div>
   );
-}
-
-function getPullRequestFailureDescription(
-  pullRequest: Data.PullRequestModel
-): string {
-  const prMergeStatus = pullRequest.gitPullRequest.mergeStatus;
-  switch (prMergeStatus) {
-    case PullRequestAsyncStatus.RejectedByPolicy:
-      return "Rejected by Policy";
-    default:
-      return PullRequestAsyncStatus[prMergeStatus];
-  }
 }
 
 export function getVoteDescription(vote: number): string {
