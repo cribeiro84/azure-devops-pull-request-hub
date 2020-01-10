@@ -6,7 +6,7 @@ import * as Data from "../tabs/PulRequestsTabData";
 import { ITableColumn, TwoLineTableCell } from "azure-devops-ui/Table";
 import { Button } from "azure-devops-ui/Button";
 import { Status } from "azure-devops-ui/Status";
-import { IIconProps, Icon } from "azure-devops-ui/Icon";
+import { IIconProps, Icon, IconSize } from "azure-devops-ui/Icon";
 import { css } from "azure-devops-ui/Util";
 import { Ago } from "azure-devops-ui/Ago";
 import { Duration } from "azure-devops-ui/Duration";
@@ -17,6 +17,7 @@ import { VssPersona } from "azure-devops-ui/VssPersona";
 import { Observer } from "azure-devops-ui/Observer";
 import { getStatusSizeValue } from "../models/constants";
 import { PullRequestPillInfo } from "./PullRequestPillInfo";
+import { Link } from "office-ui-fabric-react";
 
 export function openNewWindowTab(targetUrl: string): void {
   window.open(targetUrl, "_blank");
@@ -109,38 +110,34 @@ export function TitleColumn(
       }
       line2={
         <Tooltip text={tooltip}>
-          <span className="fontSize font-size secondary-text flex-row flex-center text-ellipsis">
-            <Button
-              className="branch-button"
-              text={tableItem.gitPullRequest.repository.name}
-              iconProps={{ iconName: "GitLogo" }}
-              onClick={onClickRepoTitleHandler}
-              subtle={true}
-            />
-            <Button
-              className="branch-button text-ellipsis"
-              text={tableItem.sourceBranch!.branchName}
-              iconProps={{ iconName: "BranchMerge" }}
-              tooltipProps={{
-                text: tableItem.sourceBranch!.branchName,
-                delayMs: 500
-              }}
-              onClick={onClickSourceBranchHandler}
-              subtle={true}
-            />
-            into
-            <Button
-              className="branch-button"
-              text={tableItem.targetBranch!.branchName}
-              iconProps={{ iconName: "BranchMerge" }}
-              tooltipProps={{
-                text: tableItem.targetBranch!.branchName,
-                delayMs: 500
-              }}
-              onClick={onClickTargetBranchHandler}
-              subtle={true}
-            />
-          </span>
+          <div className="flex-column flex-grow">
+            <div className="flex-row">
+              <div className="flex-column title-column-subdetails icon-column-subdetails">
+                <Icon iconName="GitLogo" />
+              </div>
+              <div className="flex-column title-column-subdetails">
+                <Link className="bolt-link subtle" href={tableItem.repositoryHref} target="_blank" subtle={true}>
+                  {tableItem.gitPullRequest.repository.name}
+                </Link>
+              </div>
+              <div className="flex-column title-column-subdetails icon-column-subdetails">
+                <Icon iconName="BranchMerge" />
+              </div>
+              <div className="flex-column title-column-subdetails">
+                <Link className="bolt-link subtle" href={tableItem.sourceBranchHref} target="_blank" subtle={true}>
+                  {tableItem.sourceBranch!.branchName}
+                </Link>
+              </div>
+              <div className="flex-column title-column-subdetails icon-column-subdetails">
+                <Icon iconName="BranchMerge" />
+              </div>
+              <div className="flex-column title-column-subdetails">
+                <Link className="bolt-link subtle" href={tableItem.targetBranchHref} target="_blank" subtle={true}>
+                  {tableItem.targetBranch!.branchName}
+                </Link>
+              </div>
+            </div>
+          </div>
         </Tooltip>
       }
     />
