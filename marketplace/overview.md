@@ -1,6 +1,4 @@
-<p align="center">
-  <img src="marketplace/logo.png" />
-</p>
+![Pull Request Manager Hub - Logo](marketplace/screenshots/screenshot-01.png)
 
 # Azure DevOps Pull Request Manager Hub
 
@@ -10,30 +8,9 @@ Please report any feedback/issue [here](https://github.com/cribeiro84/azure-devo
 
 Manage your Pull Requests of all your projects and repositories at a single place without having to switch between each repository. Track its status and what's most important to focus on your code review process.w
 
-- [Azure DevOps Pull Request Manager Hub](#azure-devops-pull-request-manager-hub)
-  - [Features](#features)
-  - [Future releaes](#future-releaes)
-  - [Updates](#updates)
-    - [14/12/2019](#14122019)
-    - [02/12/2019](#02122019)
-    - [29/11/2019](#29112019)
-    - [26/11/2019](#26112019)
-    - [23/11/2019](#23112019)
-    - [10/11/2019](#10112019)
-    - [08/11/2019](#08112019)
-    - [06/11/2019](#06112019)
-    - [02/10/2019](#02102019)
-    - [28/09/2019](#28092019)
-    - [09/09/2019](#09092019)
-    - [21/08/2019](#21082019)
-  - [Screenshots](#screenshots)
-    - [Pull Request Manager Hub home](#pull-request-manager-hub-home)
-    - [...using filters](#using-filters)
-    - [...and light theme](#and-light-theme)
-
 ## Features
 
-- Lists all Pull Requests across your repositories of your current project
+- Lists all Pull Requests across your repositories of the selected project
 - Filter by:
   - Title
   - Pull Request ID
@@ -62,6 +39,12 @@ Manage your Pull Requests of all your projects and repositories at a single plac
   - New badge (Pill) for your voted PRs with new changes
 
 ## Updates
+
+### 11/01/2020
+
+- UI tweaks
+- Minor improvements
+- Code refactoring
 
 ### 14/12/2019
 

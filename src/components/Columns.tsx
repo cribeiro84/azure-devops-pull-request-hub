@@ -6,7 +6,7 @@ import * as Data from "../tabs/PulRequestsTabData";
 import { ITableColumn, TwoLineTableCell } from "azure-devops-ui/Table";
 import { Button } from "azure-devops-ui/Button";
 import { Status } from "azure-devops-ui/Status";
-import { IIconProps, Icon, IconSize } from "azure-devops-ui/Icon";
+import { IIconProps, Icon } from "azure-devops-ui/Icon";
 import { css } from "azure-devops-ui/Util";
 import { Ago } from "azure-devops-ui/Ago";
 import { Duration } from "azure-devops-ui/Duration";
@@ -71,24 +71,6 @@ export function TitleColumn(
     openNewWindowTab(tableItem.pullRequestHref!);
   };
 
-  const onClickRepoTitleHandler = (
-    event: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>
-  ) => {
-    openNewWindowTab(tableItem.repositoryHref!);
-  };
-
-  const onClickSourceBranchHandler = (
-    event: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>
-  ) => {
-    openNewWindowTab(tableItem.sourceBranchHref!);
-  };
-
-  const onClickTargetBranchHandler = (
-    event: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>
-  ) => {
-    openNewWindowTab(tableItem.targetBranchHref!);
-  };
-
   return (
     <TwoLineTableCell
       className="bolt-table-cell-content-with-inline-link no-v-padding"
@@ -116,7 +98,7 @@ export function TitleColumn(
                 <Icon iconName="GitLogo" />
               </div>
               <div className="flex-column title-column-subdetails">
-                <Link className="bolt-link subtle" href={tableItem.repositoryHref} target="_blank" subtle={true}>
+                <Link className="bolt-link subtle" href={tableItem.repositoryHref} target="_blank">
                   {tableItem.gitPullRequest.repository.name}
                 </Link>
               </div>
@@ -124,7 +106,7 @@ export function TitleColumn(
                 <Icon iconName="BranchMerge" />
               </div>
               <div className="flex-column title-column-subdetails">
-                <Link className="bolt-link subtle" href={tableItem.sourceBranchHref} target="_blank" subtle={true}>
+                <Link className="bolt-link subtle" href={tableItem.sourceBranchHref} target="_blank">
                   {tableItem.sourceBranch!.branchName}
                 </Link>
               </div>
@@ -132,7 +114,7 @@ export function TitleColumn(
                 <Icon iconName="BranchMerge" />
               </div>
               <div className="flex-column title-column-subdetails">
-                <Link className="bolt-link subtle" href={tableItem.targetBranchHref} target="_blank" subtle={true}>
+                <Link className="bolt-link subtle" href={tableItem.targetBranchHref} target="_blank">
                   {tableItem.targetBranch!.branchName}
                 </Link>
               </div>
@@ -150,18 +132,13 @@ export function DetailsColumn(
   tableColumn: ITableColumn<Data.PullRequestModel>,
   tableItem: Data.PullRequestModel
 ): JSX.Element {
-  const lastCommitDate: ObservableValue<Date> = new ObservableValue<Date>(
-    tableItem.gitPullRequest.creationDate
-  );
-  tableItem.lastCommitDetails.subscribe(value => {
-    lastCommitDate.value = value!.committer.date;
-  });
-
   const onClickLastCommitHandler = (
     event: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>
   ) => {
     openNewWindowTab(tableItem.lastCommitUrl!);
   };
+
+  console.log(tableItem.lastCommitDetails);
 
   return (
     <TwoLineTableCell
@@ -210,7 +187,6 @@ export function DetailsColumn(
             {tableItem.lastShortCommitId}
           </Button>
           {" - "}
-          <Observer startDate={lastCommitDate}>
             <Button
               iconProps={{ iconName: "Clock" }}
               onClick={onClickLastCommitHandler}
@@ -226,11 +202,10 @@ export function DetailsColumn(
                   text: `When the last commit was done`,
                   delayMs: 500
                 }}
-                startDate={lastCommitDate.value!}
+                startDate={((tableItem.lastCommitDetails === undefined || tableItem.lastCommitDetails.committer === undefined) ? tableItem.gitPullRequest.creationDate : tableItem.lastCommitDetails!.committer.date!)}
                 endDate={new Date(Date.now())}
               />
             </Button>
-          </Observer>
         </div>
       }
     />

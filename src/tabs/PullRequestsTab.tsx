@@ -65,6 +65,7 @@ import {
 } from "azure-devops-extension-api/Core/Core";
 import { getVoteDescription } from "../components/Columns";
 import { IListBoxItem } from "azure-devops-ui/ListBox";
+import { getPullRequestDetailsAsync } from "./PulRequestsTabData";
 
 export class PullRequestsTab extends React.Component<
   {},
@@ -274,6 +275,15 @@ export class PullRequestsTab extends React.Component<
     this.setState({
       pullRequestCount: newList.length
     });
+
+    getPullRequestDetailsAsync(newList)
+      .then(updated => {
+        this.setState({
+          pullRequests: updated
+        });
+      }).catch(error => {
+        console.log("There was an error fetching addtional details for the PRs. Details: " + error);
+      });
   }
 
   private async getTeamProjects(): Promise<TeamProjectReference[]> {
