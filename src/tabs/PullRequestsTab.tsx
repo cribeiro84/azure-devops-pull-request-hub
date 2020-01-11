@@ -19,10 +19,7 @@ import * as Data from "./PulRequestsTabData";
 import * as DevOps from "azure-devops-extension-sdk";
 
 // Azure DevOps API
-import {
-  IProjectPageService,
-  getClient
-} from "azure-devops-extension-api";
+import { IProjectPageService, getClient } from "azure-devops-extension-api";
 import { CoreRestClient } from "azure-devops-extension-api/Core/CoreClient";
 import { GitRestClient } from "azure-devops-extension-api/Git/GitClient";
 import {
@@ -65,6 +62,7 @@ import {
 } from "azure-devops-extension-api/Core/Core";
 import { getVoteDescription } from "../components/Columns";
 import { IListBoxItem } from "azure-devops-ui/ListBox";
+import { getPullRequestDetailsAsync } from "./PulRequestsTabData";
 
 export class PullRequestsTab extends React.Component<
   {},
@@ -340,6 +338,24 @@ export class PullRequestsTab extends React.Component<
         }
 
         this.loadLists();
+
+        getPullRequestDetailsAsync(pullRequests)
+          .then(updated => {
+            console.log(updated);
+            this.setState({
+              pullRequests: updated
+            });
+
+            setTimeout(() => {
+              this.filterPullRequests();
+            }, 500);
+          })
+          .catch(error => {
+            console.log(
+              "There was an error fetching addtional details for the PRs. Details: " +
+                error
+            );
+          });
       });
   }
 

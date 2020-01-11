@@ -12,12 +12,17 @@ import { IColor } from "azure-devops-ui/Utilities/Color";
 import { IProjectInfo } from "azure-devops-extension-api/Common/CommonServices";
 import { IdentityRef } from "azure-devops-extension-api/WebApi/WebApi";
 import { Statuses } from "azure-devops-ui/Status";
-import { ObservableValue } from "azure-devops-ui/Core/Observable";
 import { getClient } from "azure-devops-extension-api";
 import { GitRestClient } from "azure-devops-extension-api/Git/GitClient";
 import { TeamProjectReference } from "azure-devops-extension-api/Core/Core";
 import { ITableColumn } from "azure-devops-ui/Table";
-import { StatusColumn, TitleColumn, DetailsColumn, ReviewersColumn, DateColumn } from "../components/Columns";
+import {
+  StatusColumn,
+  TitleColumn,
+  DetailsColumn,
+  ReviewersColumn,
+  DateColumn
+} from "../components/Columns";
 
 export const refsPreffix = "refs/heads/";
 
@@ -146,14 +151,8 @@ export class PullRequestModel {
   public lastShortCommitId?: string;
   public lastCommitUrl?: string;
   public pullRequestProgressStatus?: IStatusIndicatorData;
-  public lastCommitDetails: ObservableValue<
-    GitCommitRef | undefined
-  > = new ObservableValue(undefined);
-  public isAutoCompleteSet: ObservableValue<boolean> = new ObservableValue(
-    false
-  );
-
-  private gitClient: GitRestClient = getClient(GitRestClient);
+  public lastCommitDetails: GitCommitRef | undefined;
+  public isAutoCompleteSet: boolean = false;
 
   constructor(
     public gitPullRequest: GitPullRequest,
@@ -184,31 +183,11 @@ export class PullRequestModel {
     this.pullRequestProgressStatus = this.getStatusIndicatorData(
       this.gitPullRequest.reviewers
     );
-
-    await this.getPullRequestDetailsAsync();
-  }
-
-  private async getPullRequestDetailsAsync() {
     this.lastShortCommitId = this.gitPullRequest.lastMergeSourceCommit.commitId.substr(
       0,
       8
     );
-
     this.lastCommitUrl = `${this.baseHostUrl}/_git/${this.gitPullRequest.repository.name}/commit/${this.gitPullRequest.lastMergeSourceCommit.commitId}?refName=GB${this.gitPullRequest.sourceRefName}`;
-
-    this.gitClient
-      .getPullRequestById(this.gitPullRequest.pullRequestId)
-      .then(value => {
-        if (value.lastMergeCommit === undefined) { return; }
-        this.lastCommitDetails.value = value.lastMergeCommit;
-        this.isAutoCompleteSet.value = value.autoCompleteSetBy !== undefined;
-      })
-      .catch(error => {
-        console.log(
-          `There was an error calling the Pull Request details (method: getPullRequestById).`
-        );
-        console.log(error);
-      });
   }
 
   private getCurrentUserVoteStatus(
@@ -236,7 +215,9 @@ export class PullRequestModel {
       statusProps: { ...Statuses.Waiting, ariaLabel: "Waiting Review" }
     };
 
-    if (!reviewers || reviewers.length === 0) { return indicatorData; }
+    if (!reviewers || reviewers.length === 0) {
+      return indicatorData;
+    }
 
     if (reviewers.some(r => r.vote === -10)) {
       indicatorData.statusProps = {
@@ -283,7 +264,7 @@ export class PullRequestModel {
     projectName: string,
     baseUrl: string
   ): PullRequestModel[] {
-    let modelList: PullRequestModel[] = [];
+    const modelList: PullRequestModel[] = [];
 
     pullRequestList!.map(pr => {
       modelList.push(new PullRequestModel(pr, projectName, baseUrl));
@@ -293,6 +274,48 @@ export class PullRequestModel {
 
     return modelList;
   }
+}
+
+export function getPullRequestDetailsAsync(
+  pullRequestList: PullRequestModel[]
+): Promise<PullRequestModel[]> {
+  const gitClient: GitRestClient = getClient(GitRestClient);
+
+  if (pullRequestList === undefined || pullRequestList.length === 0) {
+    return new Promise<PullRequestModel[]>(resolve => {
+      resolve(pullRequestList);
+    });
+  }
+
+  return new Promise<PullRequestModel[]>((resolve, reject) => {
+    Promise.all(
+      pullRequestList.map(item => {
+        gitClient
+          .getPullRequestById(item.gitPullRequest.pullRequestId)
+          .then(value => {
+            if (value.lastMergeCommit === undefined) {
+              return;
+            }
+            item.lastCommitDetails = value.lastMergeCommit;
+            item.isAutoCompleteSet =
+              value.autoCompleteSetBy !== undefined;
+          })
+          .catch(error => {
+            console.log(
+              `There was an error calling the Pull Request details (method: getPullRequestById).`
+            );
+            console.log(error);
+            reject(error);
+          });
+
+          return item;
+      })
+    ).then(() => {
+      resolve(pullRequestList);
+    }).catch(error => {
+      reject(error);
+    });
+  });
 }
 
 export interface IStatusIndicatorData {

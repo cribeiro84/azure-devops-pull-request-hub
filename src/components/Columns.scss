@@ -9,6 +9,10 @@
   margin: 5px;
 }
 
+.pill {
+  border-radius: 8px;
+  margin-top: 6px;
+}
 
 .pill-draft.outlined {
   background-color: transparent;
@@ -20,4 +24,20 @@
   background-color: transparent;
   border-color: rgb(241, 112, 123);
   color: rgb(241, 112, 123);
+}
+
+.pill-autocomplete.outlined {
+  background-color: transparent;
+  border-color: rgb(221, 149, 14);
+  color: rgb(221, 149, 14);
+}
+
+.title-column-subdetails {
+  text-align: center;
+}
+
+.icon-column-subdetails {
+  padding-top: 6px;
+  padding-left: 6px;
+  margin-left: 5px;
 }

@@ -16,13 +16,18 @@ export function PullRequestPillInfo(props: any): JSX.Element {
   return (
     <PillGroup>
       <ConditionalChildren renderChildren={pullRequest.gitPullRequest.isDraft}>
-        <Pill className="pill-draft" variant={getPillVariantValue("outlined")} size={getPillSizeValue("large")}>
-          Draft
+        <Pill className="pill pill-draft" variant={getPillVariantValue("outlined")} size={getPillSizeValue("medium")}>
+          draft
         </Pill>
       </ConditionalChildren>
       <ConditionalChildren renderChildren={hasPullRequestFailure(pullRequest)}>
-        <Pill className="pill-conflicts" variant={getPillVariantValue("outlined")} size={getPillSizeValue("large")}>
+        <Pill className="pill pill-conflicts" variant={getPillVariantValue("outlined")} size={getPillSizeValue("medium")}>
           {getPullRequestFailureDescription(pullRequest)}
+        </Pill>
+      </ConditionalChildren>
+      <ConditionalChildren renderChildren={pullRequest.isAutoCompleteSet}>
+        <Pill className="pill pill-autocomplete" variant={getPillVariantValue("outlined")} size={getPillSizeValue("medium")}>
+          auto-complete
         </Pill>
       </ConditionalChildren>
     </PillGroup>
@@ -46,6 +51,6 @@ function getPullRequestFailureDescription(
     case PullRequestAsyncStatus.RejectedByPolicy:
       return "Rejected by Policy";
     default:
-      return PullRequestAsyncStatus[prMergeStatus];
+      return PullRequestAsyncStatus[prMergeStatus].toLocaleLowerCase();
   }
 }
