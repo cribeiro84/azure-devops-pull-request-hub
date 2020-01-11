@@ -37,8 +37,22 @@ npm install
 
 And then
 
+**MacOS/Linux**
+
 ```bash
 HTTPS=true react-scripts start
+```
+
+**Windows PowerShell**
+
+```powershell
+($env:HTTPS = "true") -and (react-scripts start)
+```
+
+**Windows CMD.exe**
+
+```cmd
+set HTTPS=true&&react-scripts start
 ```
 
 These above commands will trigger the compilation and will start a new browser instance pointing to <https://localhost:3000/>

@@ -12,7 +12,6 @@ import { IColor } from "azure-devops-ui/Utilities/Color";
 import { IProjectInfo } from "azure-devops-extension-api/Common/CommonServices";
 import { IdentityRef } from "azure-devops-extension-api/WebApi/WebApi";
 import { Statuses } from "azure-devops-ui/Status";
-import { ObservableValue } from "azure-devops-ui/Core/Observable";
 import { getClient } from "azure-devops-extension-api";
 import { GitRestClient } from "azure-devops-extension-api/Git/GitClient";
 import { TeamProjectReference } from "azure-devops-extension-api/Core/Core";
@@ -24,7 +23,6 @@ import {
   ReviewersColumn,
   DateColumn
 } from "../components/Columns";
-import { resolve } from "url";
 
 export const refsPreffix = "refs/heads/";
 
@@ -309,6 +307,8 @@ export function getPullRequestDetailsAsync(
             console.log(error);
             reject(error);
           });
+
+          return item;
       })
     ).then(() => {
       resolve(pullRequestList);

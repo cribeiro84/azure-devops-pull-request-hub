@@ -19,10 +19,7 @@ import * as Data from "./PulRequestsTabData";
 import * as DevOps from "azure-devops-extension-sdk";
 
 // Azure DevOps API
-import {
-  IProjectPageService,
-  getClient
-} from "azure-devops-extension-api";
+import { IProjectPageService, getClient } from "azure-devops-extension-api";
 import { CoreRestClient } from "azure-devops-extension-api/Core/CoreClient";
 import { GitRestClient } from "azure-devops-extension-api/Git/GitClient";
 import {
@@ -275,15 +272,6 @@ export class PullRequestsTab extends React.Component<
     this.setState({
       pullRequestCount: newList.length
     });
-
-    getPullRequestDetailsAsync(newList)
-      .then(updated => {
-        this.setState({
-          pullRequests: updated
-        });
-      }).catch(error => {
-        console.log("There was an error fetching addtional details for the PRs. Details: " + error);
-      });
   }
 
   private async getTeamProjects(): Promise<TeamProjectReference[]> {
@@ -350,6 +338,24 @@ export class PullRequestsTab extends React.Component<
         }
 
         this.loadLists();
+
+        getPullRequestDetailsAsync(pullRequests)
+          .then(updated => {
+            console.log(updated);
+            this.setState({
+              pullRequests: updated
+            });
+
+            setTimeout(() => {
+              this.filterPullRequests();
+            }, 500);
+          })
+          .catch(error => {
+            console.log(
+              "There was an error fetching addtional details for the PRs. Details: " +
+                error
+            );
+          });
       });
   }
 
