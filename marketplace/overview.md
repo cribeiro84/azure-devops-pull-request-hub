@@ -45,6 +45,7 @@ Manage your Pull Requests of all your projects and repositories at a single plac
 - UI tweaks
 - Minor improvements
 - Code refactoring
+- Performance improvements
 
 ### 14/12/2019
 

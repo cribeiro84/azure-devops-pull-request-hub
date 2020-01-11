@@ -2,7 +2,7 @@
   <img src="marketplace/logo.png?raw=true" />
 </p>
 
-# Azure DevOps Pull Request Manager Hub <img style="max-width: 32px;max-height: 32px;" src="marketplace/icon-light.png?raw=true" />
+# Azure DevOps Pull Request Manager Hub
 
 [![Build Status](https://dev.azure.com/caixaazul/Pull%20Request%20Manager%20Hub/_apis/build/status/cribeiro84.azure-devops-pull-request-hub?branchName=master)](https://dev.azure.com/caixaazul/Pull%20Request%20Manager%20Hub/_build/latest?definitionId=11&branchName=master)
 
@@ -37,19 +37,19 @@ npm install
 
 And then
 
-**MacOS/Linux**
+#### MacOS/Linux
 
 ```bash
 HTTPS=true react-scripts start
 ```
 
-**Windows PowerShell**
+#### Windows PowerShell
 
 ```powershell
 ($env:HTTPS = "true") -and (react-scripts start)
 ```
 
-**Windows CMD.exe**
+#### Windows CMD.exe
 
 ```cmd
 set HTTPS=true&&react-scripts start
@@ -72,13 +72,13 @@ Please follow the below commands to generate the extension for each mode.
 
 DEV Mode
 
-```
+```bash
 npm run package-dev
 ```
 
 Public Mode (Production)
 
-```
+```bash
 npm run package-release
 ```
 
@@ -96,13 +96,13 @@ Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduc
 
 ## Versioning
 
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/your/project/tags). 
+We use [SemVer](http://semver.org/) for versioning. 
 
 ## Authors
 
 * **Carlos Alessandro Ribeiro** - [cribeiro84](https://github.com/cribeiro84)
 
-See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
+See also the list of [contributors](https://github.com/cribeiro84/azure-devops-pull-request-hub/graphs/contributors) who participated in this project.
 
 ## License
 
