@@ -1,6 +1,8 @@
 import "./PullRequestTab.scss";
 
 import * as React from "react";
+import { produce } from "immer";
+
 import {
   AZDEVOPS_CLOUD_API_ORGANIZATION,
   AZDEVOPS_API_ORGANIZATION_RESOURCE,
@@ -133,13 +135,12 @@ export class PullRequestsTab extends React.Component<
     this.filter = new Filter();
   }
 
-  public async componentWillMount() {
-    await DevOps.init();
-    this.initializeState();
-  }
-
-  public componentDidMount() {
-    this.setupFilter();
+  public async componentDidMount() {
+    DevOps.init().then(async () => {
+      this.initializeState();
+      this.setupFilter();
+      await this.initializePage();
+    });
   }
 
   componentWillUnmount() {
@@ -158,7 +159,9 @@ export class PullRequestsTab extends React.Component<
     this.setState({
       pullRequests: []
     });
+  }
 
+  private async initializePage() {
     this.getOrganizationBaseUrl()
       .then(async () => {
         const projectService = await DevOps.getService<IProjectPageService>(
@@ -341,10 +344,13 @@ export class PullRequestsTab extends React.Component<
 
         getPullRequestDetailsAsync(pullRequests)
           .then(updated => {
-            console.log(updated);
-            this.setState({
-              pullRequests: updated
-            });
+            this.setState(
+              produce<Data.IPullRequestsTabState>(
+                (draftObject: { pullRequests: Data.PullRequestModel[] }) => {
+                  draftObject.pullRequests = updated;
+                }
+              )
+            );
 
             setTimeout(() => {
               this.filterPullRequests();
@@ -795,7 +801,7 @@ export class PullRequestsTab extends React.Component<
         {errorMessage.length > 0 ? (
           <ShowErrorMessage
             errorMessage={errorMessage}
-            onDismiss={this.resetErrorMessage()}
+            onDismiss={this.resetErrorMessage}
           />
         ) : null}
 
@@ -969,7 +975,7 @@ function ShowErrorMessage(props: any) {
       <MessageCard
         className="flex-self-stretch"
         severity={"Error" as MessageCardSeverity}
-        onDismiss={props.onDismiss()}
+        onDismiss={props.onDismiss}
       >
         {props.errorMessage}
       </MessageCard>

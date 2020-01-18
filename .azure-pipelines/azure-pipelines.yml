@@ -40,13 +40,17 @@ steps:
 
 - script: |
     npm run package-release
-  displayName: 'npm extension package'  
+  displayName: 'npm extension package'
 
 - task: PublishBuildArtifacts@1
   inputs:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)'
     ArtifactName: 'drop'
     publishLocation: 'Container'
+
+- task: TfxInstaller@2
+  inputs:
+    version: 'v0.6.x'
 
 - task: PublishAzureDevOpsExtension@2
   inputs:
