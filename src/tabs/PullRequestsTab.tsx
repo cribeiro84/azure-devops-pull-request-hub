@@ -202,11 +202,12 @@ export class PullRequestsTab extends React.Component<
   }
 
   private handleError(error: any): void {
-    console.log(error);
-    this.setState({
-      loading: false,
-      errorMessage: "There was an error during the extension load: " + error
-    });
+    throw error;
+    // console.log(error);
+    // this.setState({
+    //   loading: false,
+    //   errorMessage: "There was an error during the extension load: " + error
+    // });
   }
 
   private async getRepositories(project: IProjectInfo | TeamProjectReference) {
@@ -295,12 +296,14 @@ export class PullRequestsTab extends React.Component<
     this.setState({ loading: true });
     const { repositories, pullRequests } = this.state;
 
+    let newPullRequestList = Object.assign([], pullRequests);
+
     // clear the pull request list to be reloaded...
-    pullRequests.splice(0, pullRequests.length);
+    newPullRequestList.splice(0, newPullRequestList.length - 1);
     this.pullRequestItemProvider = new ObservableArray<
       | Data.PullRequestModel
       | IReadonlyObservableValue<Data.PullRequestModel | undefined>
-    >();
+    >([]);
 
     Promise.all(
       repositories.map(async r => {
@@ -320,7 +323,7 @@ export class PullRequestsTab extends React.Component<
             return pr;
           }
 
-          pullRequests.push(
+          newPullRequestList.push(
             ...Data.PullRequestModel.getModels(
               pr,
               this.state.currentProject!.name,
@@ -334,15 +337,24 @@ export class PullRequestsTab extends React.Component<
         this.handleError(error);
       })
       .finally(() => {
-        if (pullRequests.length > 0) {
+        if (newPullRequestList.length > 0) {
+          newPullRequestList = newPullRequestList.sort(
+            (a: Data.PullRequestModel, b: Data.PullRequestModel) => {
+              return (
+                a.gitPullRequest.creationDate.getTime() -
+                b.gitPullRequest.creationDate.getTime()
+              );
+            }
+          );
+
           this.setState({
-            pullRequests
+            pullRequests: newPullRequestList
           });
         }
 
         this.loadLists();
 
-        getPullRequestDetailsAsync(pullRequests)
+        getPullRequestDetailsAsync(newPullRequestList)
           .then(updated => {
             this.setState(
               produce<Data.IPullRequestsTabState>(
@@ -366,18 +378,9 @@ export class PullRequestsTab extends React.Component<
   }
 
   private loadLists() {
-    let { pullRequests } = this.state;
+    const { pullRequests } = this.state;
 
     this.reloadPullRequestItemProvider([]);
-
-    pullRequests = pullRequests.sort(
-      (a: Data.PullRequestModel, b: Data.PullRequestModel) => {
-        return (
-          a.gitPullRequest.creationDate.getTime() -
-          b.gitPullRequest.creationDate.getTime()
-        );
-      }
-    );
 
     this.pullRequestItemProvider.push(...pullRequests);
 
@@ -637,7 +640,8 @@ export class PullRequestsTab extends React.Component<
   };
 
   refresh = async () => {
-    await this.getAllPullRequests().catch(error => this.handleError(error));
+    await this.getAllPullRequests()
+      .catch(error => this.handleError(error));
   };
 
   onHelpDismiss = () => {
