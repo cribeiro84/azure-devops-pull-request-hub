@@ -136,8 +136,6 @@ export function DetailsColumn(
     openNewWindowTab(tableItem.lastCommitUrl!);
   };
 
-  console.log(tableItem.lastCommitDetails);
-
   return (
     <TwoLineTableCell
       className="bolt-table-cell-content-with-inline-link no-v-padding"

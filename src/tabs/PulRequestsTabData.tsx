@@ -86,6 +86,12 @@ export enum YesOrNo {
   Yes = 1
 }
 
+export enum AlternateStatusPr {
+  IsDraft = 0,
+  Conflicts = 1,
+  AutoComplete = 2
+}
+
 export class BranchDropDownItem {
   private _displayName: string = "";
 

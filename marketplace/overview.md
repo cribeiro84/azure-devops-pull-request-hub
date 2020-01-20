@@ -1,5 +1,3 @@
-![Pull Request Manager Hub - Logo](marketplace/screenshots/screenshot-01.png)
-
 # Azure DevOps Pull Request Manager Hub
 
 Please report any feedback/issue [here](https://github.com/cribeiro84/azure-devops-pull-request-hub):
@@ -21,7 +19,7 @@ Manage your Pull Requests of all your projects and repositories at a single plac
   - Requestor
   - Reviewers
   - Your vote status
-  - Draft
+  - Alternate Status: Is Draft, Conflicts, Auto-Complete
 - Continue where you left - When you click to review a Pull Request (it always opens in a **new window**) the row will be kept highlighted
 - Easily identify the reviewers of that Pull Request
 - Last Commit push date
@@ -39,6 +37,15 @@ Manage your Pull Requests of all your projects and repositories at a single plac
   - New badge (Pill) for your voted PRs with new changes
 
 ## Updates
+
+### 19/01/2020
+
+- UI tweaks
+- Minor improvements
+- Code refactoring
+- Performance improvements
+- Replaced Is Draft filter by Alternate Status
+  - It allows to filter by: Is Draft, Conflicts and Auto-Complete
 
 ### 11/01/2020
 

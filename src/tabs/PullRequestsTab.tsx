@@ -1,6 +1,8 @@
 import "./PullRequestTab.scss";
 
 import * as React from "react";
+import { produce } from "immer";
+
 import {
   AZDEVOPS_CLOUD_API_ORGANIZATION,
   AZDEVOPS_API_ORGANIZATION_RESOURCE,
@@ -31,8 +33,6 @@ import {
 import { MessageCard, MessageCardSeverity } from "azure-devops-ui/MessageCard";
 import { ListSelection } from "azure-devops-ui/List";
 import { IHeaderCommandBarItem } from "azure-devops-ui/HeaderCommandBar";
-import { FilterBar } from "azure-devops-ui/FilterBar";
-import { KeywordFilterBarItem } from "azure-devops-ui/TextFilterBarItem";
 import { Observer } from "azure-devops-ui/Observer";
 import { Dialog } from "azure-devops-ui/Dialog";
 import {
@@ -44,7 +44,6 @@ import {
   DropdownMultiSelection,
   DropdownSelection
 } from "azure-devops-ui/Utilities/DropdownSelection";
-import { DropdownFilterBarItem } from "azure-devops-ui/Dropdown";
 import {
   ObservableArray,
   IReadonlyObservableValue
@@ -60,9 +59,10 @@ import {
   TeamProjectReference,
   ProjectInfo
 } from "azure-devops-extension-api/Core/Core";
-import { getVoteDescription } from "../components/Columns";
 import { IListBoxItem } from "azure-devops-ui/ListBox";
 import { getPullRequestDetailsAsync } from "./PulRequestsTabData";
+import { FilterBarHub } from "../components/FilterBarHub";
+import { hasPullRequestFailure } from "../models/constants";
 
 export class PullRequestsTab extends React.Component<
   {},
@@ -82,28 +82,11 @@ export class PullRequestsTab extends React.Component<
   private selectedTargetBranches = new DropdownMultiSelection();
   private selectedReviewers = new DropdownMultiSelection();
   private selectedMyApprovalStatuses = new DropdownMultiSelection();
-  private selectedIsDraft = new DropdownMultiSelection();
+  private selectedAlternateStatusPr = new DropdownMultiSelection();
   private pullRequestItemProvider = new ObservableArray<
     | Data.PullRequestModel
     | IReadonlyObservableValue<Data.PullRequestModel | undefined>
   >();
-  private myApprovalStatuses = Object.keys(Data.ReviewerVoteOption)
-    .filter(value => !isNaN(parseInt(value, 10)))
-    .map(item => {
-      return {
-        id: item,
-        text: getVoteDescription(parseInt(item, 10))
-      };
-    });
-
-  private isDraftItems = Object.keys(Data.YesOrNo)
-    .filter(value => !isNaN(parseInt(value, 10)))
-    .map(item => {
-      return {
-        id: item,
-        text: Object.values(Data.YesOrNo)[parseInt(item, 10)].toString()
-      };
-    });
 
   private readonly gitClient: GitRestClient;
   private readonly coreClient: CoreRestClient;
@@ -133,13 +116,12 @@ export class PullRequestsTab extends React.Component<
     this.filter = new Filter();
   }
 
-  public async componentWillMount() {
-    await DevOps.init();
-    this.initializeState();
-  }
-
-  public componentDidMount() {
-    this.setupFilter();
+  public async componentDidMount() {
+    DevOps.init().then(async () => {
+      this.initializeState();
+      this.setupFilter();
+      await this.initializePage();
+    });
   }
 
   componentWillUnmount() {
@@ -158,7 +140,9 @@ export class PullRequestsTab extends React.Component<
     this.setState({
       pullRequests: []
     });
+  }
 
+  private async initializePage() {
     this.getOrganizationBaseUrl()
       .then(async () => {
         const projectService = await DevOps.getService<IProjectPageService>(
@@ -292,12 +276,14 @@ export class PullRequestsTab extends React.Component<
     this.setState({ loading: true });
     const { repositories, pullRequests } = this.state;
 
+    let newPullRequestList = Object.assign([], pullRequests);
+
     // clear the pull request list to be reloaded...
-    pullRequests.splice(0, pullRequests.length);
+    newPullRequestList.splice(0, newPullRequestList.length - 1);
     this.pullRequestItemProvider = new ObservableArray<
       | Data.PullRequestModel
       | IReadonlyObservableValue<Data.PullRequestModel | undefined>
-    >();
+    >([]);
 
     Promise.all(
       repositories.map(async r => {
@@ -317,7 +303,7 @@ export class PullRequestsTab extends React.Component<
             return pr;
           }
 
-          pullRequests.push(
+          newPullRequestList.push(
             ...Data.PullRequestModel.getModels(
               pr,
               this.state.currentProject!.name,
@@ -331,20 +317,32 @@ export class PullRequestsTab extends React.Component<
         this.handleError(error);
       })
       .finally(() => {
-        if (pullRequests.length > 0) {
+        if (newPullRequestList.length > 0) {
+          newPullRequestList = newPullRequestList.sort(
+            (a: Data.PullRequestModel, b: Data.PullRequestModel) => {
+              return (
+                a.gitPullRequest.creationDate.getTime() -
+                b.gitPullRequest.creationDate.getTime()
+              );
+            }
+          );
+
           this.setState({
-            pullRequests
+            pullRequests: newPullRequestList
           });
         }
 
         this.loadLists();
 
-        getPullRequestDetailsAsync(pullRequests)
+        getPullRequestDetailsAsync(newPullRequestList)
           .then(updated => {
-            console.log(updated);
-            this.setState({
-              pullRequests: updated
-            });
+            this.setState(
+              produce<Data.IPullRequestsTabState>(
+                (draftObject: { pullRequests: Data.PullRequestModel[] }) => {
+                  draftObject.pullRequests = updated;
+                }
+              )
+            );
 
             setTimeout(() => {
               this.filterPullRequests();
@@ -360,18 +358,9 @@ export class PullRequestsTab extends React.Component<
   }
 
   private loadLists() {
-    let { pullRequests } = this.state;
+    const { pullRequests } = this.state;
 
     this.reloadPullRequestItemProvider([]);
-
-    pullRequests = pullRequests.sort(
-      (a: Data.PullRequestModel, b: Data.PullRequestModel) => {
-        return (
-          a.gitPullRequest.creationDate.getTime() -
-          b.gitPullRequest.creationDate.getTime()
-        );
-      }
-    );
 
     this.pullRequestItemProvider.push(...pullRequests);
 
@@ -406,8 +395,8 @@ export class PullRequestsTab extends React.Component<
       "selectedMyApprovalStatuses"
     );
 
-    const isDraftFilter = this.filter.getFilterItemValue<number[]>(
-      "selectedIsDraft"
+    const selectedAlternateStatusPrFilter = this.filter.getFilterItemValue<number[]>(
+      "selectedAlternateStatusPr"
     );
 
     let filteredPullRequest = pullRequests;
@@ -485,11 +474,15 @@ export class PullRequestsTab extends React.Component<
       });
     }
 
-    if (isDraftFilter && isDraftFilter.length > 0) {
+    if (selectedAlternateStatusPrFilter && selectedAlternateStatusPrFilter.length > 0) {
       filteredPullRequest = filteredPullRequest.filter(pr => {
-        const found = isDraftFilter.some(item => {
+        const found = selectedAlternateStatusPrFilter.some(item => {
           // tslint:disable-next-line:triple-equals
-          return pr.gitPullRequest.isDraft === (item == 1);
+          return (pr.gitPullRequest.isDraft === true && (item == 0))
+            // tslint:disable-next-line:triple-equals
+            || (hasPullRequestFailure(pr) === true && (item == 1))
+            // tslint:disable-next-line:triple-equals
+            || (pr.isAutoCompleteSet === true && (item == 2));
         });
         return found;
       });
@@ -661,141 +654,28 @@ export class PullRequestsTab extends React.Component<
 
     return (
       <div className="flex-column">
-        <FilterBar filter={this.filter}>
-          <KeywordFilterBarItem
-            filterItemKey="pullRequestTitle"
-            placeholder={"Search Pull Requests"}
-            filter={this.filter}
-          />
-
-          <React.Fragment>
-            <DropdownFilterBarItem
-              filterItemKey="selectedProject"
-              onSelect={this.selectedProjectChanged}
-              filter={this.filter}
-              selection={this.selectedProject}
-              placeholder="Projects"
-              showFilterBox={true}
-              noItemsText="No project found"
-              items={projects.map(i => {
-                return {
-                  id: i.id,
-                  text: i.name
-                };
-              })}
-            />
-          </React.Fragment>
-
-          <React.Fragment>
-            <DropdownFilterBarItem
-              filterItemKey="selectedRepos"
-              filter={this.filter}
-              selection={this.selectedRepos}
-              placeholder="Repositories"
-              showFilterBox={true}
-              noItemsText="No repository found"
-              items={repositories.map(i => {
-                return {
-                  id: i.id,
-                  text: i.name
-                };
-              })}
-            />
-          </React.Fragment>
-
-          <React.Fragment>
-            <DropdownFilterBarItem
-              filterItemKey="selectedSourceBranches"
-              filter={this.filter}
-              showFilterBox={true}
-              noItemsText="No source branch found"
-              items={sourceBranchList.map(i => {
-                return {
-                  id: i.displayName,
-                  text: i.displayName
-                };
-              })}
-              selection={this.selectedSourceBranches}
-              placeholder="Source Branch"
-            />
-          </React.Fragment>
-
-          <React.Fragment>
-            <DropdownFilterBarItem
-              filterItemKey="selectedTargetBranches"
-              filter={this.filter}
-              showFilterBox={true}
-              noItemsText="No target branch found"
-              items={targetBranchList.map(i => {
-                return {
-                  id: i.displayName,
-                  text: i.displayName
-                };
-              })}
-              selection={this.selectedTargetBranches}
-              placeholder="Target Branch"
-            />
-          </React.Fragment>
-
-          <React.Fragment>
-            <DropdownFilterBarItem
-              filterItemKey="selectedAuthors"
-              noItemsText="No one found"
-              filter={this.filter}
-              showFilterBox={true}
-              items={createdByList.map(i => {
-                return {
-                  id: i.id,
-                  text: i.displayName
-                };
-              })}
-              selection={this.selectedAuthors}
-              placeholder="Created By"
-            />
-          </React.Fragment>
-
-          <React.Fragment>
-            <DropdownFilterBarItem
-              filterItemKey="selectedReviewers"
-              noItemsText="No one found"
-              filter={this.filter}
-              showFilterBox={true}
-              items={reviewerList.map(i => {
-                return {
-                  id: i.id,
-                  text: i.displayName
-                };
-              })}
-              selection={this.selectedReviewers}
-              placeholder="Reviewers"
-            />
-          </React.Fragment>
-
-          <React.Fragment>
-            <DropdownFilterBarItem
-              filterItemKey="selectedMyApprovalStatuses"
-              filter={this.filter}
-              items={this.myApprovalStatuses}
-              selection={this.selectedMyApprovalStatuses}
-              placeholder="My Approval Status"
-            />
-          </React.Fragment>
-
-          <React.Fragment>
-            <DropdownFilterBarItem
-              filterItemKey="selectedIsDraft"
-              filter={this.filter}
-              items={this.isDraftItems}
-              selection={this.selectedIsDraft}
-              placeholder="Is Draft"
-            />
-          </React.Fragment>
-        </FilterBar>
+        <FilterBarHub
+          filter={this.filter}
+          selectedProjectChanged={this.selectedProjectChanged}
+          selectedProject={this.selectedProject}
+          projects={projects}
+          repositories={repositories}
+          selectedRepos={this.selectedRepos}
+          sourceBranchList={sourceBranchList}
+          selectedSourceBranches={this.selectedSourceBranches}
+          targetBranchList={targetBranchList}
+          selectedTargetBranches={this.selectedTargetBranches}
+          createdByList={createdByList}
+          selectedAuthors={this.selectedAuthors}
+          reviewerList={reviewerList}
+          selectedReviewers={this.selectedReviewers}
+          selectedMyApprovalStatuses={this.selectedMyApprovalStatuses}
+          selectedAlternateStatusPr={this.selectedAlternateStatusPr} />
 
         {errorMessage.length > 0 ? (
           <ShowErrorMessage
             errorMessage={errorMessage}
-            onDismiss={this.resetErrorMessage()}
+            onDismiss={this.resetErrorMessage}
           />
         ) : null}
 
@@ -813,9 +693,9 @@ export class PullRequestsTab extends React.Component<
     });
   }
 
-  async selectedProjectChanged(
-    element: React.SyntheticEvent<HTMLElement>,
-    item: IListBoxItem<ProjectInfo | TeamProjectReference>
+  async selectedProjectChanged (
+    event: React.SyntheticEvent<HTMLElement, Event>,
+    item: IListBoxItem<TeamProjectReference | ProjectInfo>
   ) {
     const { projects } = this.state;
     const projectIndex = projects.findIndex(p => {
@@ -969,7 +849,7 @@ function ShowErrorMessage(props: any) {
       <MessageCard
         className="flex-self-stretch"
         severity={"Error" as MessageCardSeverity}
-        onDismiss={props.onDismiss()}
+        onDismiss={props.onDismiss}
       >
         {props.errorMessage}
       </MessageCard>
