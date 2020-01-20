@@ -1,8 +1,10 @@
-import { StatusSize } from "azure-devops-ui/Status";
+import { StatusSize, Statuses } from "azure-devops-ui/Status";
 import { PillSize, PillVariant } from "azure-devops-ui/Pill";
 import { PillGroupOverflow } from "azure-devops-ui/PillGroup";
 import { CommonServiceIds } from "azure-devops-extension-api";
 import { ZeroDataActionType } from "azure-devops-ui/ZeroData";
+import { PullRequestAsyncStatus } from "azure-devops-extension-api/Git/Git";
+import * as Data from "../tabs/PulRequestsTabData"
 
 export const AZDEVOPS_CLOUD_API_ORGANIZATION = "https://dev.azure.com";
 export const AZDEVOPS_CLOUD_API_ORGANIZATION_OLD =
@@ -18,6 +20,30 @@ export const isLocalhost = Boolean(
       /^127(?:\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$/
     )
 );
+
+export function hasPullRequestFailure(pullRequest: Data.PullRequestModel): boolean {
+  const prMergeStatus = pullRequest.gitPullRequest.mergeStatus;
+  return (
+    prMergeStatus === PullRequestAsyncStatus.Conflicts ||
+    prMergeStatus === PullRequestAsyncStatus.Failure ||
+    prMergeStatus === PullRequestAsyncStatus.RejectedByPolicy
+  );
+}
+
+export function getStatusIcon(vote: number) {
+  switch (vote) {
+    case 10:
+      return Statuses.Success;
+    case 5:
+      return Statuses.Success;
+    case -10:
+      return Statuses.Failed;
+    case -5:
+      return Statuses.Warning;
+  }
+
+  return Statuses.Queued;
+}
 
 export function getStatusSizeValue(value: string): StatusSize {
   switch (value) {
