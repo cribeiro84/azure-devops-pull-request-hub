@@ -61,7 +61,7 @@ export function TitleColumn(
 ): JSX.Element {
   const tooltip = `from ${tableItem.sourceBranch!.branchName} into ${
     tableItem.targetBranch!.branchName
-  }`;
+    }`;
 
   const onClickPullRequestTitleHandler = (
     event: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>
@@ -145,7 +145,7 @@ export function DetailsColumn(
       line1={
         <div>
           <Button
-            className="branch-button text-ellipsis"
+            className="button-icon-bold"
             text={tableItem.gitPullRequest.createdBy.displayName}
             iconProps={{
               render: () => {
@@ -172,6 +172,75 @@ export function DetailsColumn(
       line2={
         <div>
           <Button
+            className="button-icon"
+            text={tableItem.comment.terminatedComment.toString() + "/" + tableItem.comment.totalcomment.toString()}
+            iconProps={{ iconName: "ActivityFeed" }}
+            tooltipProps={{
+              text: tableItem.comment.terminatedComment.toString() + " out of " + tableItem.comment.totalcomment.toString() + " comments are marked as resolved, won't fix, or closed",
+              delayMs: 500
+            }}
+            subtle={true}
+          />
+
+          <Icon
+            className={(tableItem.isAllPoliciesOk !== undefined) ? tableItem.isAllPoliciesOk ? "icon-policy-green" : "icon-policy-red" : ""}
+            iconName="Ribbon"
+            tooltipProps={{
+              renderContent: () => {
+                return (
+                  <div>
+                    <b>Policies</b>
+                    {
+                      (tableItem.policies !== undefined && tableItem.policies.length > 0) ? 
+                      tableItem.policies.map(policy =>
+                        {
+                          return <p style={{ margin: '2px 0px 0px' }} key={policy.id}>
+                            {policy.isReviewersApprovedOk !== undefined ?
+                              policy.isReviewersApprovedOk ?
+                                <span aria-hidden="true" className="fabric-icon ms-Icon--StatusCircleCheckmark icon-green"><span className="span-tooltip">{policy.reviewerCount} of {policy.minimumApproverCount} reviewers approved</span></span> :
+                                <span aria-hidden="true" className="fabric-icon ms-Icon--StatusCircleErrorX icon-red"><span className="span-tooltip">{policy.reviewerCount} of {policy.minimumApproverCount} reviewers approved</span></span>
+                              : null}
+
+                            {policy.isRequiredReviewerOk !== undefined ?
+                              policy.isRequiredReviewerOk ?
+                                <span aria-hidden="true" className="fabric-icon ms-Icon--StatusCircleCheckmark icon-green"><span className="span-tooltip">Required reviewers approved{(policy.requiredReviewers !== undefined &&
+                                  policy.requiredReviewers.length > 0 &&
+                                  policy.requiredReviewers[0].displayName !== "") ? " - " + policy.requiredReviewers[0].displayName : null}</span></span> :
+                                <span aria-hidden="true" className="fabric-icon ms-Icon--StatusCircleErrorX icon-red"><span className="span-tooltip">Required reviewers have not approved{(policy.requiredReviewers !== undefined &&
+                                  policy.requiredReviewers.length > 0 &&
+                                  policy.requiredReviewers[0].displayName !== "") ? " - " + policy.requiredReviewers[0].displayName : null}</span></span>
+                              : null}
+
+                            {policy.isWorkItemOk !== undefined ?
+                              policy.isWorkItemOk ?
+                                <span aria-hidden="true" className="fabric-icon ms-Icon--StatusCircleCheckmark icon-green"><span className="span-tooltip">Work items linked</span></span> :
+                                <span aria-hidden="true" className="fabric-icon ms-Icon--StatusCircleErrorX icon-red"><span className="span-tooltip">No work items linked</span></span>
+                              : null}
+
+                            {policy.isCommentOk !== undefined ?
+                              policy.isCommentOk ?
+                                <span aria-hidden="true" className="fabric-icon ms-Icon--StatusCircleCheckmark icon-green"><span className="span-tooltip">All comments resolved</span></span> :
+                                <span aria-hidden="true" className="fabric-icon ms-Icon--StatusCircleErrorX icon-red"><span className="span-tooltip">Not all comments resolved</span></span>
+                              : null}
+
+                            {policy.isBuildOk !== undefined ?
+                              policy.isBuildOk ?
+                                <span aria-hidden="true" className="fabric-icon ms-Icon--StatusCircleCheckmark icon-green"><span className="span-tooltip">Build success</span></span> :
+                                <span aria-hidden="true" className="fabric-icon ms-Icon--StatusCircleErrorX icon-red"><span className="span-tooltip">Build problem</span></span>
+                              : null}                              
+                          </p>;
+                        }
+                      )
+                      : <p style={{ margin: '2px 0px 0px' }}><span className="span-tooltip">- No policies</span></p>
+                    }
+                  </div>
+                );
+              }
+            }}
+          ></Icon>
+
+          <Button
+            className="button-spaceicon-bold"
             iconProps={{ iconName: "BranchCommit" }}
             onClick={onClickLastCommitHandler}
             subtle={true}
@@ -183,25 +252,27 @@ export function DetailsColumn(
             {tableItem.lastShortCommitId}
           </Button>
           {" - "}
-            <Button
-              iconProps={{ iconName: "Clock" }}
-              onClick={onClickLastCommitHandler}
-              subtle={true}
+          <Button
+            className="button-icon"
+            iconProps={{ iconName: "Clock" }}
+            onClick={onClickLastCommitHandler}
+            subtle={true}
+            tooltipProps={{
+              text: `Last commit date and time`,
+              delayMs: 500
+            }}
+            disabled={true}
+          >
+            <Duration
+              className="fontSize font-size"
               tooltipProps={{
-                text: `Last commit date and time`,
+                text: `When the last commit was done`,
                 delayMs: 500
               }}
-              disabled={true}
-            >
-              <Duration
-                tooltipProps={{
-                  text: `When the last commit was done`,
-                  delayMs: 500
-                }}
-                startDate={((tableItem.lastCommitDetails === undefined || tableItem.lastCommitDetails.committer === undefined) ? tableItem.gitPullRequest.creationDate : tableItem.lastCommitDetails!.committer.date!)}
-                endDate={new Date(Date.now())}
-              />
-            </Button>
+              startDate={((tableItem.lastCommitDetails === undefined || tableItem.lastCommitDetails.committer === undefined) ? tableItem.gitPullRequest.creationDate : tableItem.lastCommitDetails!.committer.date!)}
+              endDate={new Date(Date.now())}
+            />
+          </Button>
         </div>
       }
     />

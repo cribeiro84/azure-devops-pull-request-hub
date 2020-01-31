@@ -30,6 +30,54 @@ export function hasPullRequestFailure(pullRequest: Data.PullRequestModel): boole
   );
 }
 
+/**
+   * Has pull request reviewer required red icon.
+   * @remarks
+   * Rule to check if the red required icon is present in the pull request.
+   * @param pullRequestList - Pull request model
+   * @returns true to present the icon
+   */
+export function hasPullRequestReviewerRequiredRed(pullRequest: Data.PullRequestModel): boolean {
+  
+  let prRevierwRequired = false;
+
+  if(pullRequest.gitPullRequest.reviewers !== undefined && 
+    pullRequest.gitPullRequest.reviewers.length > 0){
+      let reviewersFilterd = pullRequest.gitPullRequest.reviewers.filter(r => r.isRequired !== undefined);
+
+      if(reviewersFilterd !== undefined && reviewersFilterd.length > 0){
+        prRevierwRequired = reviewersFilterd.some(x => x.isRequired && x.vote === 0);
+
+      }
+  }
+
+  return prRevierwRequired;
+}
+
+ /**
+   * Has pull request reviewer required gray icon.
+   * @remarks
+   * Rule to check if the gray required icon is present in the pull request.
+   * @param pullRequestList - Pull request model
+   * @returns true to present the icon
+   */
+export function hasPullRequestReviewerRequiredGray(pullRequest: Data.PullRequestModel): boolean {
+  
+  let prRevierwRequired = false;
+
+  if(pullRequest.gitPullRequest.reviewers !== undefined && 
+    pullRequest.gitPullRequest.reviewers.length > 0){
+      let reviewersFilterd = pullRequest.gitPullRequest.reviewers.filter(r => r.isRequired !== undefined);
+
+      if(reviewersFilterd !== undefined && reviewersFilterd.length > 0){
+        prRevierwRequired = reviewersFilterd.every(x => x.isRequired && x.vote !== 0);
+
+      }
+  }
+
+  return prRevierwRequired;
+}
+
 export function getStatusIcon(vote: number) {
   switch (vote) {
     case 10:

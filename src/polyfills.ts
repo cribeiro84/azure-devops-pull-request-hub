@@ -2,26 +2,16 @@ import "core-js";
 
 export function addPolyFills() {
   if (!Array.prototype.flat) {
-      Array.prototype.flat = function() {
-          var depth = arguments[0];
-          depth = depth === undefined ? 1 : Math.floor(depth);
-          if (depth < 1) return Array.prototype.slice.call(this);
-          return (function flat(arr, depth) {
-              var len = arr.length >>> 0;
-              var flattened: any[] = [];
-              var i = 0;
-              while (i < len) {
-                  if (i in arr) {
-                      var el = arr[i];
-                      if (Array.isArray(el) && depth > 0)
-                          flattened = flattened.concat(flat(el, depth - 1));
-                      else flattened.push(el);
-                  }
-                  i++;
-              }
-              return flattened;
-          })(this, depth);
-      };
+    // eslint-disable-next-line no-extend-native
+    Array.prototype.flat = function (depth: any = 1) {
+      depth = isNaN(depth) ? 0 : Math.floor(depth);
+      if (depth < 1) return this.slice();
+      return [].concat(
+        ...(depth < 2)
+          ? this
+          : this.map(v => Array.isArray(v) ? v.flat(depth - 1) : v)
+      )
+    };
   }
 
   // Get a handle on the global object

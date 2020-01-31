@@ -26,6 +26,18 @@
   color: rgb(241, 112, 123);
 }
 
+.pill-requiredred.outlined {
+  background-color: transparent;
+  border-color: rgb(241, 112, 123);
+  color: rgb(241, 112, 123);
+}
+
+.pill-required.outlined {
+  background-color: transparent;
+  border-color: rgb(146, 144, 144);
+  color: rgb(146, 144, 144);
+}
+
 .pill-autocomplete.outlined {
   background-color: transparent;
   border-color: rgb(221, 149, 14);
@@ -41,3 +53,33 @@
   padding-left: 6px;
   margin-left: 5px;
 }
+
+.icon-red{
+  color: red;
+  font-size: x-large;
+  font-weight: bold;
+
+}
+.icon-green{
+  color: green;
+  font-size: x-large;
+  font-weight: bold;
+}
+
+.icon-policy-red{
+  color: rgb(182, 1, 1);
+}
+
+.icon-policy-green{
+  color: rgb(2, 131, 2);
+}
+
+.span-tooltip{
+  color: white;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 12px;
+  font-weight: normal;
+  padding-top: 5px;
+  
+}
+

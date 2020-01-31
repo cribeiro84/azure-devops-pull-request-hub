@@ -7,3 +7,43 @@
 .left-content-spacing {
     margin-left: 16px;
 }
+
+.button-icon {
+    font-weight: 400;
+    padding: 2px;
+}
+
+.button-icon > span {
+    padding-right: 6px !important;
+}
+
+.button-icon:hover {
+    background-color: transparent !important;
+    cursor: default !important;
+}
+
+.button-icon-bold {
+    font-weight: 600;
+    padding: 2px;
+}
+
+.button-icon-bold > span {
+    padding-right: 6px !important;
+}
+
+.button-icon-bold:hover {
+    background-color: transparent !important;
+    cursor: default !important;
+}
+
+.button-spaceicon-bold {
+    font-weight: 600;
+    padding: 2px;
+}
+
+.button-spaceicon-bold > span {
+    padding-right: 1px !important;
+}
+
+
+
