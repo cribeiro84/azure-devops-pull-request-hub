@@ -665,7 +665,7 @@ export function processPolicyBuildAsync(
                   undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined,
                   undefined, undefined, undefined, undefined, undefined, policy.repositoryId, repositoryType)
                   .then(builds => {
-                    
+
                     if (builds !== undefined && builds.length > 0) {
                       let build = builds.sort(x => x.buildNumberRevision).reverse()[0];
 
@@ -673,7 +673,7 @@ export function processPolicyBuildAsync(
 
                       policy.isBuildOk = (item.gitPullRequest.pullRequestId.toString() === parameters["system.pullRequest.pullRequestId"] &&
                         policy.refName === parameters["system.pullRequest.targetBranch"] &&
-                        build.status === BuildStatus.Completed && 
+                        build.status === BuildStatus.Completed &&
                         build.result === BuildResult.Succeeded);
                     }
                   })

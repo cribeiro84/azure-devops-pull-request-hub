@@ -1,7 +1,7 @@
 import * as React from "react";
 
 import { Pill } from "azure-devops-ui/Pill";
-import { getPillSizeValue, getPillVariantValue, hasPullRequestFailure, hasPullRequestReviewerRequiredRed, hasPullRequestReviewerRequiredGray } from "../models/constants";
+import { getPillSizeValue, getPillVariantValue, hasPullRequestFailure, hasPullRequestReviewerRequired } from "../models/constants";
 import * as Data from "../tabs/PulRequestsTabData";
 import { PullRequestAsyncStatus } from "azure-devops-extension-api/Git/Git";
 import { PullRequestModel } from "../tabs/PulRequestsTabData";
@@ -30,16 +30,16 @@ export function PullRequestPillInfo(props: any): JSX.Element {
           auto-complete
         </Pill>
       </ConditionalChildren>
-      <ConditionalChildren renderChildren={hasPullRequestReviewerRequiredRed(pullRequest)}>
+      <ConditionalChildren renderChildren={hasPullRequestReviewerRequired(pullRequest, true)}>
         <Pill className="pill pill-requiredred" variant={getPillVariantValue("outlined")} size={getPillSizeValue("medium")} >
-          required
+          review required
         </Pill>
-      </ConditionalChildren>   
-      <ConditionalChildren renderChildren={hasPullRequestReviewerRequiredGray(pullRequest)}>
+      </ConditionalChildren>
+      {/* <ConditionalChildren renderChildren={hasPullRequestReviewerRequired(pullRequest, false)}>
         <Pill className="pill pill-required" variant={getPillVariantValue("outlined")} size={getPillSizeValue("medium")} >
-          required
+          review required
         </Pill>
-      </ConditionalChildren>          
+      </ConditionalChildren> */}
     </PillGroup>
   );
 }
