@@ -191,10 +191,10 @@ export function DetailsColumn(
                   <div>
                     <b>Policies</b>
                     {
-                      (tableItem.policies !== undefined && tableItem.policies.length > 0) ? 
+                      (tableItem.policies !== undefined && tableItem.policies.length > 0) ?
                       tableItem.policies.map(policy =>
                         {
-                          return <p style={{ margin: '2px 0px 0px' }} key={policy.id}>
+                          return <p style={{ margin: "2px 0px 0px" }} key={policy.id}>
                             {policy.isReviewersApprovedOk !== undefined ?
                               policy.isReviewersApprovedOk ?
                                 <span aria-hidden="true" className="fabric-icon ms-Icon--StatusCircleCheckmark icon-green"><span className="span-tooltip">{policy.reviewerCount} of {policy.minimumApproverCount} reviewers approved</span></span> :
@@ -227,17 +227,17 @@ export function DetailsColumn(
                               policy.isBuildOk ?
                                 <span aria-hidden="true" className="fabric-icon ms-Icon--StatusCircleCheckmark icon-green"><span className="span-tooltip">Build success</span></span> :
                                 <span aria-hidden="true" className="fabric-icon ms-Icon--StatusCircleErrorX icon-red"><span className="span-tooltip">Build problem</span></span>
-                              : null}                              
+                              : null}
                           </p>;
                         }
                       )
-                      : <p style={{ margin: '2px 0px 0px' }}><span className="span-tooltip">- No policies</span></p>
+                      : <p style={{ margin: "2px 0px 0px" }}><span className="span-tooltip">- No policies</span></p>
                     }
                   </div>
                 );
               }
             }}
-          ></Icon>
+          />
 
           <Button
             className="button-spaceicon-bold"
