@@ -188,52 +188,58 @@ export function DetailsColumn(
             tooltipProps={{
               renderContent: () => {
                 return (
-                  <div>
-                    <b>Policies</b>
+                  <table className="table-border-spacing">
+                    <tr><td colSpan={2}><b>Policies</b></td></tr>
                     {
                       (tableItem.policies !== undefined && tableItem.policies.length > 0) ?
-                      tableItem.policies.map(policy =>
-                        {
-                          return <p style={{ margin: "2px 0px 0px" }} key={policy.id}>
-                            {policy.isReviewersApprovedOk !== undefined ?
+                        tableItem.policies.map(policy => {
+                          return (
+                            policy.isReviewersApprovedOk !== undefined ?
                               policy.isReviewersApprovedOk ?
-                                <span aria-hidden="true" className="fabric-icon ms-Icon--StatusCircleCheckmark icon-green"><span className="span-tooltip">{policy.reviewerCount} of {policy.minimumApproverCount} reviewers approved</span></span> :
-                                <span aria-hidden="true" className="fabric-icon ms-Icon--StatusCircleErrorX icon-red"><span className="span-tooltip">{policy.reviewerCount} of {policy.minimumApproverCount} reviewers approved</span></span>
-                              : null}
-
-                            {policy.isRequiredReviewerOk !== undefined ?
+                                <tr><td className="td-vertical-align"><span className="fabric-icon ms-Icon--StatusCircleCheckmark icon-green" /></td><td className="span-tooltip">{policy.reviewerCount} of {policy.minimumApproverCount} reviewers approved</td></tr>
+                              :
+                                <tr><td className="td-vertical-align"><span className="fabric-icon ms-Icon--StatusCircleErrorX icon-red"/></td><td className="span-tooltip">{policy.reviewerCount} of {policy.minimumApproverCount} reviewers approved</td></tr>
+                            :
+                            policy.isRequiredReviewerOk !== undefined ?
                               policy.isRequiredReviewerOk ?
-                                <span aria-hidden="true" className="fabric-icon ms-Icon--StatusCircleCheckmark icon-green"><span className="span-tooltip">Required reviewers approved{(policy.requiredReviewers !== undefined &&
-                                  policy.requiredReviewers.length > 0 &&
-                                  policy.requiredReviewers[0].displayName !== "") ? " - " + policy.requiredReviewers[0].displayName : null}</span></span> :
-                                <span aria-hidden="true" className="fabric-icon ms-Icon--StatusCircleErrorX icon-red"><span className="span-tooltip">Required reviewers have not approved{(policy.requiredReviewers !== undefined &&
-                                  policy.requiredReviewers.length > 0 &&
-                                  policy.requiredReviewers[0].displayName !== "") ? " - " + policy.requiredReviewers[0].displayName : null}</span></span>
-                              : null}
-
-                            {policy.isWorkItemOk !== undefined ?
-                              policy.isWorkItemOk ?
-                                <span aria-hidden="true" className="fabric-icon ms-Icon--StatusCircleCheckmark icon-green"><span className="span-tooltip">Work items linked</span></span> :
-                                <span aria-hidden="true" className="fabric-icon ms-Icon--StatusCircleErrorX icon-red"><span className="span-tooltip">No work items linked</span></span>
-                              : null}
-
-                            {policy.isCommentOk !== undefined ?
+                                <tr><td className="td-vertical-align"><span className="fabric-icon ms-Icon--StatusCircleCheckmark icon-green"/></td><td className="span-tooltip">Required reviewers approved{
+                                  (policy.requiredReviewers !== undefined && policy.requiredReviewers.length > 0 && policy.requiredReviewers[0].displayName !== "") ?
+                                    " - " + policy.requiredReviewers[0].displayName
+                                  :
+                                    null}
+                                </td></tr>
+                              :
+                                <tr><td className="td-vertical-align"><span className="fabric-icon ms-Icon--StatusCircleErrorX icon-red" /></td><td className="span-tooltip">Required reviewers have not approved{
+                                  (policy.requiredReviewers !== undefined && policy.requiredReviewers.length > 0 && policy.requiredReviewers[0].displayName !== "") ?
+                                    " - " + policy.requiredReviewers[0].displayName
+                                  :
+                                  null}
+                                </td></tr>
+                            :
+                            policy.isWorkItemOk !== undefined ?
+                             policy.isWorkItemOk ?
+                                <tr><td className="td-vertical-align"><span className="fabric-icon ms-Icon--StatusCircleCheckmark icon-green"/></td><td className="span-tooltip">Work items linked</td></tr>
+                              :
+                                <tr><td className="td-vertical-align"><span className="fabric-icon ms-Icon--StatusCircleErrorX icon-red"/></td><td className="span-tooltip">No work items linked</td></tr>
+                            :
+                            policy.isCommentOk !== undefined ?
                               policy.isCommentOk ?
-                                <span aria-hidden="true" className="fabric-icon ms-Icon--StatusCircleCheckmark icon-green"><span className="span-tooltip">All comments resolved</span></span> :
-                                <span aria-hidden="true" className="fabric-icon ms-Icon--StatusCircleErrorX icon-red"><span className="span-tooltip">Not all comments resolved</span></span>
-                              : null}
-
-                            {policy.isBuildOk !== undefined ?
+                                <tr><td className="td-vertical-align"><span className="fabric-icon ms-Icon--StatusCircleCheckmark icon-green"/></td><td className="span-tooltip">All comments resolved</td></tr>
+                              :
+                                <tr><td className="td-vertical-align"><span className="fabric-icon ms-Icon--StatusCircleErrorX icon-red"/></td><td className="span-tooltip">Not all comments resolved</td></tr>
+                            :
+                            policy.isBuildOk !== undefined ?
                               policy.isBuildOk ?
-                                <span aria-hidden="true" className="fabric-icon ms-Icon--StatusCircleCheckmark icon-green"><span className="span-tooltip">Build success</span></span> :
-                                <span aria-hidden="true" className="fabric-icon ms-Icon--StatusCircleErrorX icon-red"><span className="span-tooltip">Build problem</span></span>
-                              : null}
-                          </p>;
-                        }
-                      )
-                      : <p style={{ margin: "2px 0px 0px" }}><span className="span-tooltip">- No policies</span></p>
+                                <tr><td className="td-vertical-align"><span className="fabric-icon ms-Icon--StatusCircleCheckmark icon-green"/></td><td className="span-tooltip">Build success</td></tr>
+                              :
+                                <tr><td className="td-vertical-align"><span className="fabric-icon ms-Icon--StatusCircleErrorX icon-red"/></td><td className="span-tooltip">Build problem</td></tr>
+                            : null
+                          );
+                        })
+                      :
+                      <tr><td colSpan={2}>- No policies</td></tr>
                     }
-                  </div>
+                  </table>
                 );
               }
             }}

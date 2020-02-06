@@ -67,19 +67,24 @@
 }
 
 .icon-policy-red{
-  color: rgb(182, 1, 1);
+  color: rgb(233, 0, 0);
 }
 
 .icon-policy-green{
-  color: rgb(2, 131, 2);
+  color: rgb(1, 165, 1);
 }
 
 .span-tooltip{
-  color: white;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   font-size: 12px;
   font-weight: normal;
-  padding-top: 5px;
-  
+  white-space: normal;
 }
 
+.td-vertical-align{
+  vertical-align: top;
+}
+
+.table-border-spacing{
+  border-spacing: 0px;
+}

@@ -665,7 +665,7 @@ export function processPolicyBuildAsync(
                   undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined,
                   undefined, undefined, undefined, undefined, undefined, policy.repositoryId, repositoryType)
                   .then(builds => {
-                    console.log(item.gitPullRequest.pullRequestId + " processPolicyBuildAsync");
+                    
                     if (builds !== undefined && builds.length > 0) {
                       let build = builds.sort(x => x.buildNumberRevision).reverse()[0];
 
