@@ -26,7 +26,10 @@ import {
   ReviewersColumn,
   DateColumn
 } from "../components/Columns";
-import { BuildStatus, BuildResult } from "azure-devops-extension-api/Build/Build";
+import {
+  BuildStatus,
+  BuildResult
+} from "azure-devops-extension-api/Build/Build";
 
 export const refsPreffix = "refs/heads/";
 
@@ -97,15 +100,15 @@ export enum AlternateStatusPr {
 }
 
 export class BranchDropDownItem {
-  private _displayName: string = "";
+  private DISPLAY_NAME: string = "";
 
   constructor(public repositoryName: string, public branchName: string) {
     this.branchName = this.branchName.replace(refsPreffix, "");
-    this._displayName = `${this.repositoryName}->${this.branchName}`;
+    this.DISPLAY_NAME = `${this.repositoryName}->${this.branchName}`;
   }
 
   public get displayName(): string {
-    return this._displayName;
+    return this.DISPLAY_NAME;
   }
 }
 
@@ -345,8 +348,7 @@ export function getPullRequestDetailsAsync(
               return;
             }
             item.lastCommitDetails = value.lastMergeCommit;
-            item.isAutoCompleteSet =
-              value.autoCompleteSetBy !== undefined;
+            item.isAutoCompleteSet = value.autoCompleteSetBy !== undefined;
           })
           .catch(error => {
             console.log(
@@ -358,11 +360,13 @@ export function getPullRequestDetailsAsync(
 
         return item;
       })
-    ).then(() => {
-      resolve(pullRequestList);
-    }).catch(error => {
-      reject(error);
-    });
+    )
+      .then(() => {
+        resolve(pullRequestList);
+      })
+      .catch(error => {
+        reject(error);
+      });
   });
 }
 
@@ -388,42 +392,56 @@ export function getPullRequestThreadAsync(
     Promise.all(
       pullRequestList.map(async item => {
         await gitClient
-          .getThreads(item.gitPullRequest.repository.id, item.gitPullRequest.pullRequestId)
+          .getThreads(
+            item.gitPullRequest.repository.id,
+            item.gitPullRequest.pullRequestId
+          )
           .then(value => {
             if (value !== undefined) {
-              let threads = value.filter(x => x.status !== undefined);
-              let terminatedThread = value.filter(x => x.status !== undefined &&
-                (x.status === CommentThreadStatus.Closed || x.status === CommentThreadStatus.WontFix || x.status === CommentThreadStatus.Fixed));
+              const threads = value.filter(x => x.status !== undefined);
+              const terminatedThread = value.filter(
+                x =>
+                  x.status !== undefined &&
+                  (x.status === CommentThreadStatus.Closed ||
+                    x.status === CommentThreadStatus.WontFix ||
+                    x.status === CommentThreadStatus.Fixed)
+              );
 
               item.comment = new PullRequestComment();
 
-              item.comment.totalcomment = (threads !== undefined) ? threads.length : 0;
-              item.comment.terminatedComment = (terminatedThread !== undefined) ? terminatedThread.length : 0;
+              item.comment.totalcomment =
+                threads !== undefined ? threads.length : 0;
+              item.comment.terminatedComment =
+                terminatedThread !== undefined ? terminatedThread.length : 0;
             }
           })
           .catch(error => {
-            console.log("There was an error calling the Pull Request threads (method: getPullRequestThreadAsync).");
+            console.log(
+              "There was an error calling the Pull Request threads (method: getPullRequestThreadAsync)."
+            );
             console.log(error);
             reject(error);
           });
 
         return item;
       })
-    ).then(() => {
-      resolve(pullRequestList);
-    }).catch(error => {
-      reject(error);
-    });
+    )
+      .then(() => {
+        resolve(pullRequestList);
+      })
+      .catch(error => {
+        reject(error);
+      });
   });
 }
 
 /**
-  * Get pullrequest work item asysn.
-  * @remarks
-  * Get pull request work item information.
-  * @param pullRequestList - List of pull request
-  * @returns pull request list with work item information
-  */
+ * Get pullrequest work item asysn.
+ * @remarks
+ * Get pull request work item information.
+ * @param pullRequestList - List of pull request
+ * @returns pull request list with work item information
+ */
 export function getPullRequestWorkItemAsync(
   pullRequestList: PullRequestModel[]
 ): Promise<PullRequestModel[]> {
@@ -439,33 +457,41 @@ export function getPullRequestWorkItemAsync(
     Promise.all(
       pullRequestList.map(async item => {
         await gitClient
-          .getPullRequestWorkItemRefs(item.gitPullRequest.repository.id, item.gitPullRequest.pullRequestId, item.projectName)
+          .getPullRequestWorkItemRefs(
+            item.gitPullRequest.repository.id,
+            item.gitPullRequest.pullRequestId,
+            item.projectName
+          )
           .then(value => {
-            item.existWorkItem = (value !== undefined && value.length > 0);
+            item.existWorkItem = value !== undefined && value.length > 0;
           })
           .catch(error => {
-            console.log("There was an error calling the Pull Request work item (method: getPullRequestWorkItemAsync).");
+            console.log(
+              "There was an error calling the Pull Request work item (method: getPullRequestWorkItemAsync)."
+            );
             console.log(error);
             reject(error);
           });
 
         return item;
       })
-    ).then(() => {
-      resolve(pullRequestList);
-    }).catch(error => {
-      reject(error);
-    });
+    )
+      .then(() => {
+        resolve(pullRequestList);
+      })
+      .catch(error => {
+        reject(error);
+      });
   });
 }
 
 /**
-  * Get pullrequest policy asysn.
-  * @remarks
-  * Get pull request policies information.
-  * @param pullRequestList - List of pull request
-  * @returns pull request list with policies information
-  */
+ * Get pullrequest policy asysn.
+ * @remarks
+ * Get pull request policies information.
+ * @param pullRequestList - List of pull request
+ * @returns pull request list with policies information
+ */
 export function getPullRequestPolicyAsync(
   pullRequestList: PullRequestModel[]
 ): Promise<PullRequestModel[]> {
@@ -487,110 +513,160 @@ export function getPullRequestPolicyAsync(
               return;
             }
 
-            let policies = value.filter(x =>
-              x.isBlocking &&
-              x.isEnabled &&
-              !x.isDeleted &&
-              x.settings !== undefined &&
-              x.settings instanceof Object &&
-              x.settings.scope instanceof Array &&
-              Array(x.settings.scope).length > 0)
+            const policies = value.filter(
+              x =>
+                x.isBlocking &&
+                x.isEnabled &&
+                !x.isDeleted &&
+                x.settings !== undefined &&
+                x.settings instanceof Object &&
+                x.settings.scope instanceof Array &&
+                Array(x.settings.scope).length > 0
+            );
 
             if (policies !== undefined && policies.length > 0) {
-
               policies.map(policy => {
-
-                if (policy.settings.scope[0].repositoryId === item.gitPullRequest.repository.id &&
-                  policy.settings.scope[0].refName === item.gitPullRequest.targetRefName) {
-                  let pullRequestPolicy = new PullRequestPolicy();
+                if (
+                  policy.settings.scope[0].repositoryId ===
+                    item.gitPullRequest.repository.id &&
+                  policy.settings.scope[0].refName ===
+                    item.gitPullRequest.targetRefName
+                ) {
+                  const pullRequestPolicy = new PullRequestPolicy();
 
                   pullRequestPolicy.id = policy.id;
                   pullRequestPolicy.displayName = policy.type.displayName;
-                  pullRequestPolicy.repositoryId = policy.settings.scope[0].repositoryId;
+                  pullRequestPolicy.repositoryId =
+                    policy.settings.scope[0].repositoryId;
                   pullRequestPolicy.refName = policy.settings.scope[0].refName;
-                  pullRequestPolicy.allowDownvotes = policy.settings.allowDownvotes;
-                  pullRequestPolicy.creatorVoteCounts = policy.settings.creatorVoteCounts;
-                  pullRequestPolicy.minimumApproverCount = policy.settings.minimumApproverCount;
-                  pullRequestPolicy.resetOnSourcePush = policy.settings.resetOnSourcePush;
-                  pullRequestPolicy.allowNoFastForward = policy.settings.allowNoFastForward;
+                  pullRequestPolicy.allowDownvotes =
+                    policy.settings.allowDownvotes;
+                  pullRequestPolicy.creatorVoteCounts =
+                    policy.settings.creatorVoteCounts;
+                  pullRequestPolicy.minimumApproverCount =
+                    policy.settings.minimumApproverCount;
+                  pullRequestPolicy.resetOnSourcePush =
+                    policy.settings.resetOnSourcePush;
+                  pullRequestPolicy.allowNoFastForward =
+                    policy.settings.allowNoFastForward;
                   pullRequestPolicy.allowSquash = policy.settings.allowSquash;
                   pullRequestPolicy.allowRebase = policy.settings.allowRebase;
-                  pullRequestPolicy.allowRebaseMerge = policy.settings.allowRebaseMerge;
-                  pullRequestPolicy.buildDefinitionId = policy.settings.buildDefinitionId;
+                  pullRequestPolicy.allowRebaseMerge =
+                    policy.settings.allowRebaseMerge;
+                  pullRequestPolicy.buildDefinitionId =
+                    policy.settings.buildDefinitionId;
 
-                  if (policy.settings.requiredReviewerIds !== undefined &&
+                  if (
+                    policy.settings.requiredReviewerIds !== undefined &&
                     policy.settings.requiredReviewerIds instanceof Array &&
-                    policy.settings.requiredReviewerIds.length > 0) {
-
+                    policy.settings.requiredReviewerIds.length > 0
+                  ) {
                     pullRequestPolicy.requiredReviewers = [];
-                    let requiredReviewersId = policy.settings.requiredReviewerIds as Array<string>;
+                    const requiredReviewersId = policy.settings
+                      .requiredReviewerIds as Array<string>;
 
                     requiredReviewersId.map(reviewerId => {
-                      let pullRequestRequiredReviewer = new PullRequestRequiredReviewer();
+                      const pullRequestRequiredReviewer = new PullRequestRequiredReviewer();
                       pullRequestRequiredReviewer.id = reviewerId;
 
-                      let reviewerFound = item.gitPullRequest.reviewers.find(x => x.id === reviewerId);
+                      const reviewerFound = item.gitPullRequest.reviewers.find(
+                        x => x.id === reviewerId
+                      );
 
                       if (reviewerFound !== undefined) {
-                        pullRequestRequiredReviewer.displayName = reviewerFound.displayName;
+                        pullRequestRequiredReviewer.displayName =
+                          reviewerFound.displayName;
                       }
 
-                      pullRequestPolicy.requiredReviewers!.push(pullRequestRequiredReviewer);
+                      pullRequestPolicy.requiredReviewers!.push(
+                        pullRequestRequiredReviewer
+                      );
 
                       return reviewerId;
                     });
                   }
 
-                  if (pullRequestPolicy.displayName === "Minimum number of reviewers") {
-
+                  if (
+                    pullRequestPolicy.displayName ===
+                    "Minimum number of reviewers"
+                  ) {
                     let reviewerCount = 0;
 
                     if (pullRequestPolicy.creatorVoteCounts) {
-                      reviewerCount = item.gitPullRequest.reviewers.filter(x => x.vote === 10 || x.vote === 5).length;
+                      reviewerCount = item.gitPullRequest.reviewers.filter(
+                        x => x.vote === 10 || x.vote === 5
+                      ).length;
                     } else {
-                      reviewerCount = item.gitPullRequest.reviewers.filter(x => (x.vote === 10 || x.vote === 5) && x.id !== item.gitPullRequest.createdBy.id).length;
+                      reviewerCount = item.gitPullRequest.reviewers.filter(
+                        x =>
+                          (x.vote === 10 || x.vote === 5) &&
+                          x.id !== item.gitPullRequest.createdBy.id
+                      ).length;
                     }
 
-                    pullRequestPolicy.isReviewersApprovedOk = (reviewerCount === pullRequestPolicy.minimumApproverCount);
+                    pullRequestPolicy.isReviewersApprovedOk =
+                      reviewerCount === pullRequestPolicy.minimumApproverCount;
                     pullRequestPolicy.reviewerCount = reviewerCount;
-                  } else if (pullRequestPolicy.displayName === "Work item linking") {
+                  } else if (
+                    pullRequestPolicy.displayName === "Work item linking"
+                  ) {
                     pullRequestPolicy.isWorkItemOk = item.existWorkItem;
-                  } else if (pullRequestPolicy.displayName === "Comment requirements") {
-                    pullRequestPolicy.isCommentOk = (item.comment.totalcomment - item.comment.terminatedComment === 0);
-                  } else if (pullRequestPolicy.displayName === "Require a merge strategy") {
-                    //TODO
+                  } else if (
+                    pullRequestPolicy.displayName === "Comment requirements"
+                  ) {
+                    pullRequestPolicy.isCommentOk =
+                      item.comment.totalcomment -
+                        item.comment.terminatedComment ===
+                      0;
+                  } else if (
+                    pullRequestPolicy.displayName === "Require a merge strategy"
+                  ) {
+                    // TODO
                   } else if (pullRequestPolicy.displayName === "Build") {
-                    //TODO
+                    // TODO
                   } else if (pullRequestPolicy.displayName === "Status") {
-                    //TODO
-                  } else if (pullRequestPolicy.displayName === "Required reviewers") {
+                    // TODO
+                  } else if (
+                    pullRequestPolicy.displayName === "Required reviewers"
+                  ) {
                     let reviewers;
 
                     if (pullRequestPolicy.creatorVoteCounts) {
-                      reviewers = item.gitPullRequest.reviewers.filter(x => x.vote === 10 || x.vote === 5);
+                      reviewers = item.gitPullRequest.reviewers.filter(
+                        x => x.vote === 10 || x.vote === 5
+                      );
                     } else {
-                      reviewers = item.gitPullRequest.reviewers.filter(x => (x.vote === 10 || x.vote === 5) && x.id !== item.gitPullRequest.createdBy.id);
+                      reviewers = item.gitPullRequest.reviewers.filter(
+                        x =>
+                          (x.vote === 10 || x.vote === 5) &&
+                          x.id !== item.gitPullRequest.createdBy.id
+                      );
                     }
 
                     let reviewerCount = 0;
 
-                    if (pullRequestPolicy.requiredReviewers !== undefined &&
+                    if (
+                      pullRequestPolicy.requiredReviewers !== undefined &&
                       pullRequestPolicy.requiredReviewers.length > 0 &&
                       reviewers !== undefined &&
-                      reviewers.length > 0) {
+                      reviewers.length > 0
+                    ) {
                       reviewers.forEach(reviewer => {
-                        pullRequestPolicy.requiredReviewers!.forEach(requiredReviewer => {
-
-                          if (reviewer.id === requiredReviewer.id) {
-                            reviewerCount += 1;
+                        pullRequestPolicy.requiredReviewers!.forEach(
+                          requiredReviewer => {
+                            if (reviewer.id === requiredReviewer.id) {
+                              reviewerCount += 1;
+                            }
                           }
-                        });
+                        );
                       });
                     }
 
-                    pullRequestPolicy.isRequiredReviewerOk = (pullRequestPolicy.minimumApproverCount !== undefined &&
+                    pullRequestPolicy.isRequiredReviewerOk =
+                      pullRequestPolicy.minimumApproverCount !== undefined &&
                       reviewerCount >= pullRequestPolicy.minimumApproverCount &&
-                      (pullRequestPolicy.isRequiredReviewerOk === undefined || pullRequestPolicy.isRequiredReviewerOk));
+                      (pullRequestPolicy.isRequiredReviewerOk === undefined ||
+                        pullRequestPolicy.isRequiredReviewerOk);
                   }
 
                   item.policies.push(pullRequestPolicy);
@@ -600,41 +676,47 @@ export function getPullRequestPolicyAsync(
               });
 
               if (item.policies !== undefined && item.policies.length > 0) {
-
-                item.isAllPoliciesOk = item.policies.every(p =>
-                  (p.isBuildOk === undefined || p.isBuildOk) &&
-                  (p.isCommentOk === undefined || p.isCommentOk) &&
-                  (p.isRequiredReviewerOk === undefined || p.isRequiredReviewerOk) &&
-                  (p.isReviewersApprovedOk === undefined || p.isReviewersApprovedOk) &&
-                  (p.isWorkItemOk === undefined || p.isWorkItemOk));
+                item.isAllPoliciesOk = item.policies.every(
+                  p =>
+                    (p.isBuildOk === undefined || p.isBuildOk) &&
+                    (p.isCommentOk === undefined || p.isCommentOk) &&
+                    (p.isRequiredReviewerOk === undefined ||
+                      p.isRequiredReviewerOk) &&
+                    (p.isReviewersApprovedOk === undefined ||
+                      p.isReviewersApprovedOk) &&
+                    (p.isWorkItemOk === undefined || p.isWorkItemOk)
+                );
               }
             }
           })
           .catch(error => {
-            console.log("There was an error calling the policies (method: getPolicyConfigurations).");
+            console.log(
+              "There was an error calling the policies (method: getPolicyConfigurations)."
+            );
             console.log(error);
             reject(error);
           });
 
         return item;
       })
-
-    ).then(() => {
-      processPolicyBuildAsync(pullRequestList);
-      resolve(pullRequestList);
-    }).catch(error => {
-      reject(error);
-    });
+    )
+      .then(() => {
+        processPolicyBuildAsync(pullRequestList);
+        resolve(pullRequestList);
+      })
+      .catch(error => {
+        reject(error);
+      });
   });
 }
 
 /**
-  * Process policy build async.
-  * @remarks
-  * Get the build information if there is a build policy.
-  * @param pullRequestList - List of pull request
-  * @returns pull request list with build information
-  */
+ * Process policy build async.
+ * @remarks
+ * Get the build information if there is a build policy.
+ * @param pullRequestList - List of pull request
+ * @returns pull request list with build information
+ */
 export function processPolicyBuildAsync(
   pullRequestList: PullRequestModel[]
 ): Promise<PullRequestModel[]> {
@@ -649,36 +731,62 @@ export function processPolicyBuildAsync(
   return new Promise<PullRequestModel[]>((resolve, reject) => {
     Promise.all(
       pullRequestList.map(item => {
-
         if (item.policies !== undefined && item.policies.length > 0) {
-
-          let policies = item.policies.filter(x => x.buildDefinitionId !== undefined);
+          const policies = item.policies.filter(
+            x => x.buildDefinitionId !== undefined
+          );
           if (policies !== undefined && policies.length > 0) {
             policies.map(async policy => {
-
               if (policy.buildDefinitionId !== undefined) {
-                let definitions: number[] = [];
-                let repositoryType: string = "TfsGit";
+                const definitions: number[] = [];
+                const repositoryType: string = "TfsGit";
                 definitions.push(policy.buildDefinitionId);
 
-                build.getBuilds(item.projectName, definitions, undefined, undefined, undefined, undefined,
-                  undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined,
-                  undefined, undefined, undefined, undefined, undefined, policy.repositoryId, repositoryType)
+                build
+                  .getBuilds(
+                    item.projectName,
+                    definitions,
+                    undefined,
+                    undefined,
+                    undefined,
+                    undefined,
+                    undefined,
+                    undefined,
+                    undefined,
+                    undefined,
+                    undefined,
+                    undefined,
+                    undefined,
+                    undefined,
+                    undefined,
+                    undefined,
+                    undefined,
+                    undefined,
+                    undefined,
+                    policy.repositoryId,
+                    repositoryType
+                  )
                   .then(builds => {
-
                     if (builds !== undefined && builds.length > 0) {
-                      let build = builds.sort(x => x.buildNumberRevision).reverse()[0];
+                      const build = builds
+                        .sort(x => x.buildNumberRevision)
+                        .reverse()[0];
 
-                      let parameters = JSON.parse(build.parameters);
+                        const parameters = JSON.parse(build.parameters);
 
-                      policy.isBuildOk = (item.gitPullRequest.pullRequestId.toString() === parameters["system.pullRequest.pullRequestId"] &&
-                        policy.refName === parameters["system.pullRequest.targetBranch"] &&
+                      policy.isBuildOk =
+                        item.gitPullRequest.pullRequestId.toString() ===
+                          parameters["system.pullRequest.pullRequestId"] &&
+                        policy.refName ===
+                          parameters["system.pullRequest.targetBranch"] &&
                         build.status === BuildStatus.Completed &&
-                        build.result === BuildResult.Succeeded);
+                        build.result === BuildResult.Succeeded;
                     }
                   })
                   .catch(error => {
-                    console.log("There was an error calling the builds (method: processPolicyBuildAsync).");
+                    console.log(
+                      "There was an error calling the builds (method: processPolicyBuildAsync)."
+                    );
                     console.log(error);
                     reject(error);
                   });
@@ -691,11 +799,13 @@ export function processPolicyBuildAsync(
 
         return item;
       })
-    ).then(() => {
-      resolve(pullRequestList);
-    }).catch(error => {
-      reject(error);
-    });
+    )
+      .then(() => {
+        resolve(pullRequestList);
+      })
+      .catch(error => {
+        reject(error);
+      });
   });
 }
 
