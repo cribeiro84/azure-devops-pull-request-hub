@@ -96,7 +96,11 @@ export function TitleColumn(
                 <Icon iconName="GitLogo" />
               </div>
               <div className="flex-column title-column-subdetails">
-                <Link className="bolt-link subtle" href={tableItem.repositoryHref} target="_blank">
+                <Link
+                  className="bolt-link subtle"
+                  href={tableItem.repositoryHref}
+                  target="_blank"
+                >
                   {tableItem.gitPullRequest.repository.name}
                 </Link>
               </div>
@@ -104,7 +108,11 @@ export function TitleColumn(
                 <Icon iconName="BranchMerge" />
               </div>
               <div className="flex-column title-column-subdetails">
-                <Link className="bolt-link subtle" href={tableItem.sourceBranchHref} target="_blank">
+                <Link
+                  className="bolt-link subtle"
+                  href={tableItem.sourceBranchHref}
+                  target="_blank"
+                >
                   {tableItem.sourceBranch!.branchName}
                 </Link>
               </div>
@@ -112,7 +120,11 @@ export function TitleColumn(
                 <Icon iconName="BranchMerge" />
               </div>
               <div className="flex-column title-column-subdetails">
-                <Link className="bolt-link subtle" href={tableItem.targetBranchHref} target="_blank">
+                <Link
+                  className="bolt-link subtle"
+                  href={tableItem.targetBranchHref}
+                  target="_blank"
+                >
                   {tableItem.targetBranch!.branchName}
                 </Link>
               </div>
@@ -145,7 +157,7 @@ export function DetailsColumn(
       line1={
         <div>
           <Button
-            className="branch-button text-ellipsis"
+            className="button-icon-bold"
             text={tableItem.gitPullRequest.createdBy.displayName}
             iconProps={{
               render: () => {
@@ -172,6 +184,110 @@ export function DetailsColumn(
       line2={
         <div>
           <Button
+            className="button-icon"
+            text={
+              tableItem.comment.terminatedComment.toString() +
+              "/" +
+              tableItem.comment.totalcomment.toString()
+            }
+            iconProps={{ iconName: "ActivityFeed" }}
+            tooltipProps={{
+              text:
+                tableItem.comment.terminatedComment.toString() +
+                " out of " +
+                tableItem.comment.totalcomment.toString() +
+                " comments are marked as resolved, won't fix, or closed",
+              delayMs: 500
+            }}
+            subtle={true}
+          />
+
+          <Icon
+            className={
+              tableItem.isAllPoliciesOk !== undefined
+                ? tableItem.isAllPoliciesOk
+                  ? "icon-policy-green"
+                  : "icon-policy-red"
+                : ""
+            }
+            iconName="Ribbon"
+            tooltipProps={{
+              renderContent: () => {
+                return (
+                  <table className="table-border-spacing">
+                    <tr>
+                      <td colSpan={2}>
+                        <b>Policies</b>
+                      </td>
+                    </tr>
+                    {tableItem.policies !== undefined &&
+                    tableItem.policies.length > 0 ? (
+                      tableItem.policies.map(policy => {
+                        return policy.isReviewersApprovedOk !== undefined ? (
+                            <tr>
+                              <td className="td-vertical-align">
+                              <span className={`fabric-icon ms-Icon--${policy.isReviewersApprovedOk ? "StatusCircleCheckmark icon-green" : "StatusCircleErrorX icon-red"}`} />
+                              </td>
+                              <td className="span-tooltip">
+                                {policy.reviewerCount} of{" "}
+                                {policy.minimumApproverCount} reviewers approved
+                              </td>
+                            </tr>
+                        ) : policy.isRequiredReviewerOk !== undefined ? (
+                            <tr>
+                              <td className="td-vertical-align">
+                              <span className={`fabric-icon ms-Icon--${policy.isRequiredReviewerOk ? "StatusCircleCheckmark icon-green" : "StatusCircleErrorX icon-red"}`} />
+                              </td>
+                              <td className="span-tooltip">
+                                Required reviewers approved
+                                {policy.requiredReviewers !== undefined &&
+                                policy.requiredReviewers.length > 0 &&
+                                policy.requiredReviewers[0].displayName !== ""
+                                  ? " - " +
+                                    policy.requiredReviewers[0].displayName
+                                  : null}
+                              </td>
+                            </tr>
+                        ) : policy.isWorkItemOk !== undefined ? (
+                            <tr>
+                              <td className="td-vertical-align">
+                              <span className={`fabric-icon ms-Icon--${policy.isWorkItemOk ? "StatusCircleCheckmark icon-green" : "StatusCircleErrorX icon-red"}`} />
+                              </td>
+                              <td className="span-tooltip">
+                                Work items linked
+                              </td>
+                            </tr>
+                        ) : policy.isCommentOk !== undefined ? (
+                            <tr>
+                              <td className="td-vertical-align">
+                              <span className={`fabric-icon ms-Icon--${policy.isCommentOk ? "StatusCircleCheckmark icon-green" : "StatusCircleErrorX icon-red"}`} />
+                              </td>
+                              <td className="span-tooltip">
+                                All comments resolved
+                              </td>
+                            </tr>
+                        ) : policy.isBuildOk !== undefined ? (
+                            <tr>
+                              <td className="td-vertical-align">
+                              <span className={`fabric-icon ms-Icon--${policy.isBuildOk ? "StatusCircleCheckmark icon-green" : "StatusCircleErrorX icon-red"}`} />
+                              </td>
+                              <td className="span-tooltip">Build success</td>
+                            </tr>
+                        ) : null;
+                      })
+                    ) : (
+                      <tr>
+                        <td colSpan={2}>- No policies</td>
+                      </tr>
+                    )}
+                  </table>
+                );
+              }
+            }}
+          />
+
+          <Button
+            className="button-spaceicon-bold"
             iconProps={{ iconName: "BranchCommit" }}
             onClick={onClickLastCommitHandler}
             subtle={true}
@@ -183,25 +299,32 @@ export function DetailsColumn(
             {tableItem.lastShortCommitId}
           </Button>
           {" - "}
-            <Button
-              iconProps={{ iconName: "Clock" }}
-              onClick={onClickLastCommitHandler}
-              subtle={true}
+          <Button
+            className="button-icon"
+            iconProps={{ iconName: "Clock" }}
+            onClick={onClickLastCommitHandler}
+            subtle={true}
+            tooltipProps={{
+              text: `Last commit date and time`,
+              delayMs: 500
+            }}
+            disabled={true}
+          >
+            <Duration
+              className="fontSize font-size"
               tooltipProps={{
-                text: `Last commit date and time`,
+                text: `When the last commit was done`,
                 delayMs: 500
               }}
-              disabled={true}
-            >
-              <Duration
-                tooltipProps={{
-                  text: `When the last commit was done`,
-                  delayMs: 500
-                }}
-                startDate={((tableItem.lastCommitDetails === undefined || tableItem.lastCommitDetails.committer === undefined) ? tableItem.gitPullRequest.creationDate : tableItem.lastCommitDetails!.committer.date!)}
-                endDate={new Date(Date.now())}
-              />
-            </Button>
+              startDate={
+                tableItem.lastCommitDetails === undefined ||
+                tableItem.lastCommitDetails.committer === undefined
+                  ? tableItem.gitPullRequest.creationDate
+                  : tableItem.lastCommitDetails!.committer.date!
+              }
+              endDate={new Date(Date.now())}
+            />
+          </Button>
         </div>
       }
     />

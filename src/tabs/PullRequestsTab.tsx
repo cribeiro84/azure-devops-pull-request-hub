@@ -61,13 +61,16 @@ import {
 } from "azure-devops-extension-api/Core/Core";
 import { IListBoxItem } from "azure-devops-ui/ListBox";
 import { getPullRequestDetailsAsync } from "./PulRequestsTabData";
+import { getPullRequestThreadAsync } from "./PulRequestsTabData";
+import { getPullRequestWorkItemAsync } from "./PulRequestsTabData";
+import { getPullRequestPolicyAsync } from "./PulRequestsTabData";
 import { FilterBarHub } from "../components/FilterBarHub";
 import { hasPullRequestFailure } from "../models/constants";
 
 export class PullRequestsTab extends React.Component<
   {},
   Data.IPullRequestsTabState
-> {
+  > {
   private baseUrl: string = "";
   private prRowSelecion = new ListSelection({
     selectOnFocus: true,
@@ -167,7 +170,7 @@ export class PullRequestsTab extends React.Component<
               .then(() => {
                 this.getAllPullRequests().catch(error =>
                   this.handleError(error)
-                );
+                  );
               })
               .catch(error => {
                 this.handleError(error);
@@ -233,7 +236,7 @@ export class PullRequestsTab extends React.Component<
     } else {
       const baseUrlFormat = `${AZDEVOPS_CLOUD_API_ORGANIZATION}/${AZDEVOPS_API_ORGANIZATION_RESOURCE}/?accountName=${
         DevOps.getHost().name
-      }&api-version=5.0-preview.1`;
+        }&api-version=5.0-preview.1`;
 
       await fetch(baseUrlFormat)
         .then(res => res.json())
@@ -279,7 +282,8 @@ export class PullRequestsTab extends React.Component<
     let newPullRequestList = Object.assign([], pullRequests);
 
     // clear the pull request list to be reloaded...
-    newPullRequestList.splice(0, newPullRequestList.length - 1);
+    newPullRequestList.splice(0, newPullRequestList.length);
+
     this.pullRequestItemProvider = new ObservableArray<
       | Data.PullRequestModel
       | IReadonlyObservableValue<Data.PullRequestModel | undefined>
@@ -334,25 +338,33 @@ export class PullRequestsTab extends React.Component<
 
         this.loadLists();
 
-        getPullRequestDetailsAsync(newPullRequestList)
+        const pullRequestDetails = getPullRequestDetailsAsync(newPullRequestList);
+
+        const pullRequestThread = getPullRequestThreadAsync(newPullRequestList);
+
+        const pullRequestWorkItem = getPullRequestWorkItemAsync(newPullRequestList);
+
+        const pullRequestPolicy = getPullRequestPolicyAsync(newPullRequestList);
+
+        Promise.all([pullRequestDetails, pullRequestThread, pullRequestWorkItem, pullRequestPolicy])
           .then(updated => {
             this.setState(
               produce<Data.IPullRequestsTabState>(
                 (draftObject: { pullRequests: Data.PullRequestModel[] }) => {
-                  draftObject.pullRequests = updated;
+                  draftObject.pullRequests = updated[0];
                 }
               )
             );
 
-            setTimeout(() => {
+            //setTimeout(() => {
               this.filterPullRequests();
-            }, 500);
+            //}, 1500);
           })
           .catch(error => {
             console.log(
-              "There was an error fetching addtional details for the PRs. Details: " +
-                error
-            );
+              "There was an error fetching addtional details for the PRs. Error: " +
+              error
+              );
           });
       });
   }
@@ -478,11 +490,11 @@ export class PullRequestsTab extends React.Component<
       filteredPullRequest = filteredPullRequest.filter(pr => {
         const found = selectedAlternateStatusPrFilter.some(item => {
           // tslint:disable-next-line:triple-equals
-          return (pr.gitPullRequest.isDraft === true && (item == 0))
+          return (pr.gitPullRequest.isDraft === true && (item === 0))
             // tslint:disable-next-line:triple-equals
-            || (hasPullRequestFailure(pr) === true && (item == 1))
+            || (hasPullRequestFailure(pr) === true && (item === 1))
             // tslint:disable-next-line:triple-equals
-            || (pr.isAutoCompleteSet === true && (item == 2));
+            || (pr.isAutoCompleteSet === true && (item === 2));
         });
         return found;
       });
