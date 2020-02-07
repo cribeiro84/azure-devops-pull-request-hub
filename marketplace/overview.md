@@ -24,6 +24,8 @@ Manage your Pull Requests of all your projects and repositories at a single plac
 - Easily identify the reviewers of that Pull Request
 - Last Commit push date
 - You can now manage all Pull Requests across all projects you have access to
+- Comments count + resolved ones (For instance: 1/2 resolved)
+- Pull Request policies check (Reviewers, build, so on)
 
 ## Future releaes
 
@@ -32,11 +34,18 @@ Manage your Pull Requests of all your projects and repositories at a single plac
   - Selected search filters
   - Last PR reviewed (highlight)
 - Work Items count
-- Comments count + resolved ones (For instance: 1/2 resolved)
 - Where you left:
   - New badge (Pill) for your voted PRs with new changes
 
-## Updates
+## Updates (dd/MM/yyyy)
+
+### 03/02/2020
+
+- UI tweaks
+- Code refactoring
+- New features
+  - Comments count + resolved ones (For instance: 1/2 resolved)
+  - Pull Request policies check (Reviewers, build, so on)
 
 ### 19/01/2020
 
