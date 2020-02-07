@@ -70,7 +70,7 @@ import { hasPullRequestFailure } from "../models/constants";
 export class PullRequestsTab extends React.Component<
   {},
   Data.IPullRequestsTabState
-  > {
+> {
   private baseUrl: string = "";
   private prRowSelecion = new ListSelection({
     selectOnFocus: true,
@@ -170,7 +170,7 @@ export class PullRequestsTab extends React.Component<
               .then(() => {
                 this.getAllPullRequests().catch(error =>
                   this.handleError(error)
-                  );
+                );
               })
               .catch(error => {
                 this.handleError(error);
@@ -236,7 +236,7 @@ export class PullRequestsTab extends React.Component<
     } else {
       const baseUrlFormat = `${AZDEVOPS_CLOUD_API_ORGANIZATION}/${AZDEVOPS_API_ORGANIZATION_RESOURCE}/?accountName=${
         DevOps.getHost().name
-        }&api-version=5.0-preview.1`;
+      }&api-version=5.0-preview.1`;
 
       await fetch(baseUrlFormat)
         .then(res => res.json())
@@ -338,15 +338,24 @@ export class PullRequestsTab extends React.Component<
 
         this.loadLists();
 
-        const pullRequestDetails = getPullRequestDetailsAsync(newPullRequestList);
+        const pullRequestDetails = getPullRequestDetailsAsync(
+          newPullRequestList
+        );
 
         const pullRequestThread = getPullRequestThreadAsync(newPullRequestList);
 
-        const pullRequestWorkItem = getPullRequestWorkItemAsync(newPullRequestList);
+        const pullRequestWorkItem = getPullRequestWorkItemAsync(
+          newPullRequestList
+        );
 
         const pullRequestPolicy = getPullRequestPolicyAsync(newPullRequestList);
 
-        Promise.all([pullRequestDetails, pullRequestThread, pullRequestWorkItem, pullRequestPolicy])
+        Promise.all([
+          pullRequestDetails,
+          pullRequestThread,
+          pullRequestWorkItem,
+          pullRequestPolicy
+        ])
           .then(updated => {
             this.setState(
               produce<Data.IPullRequestsTabState>(
@@ -356,15 +365,13 @@ export class PullRequestsTab extends React.Component<
               )
             );
 
-            //setTimeout(() => {
-              this.filterPullRequests();
-            //}, 1500);
+            this.filterPullRequests();
           })
           .catch(error => {
             console.log(
               "There was an error fetching addtional details for the PRs. Error: " +
-              error
-              );
+                error
+            );
           });
       });
   }
@@ -407,9 +414,9 @@ export class PullRequestsTab extends React.Component<
       "selectedMyApprovalStatuses"
     );
 
-    const selectedAlternateStatusPrFilter = this.filter.getFilterItemValue<number[]>(
-      "selectedAlternateStatusPr"
-    );
+    const selectedAlternateStatusPrFilter = this.filter.getFilterItemValue<
+      number[]
+    >("selectedAlternateStatusPr");
 
     let filteredPullRequest = pullRequests;
 
@@ -486,15 +493,20 @@ export class PullRequestsTab extends React.Component<
       });
     }
 
-    if (selectedAlternateStatusPrFilter && selectedAlternateStatusPrFilter.length > 0) {
+    if (
+      selectedAlternateStatusPrFilter &&
+      selectedAlternateStatusPrFilter.length > 0
+    ) {
       filteredPullRequest = filteredPullRequest.filter(pr => {
         const found = selectedAlternateStatusPrFilter.some(item => {
-          // tslint:disable-next-line:triple-equals
-          return (pr.gitPullRequest.isDraft === true && (item === 0))
+          return (
             // tslint:disable-next-line:triple-equals
-            || (hasPullRequestFailure(pr) === true && (item === 1))
+            (pr.gitPullRequest.isDraft === true && item == 0) ||
             // tslint:disable-next-line:triple-equals
-            || (pr.isAutoCompleteSet === true && (item === 2));
+            (hasPullRequestFailure(pr) === true && item == 1) ||
+            // tslint:disable-next-line:triple-equals
+            (pr.isAutoCompleteSet === true && item == 2)
+          );
         });
         return found;
       });
@@ -682,7 +694,8 @@ export class PullRequestsTab extends React.Component<
           reviewerList={reviewerList}
           selectedReviewers={this.selectedReviewers}
           selectedMyApprovalStatuses={this.selectedMyApprovalStatuses}
-          selectedAlternateStatusPr={this.selectedAlternateStatusPr} />
+          selectedAlternateStatusPr={this.selectedAlternateStatusPr}
+        />
 
         {errorMessage.length > 0 ? (
           <ShowErrorMessage
@@ -705,7 +718,7 @@ export class PullRequestsTab extends React.Component<
     });
   }
 
-  async selectedProjectChanged (
+  async selectedProjectChanged(
     event: React.SyntheticEvent<HTMLElement, Event>,
     item: IListBoxItem<TeamProjectReference | ProjectInfo>
   ) {
