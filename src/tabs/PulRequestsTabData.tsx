@@ -526,11 +526,13 @@ export function getPullRequestPolicyAsync(
 
             if (policies !== undefined && policies.length > 0) {
               policies.map(policy => {
+
                 if (
-                  policy.settings.scope[0].repositoryId ===
-                    item.gitPullRequest.repository.id &&
-                  policy.settings.scope[0].refName ===
-                    item.gitPullRequest.targetRefName
+                    policy.settings.scope[0].repositoryId === item.gitPullRequest.repository.id &&
+                    (
+                      (policy.settings.scope[0].matchKind === "Exact" && policy.settings.scope[0].refName === item.gitPullRequest.targetRefName) ||
+                      (policy.settings.scope[0].matchKind === "Prefix" && item.gitPullRequest.targetRefName.startsWith(policy.settings.scope[0].refName))
+                    )
                 ) {
                   const pullRequestPolicy = new PullRequestPolicy();
 
@@ -573,9 +575,16 @@ export function getPullRequestPolicyAsync(
                         x => x.id === reviewerId
                       );
 
-                      if (reviewerFound !== undefined) {
-                        pullRequestRequiredReviewer.displayName =
-                          reviewerFound.displayName;
+                      if(reviewerFound !== undefined){
+                        if(reviewerFound.isContainer === undefined || reviewerFound.isContainer === false)
+                        {
+                          pullRequestRequiredReviewer.displayName = reviewerFound.displayName;
+                        } else {
+                          let name = reviewerFound!.displayName!.split("\\");
+                          if(name.length > 0){
+                            pullRequestRequiredReviewer.displayName = name[name.length - 1];
+                          }
+                        }
                       }
 
                       pullRequestPolicy.requiredReviewers!.push(
@@ -594,12 +603,12 @@ export function getPullRequestPolicyAsync(
 
                     if (pullRequestPolicy.creatorVoteCounts) {
                       reviewerCount = item.gitPullRequest.reviewers.filter(
-                        x => x.vote === 10 || x.vote === 5
+                        x => (x.vote === 10 || x.vote === 5) && (x.isContainer === undefined || x.isContainer === false)
                       ).length;
                     } else {
                       reviewerCount = item.gitPullRequest.reviewers.filter(
                         x =>
-                          (x.vote === 10 || x.vote === 5) &&
+                          (x.vote === 10 || x.vote === 5) && (x.isContainer === undefined || x.isContainer === false) &&
                           x.id !== item.gitPullRequest.createdBy.id
                       ).length;
                     }
