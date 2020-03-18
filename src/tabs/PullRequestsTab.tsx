@@ -70,7 +70,7 @@ import { hasPullRequestFailure } from "../models/constants";
 export class PullRequestsTab extends React.Component<
   {},
   Data.IPullRequestsTabState
-> {
+  > {
   private baseUrl: string = "";
   private prRowSelecion = new ListSelection({
     selectOnFocus: true,
@@ -167,7 +167,18 @@ export class PullRequestsTab extends React.Component<
             );
 
             this.getRepositories(currentProject!)
-              .then(() => {
+              .then((repositories) => {
+                const storedRepos = this.getStoredSelectedRepositores();
+                if (storedRepos !== null) {
+                  storedRepos.forEach((repo: string) => {
+                    this.selectedRepos.select(
+                      repositories.findIndex(p => {
+                        return p.id === repo;
+                      })
+                    );
+                  });
+                }
+
                 this.getAllPullRequests().catch(error =>
                   this.handleError(error)
                 );
@@ -193,24 +204,41 @@ export class PullRequestsTab extends React.Component<
     });
   }
 
-  private async getRepositories(project: IProjectInfo | TeamProjectReference) {
+  private async getRepositories(project: IProjectInfo | TeamProjectReference): Promise<GitRepository[]> {
     this.setState({
       currentProject: project
     });
 
-    this.setState({
-      repositories: (
-        await this.gitClient.getRepositories(project.name, true)
-      ).sort((a: GitRepository, b: GitRepository) => {
-        if (a.name < b.name) {
-          return -1;
-        }
-        if (a.name > b.name) {
-          return 1;
-        }
-        return 0;
-      })
+    const repos = (
+      await this.gitClient.getRepositories(project.name, true)
+    ).sort((a: GitRepository, b: GitRepository) => {
+      if (a.name < b.name) {
+        return -1;
+      }
+      if (a.name > b.name) {
+        return 1;
+      }
+      return 0;
     });
+
+    this.setState({
+      repositories: repos
+    });
+
+    return repos;
+  }
+
+  private getStoredSelectedRepositores(): string[] | null {
+    const reposInStorage = localStorage.getItem("PRMH_SelectedRepos");
+    if (reposInStorage !== null) {
+      return JSON.parse(reposInStorage);
+    }
+
+    return null;
+  }
+
+  private storeSelectedRepositores(repositores: string[]) {
+    localStorage.setItem("PRMH_SelectedRepos", JSON.stringify(repositores))
   }
 
   private async getOrganizationBaseUrl() {
@@ -236,7 +264,7 @@ export class PullRequestsTab extends React.Component<
     } else {
       const baseUrlFormat = `${AZDEVOPS_CLOUD_API_ORGANIZATION}/${AZDEVOPS_API_ORGANIZATION_RESOURCE}/?accountName=${
         DevOps.getHost().name
-      }&api-version=5.0-preview.1`;
+        }&api-version=5.0-preview.1`;
 
       await fetch(baseUrlFormat)
         .then(res => res.json())
@@ -370,7 +398,7 @@ export class PullRequestsTab extends React.Component<
           .catch(error => {
             console.log(
               "There was an error fetching addtional details for the PRs. Error: " +
-                error
+              error
             );
           });
       });
@@ -391,11 +419,19 @@ export class PullRequestsTab extends React.Component<
   private filterPullRequests() {
     const { pullRequests } = this.state;
 
+    const repos = this.filter.getFilterItemValue<string[]>("selectedRepos");
+    let repositoriesFilter = repos;
+    if (repos === undefined) {
+      const storedRepos = this.getStoredSelectedRepositores();
+      if (storedRepos !== null) {
+        repositoriesFilter = storedRepos;
+      }
+    } else {
+      this.storeSelectedRepositores(repos);
+    }
+
     const filterPullRequestTitle = this.filter.getFilterItemValue<string>(
       "pullRequestTitle"
-    );
-    const repositoriesFilter = this.filter.getFilterItemValue<string[]>(
-      "selectedRepos"
     );
     const sourceBranchFilter = this.filter.getFilterItemValue<string[]>(
       "selectedSourceBranches"
