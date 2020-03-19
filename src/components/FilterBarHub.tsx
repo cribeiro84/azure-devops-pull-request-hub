@@ -50,7 +50,7 @@ export interface IFilterHubProps {
     item: IListBoxItem<TeamProjectReference | ProjectInfo>
   ) => void;
   selectedProject: DropdownSelection;
-  selectedRepos: DropdownSelection;
+  selectedRepos: DropdownMultiSelection;
   repositories: GitRepository[];
   selectedSourceBranches: DropdownMultiSelection;
   sourceBranchList: Data.BranchDropDownItem[];
