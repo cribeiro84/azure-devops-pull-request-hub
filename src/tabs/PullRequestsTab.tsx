@@ -468,7 +468,7 @@ export class PullRequestsTab extends React.Component<
 
     if (repositoriesFilter && repositoriesFilter.length > 0) {
       filteredPullRequest = filteredPullRequest.filter(pr => {
-        const found = repositoriesFilter.some(r => {
+        const found = repositoriesFilter!.some(r => {
           return pr.gitPullRequest.repository.id === r;
         });
 
