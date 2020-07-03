@@ -230,7 +230,7 @@ export function DetailsColumn(
                               </td>
                               <td className="span-tooltip">
                                 {policy.reviewerCount} of{" "}
-                                {policy.minimumApproverCount} reviewers approved
+                                at least {policy.minimumApproverCount} reviewers approved
                               </td>
                             </tr>
                         ) : policy.isRequiredReviewerOk !== undefined ? (
