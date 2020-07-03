@@ -410,7 +410,7 @@ export function getPullRequestThreadAsync(
               item.comment = new PullRequestComment();
 
               item.comment.totalcomment =
-                threads !== undefined ? threads.length : 0;
+                threads !== undefined ? threads.filter(x => !x.isDeleted).length : 0;
               item.comment.terminatedComment =
                 terminatedThread !== undefined ? terminatedThread.length : 0;
             }
