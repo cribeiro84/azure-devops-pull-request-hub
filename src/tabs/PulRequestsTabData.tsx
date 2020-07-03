@@ -789,7 +789,7 @@ export function processPolicyBuildAsync(
                         policy.refName ===
                           parameters["system.pullRequest.targetBranch"] &&
                         build.status === BuildStatus.Completed &&
-                        build.result === BuildResult.Succeeded || build.result === BuildResult.PartiallySucceeded;
+                        (build.result === BuildResult.Succeeded || build.result === BuildResult.PartiallySucceeded);
                     }
                   })
                   .catch(error => {
