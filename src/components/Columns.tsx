@@ -271,7 +271,7 @@ export function DetailsColumn(
                               <td className="td-vertical-align">
                               <span className={`fabric-icon ms-Icon--${policy.isBuildOk ? "StatusCircleCheckmark icon-green" : "StatusCircleErrorX icon-red"}`} />
                               </td>
-                              <td className="span-tooltip">Build success</td>
+                              <td className="span-tooltip">Build succeeded</td>
                             </tr>
                         ) : null;
                       })
