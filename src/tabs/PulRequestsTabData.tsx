@@ -232,7 +232,8 @@ export class PullRequestModel {
       this.gitPullRequest.reviewers
     );
     this.pullRequestProgressStatus = this.getStatusIndicatorData(
-      this.gitPullRequest.reviewers
+      this.gitPullRequest.reviewers,
+      this.isAllPoliciesOk
     );
     this.lastShortCommitId = this.gitPullRequest.lastMergeSourceCommit.commitId.substr(
       0,
@@ -259,7 +260,8 @@ export class PullRequestModel {
   }
 
   private getStatusIndicatorData(
-    reviewers: IdentityRefWithVote[]
+    reviewers: IdentityRefWithVote[],
+    isAllPoliciesOk: boolean | undefined
   ): IStatusIndicatorData {
     const indicatorData: IStatusIndicatorData = {
       label: "Waiting Review",
@@ -286,7 +288,7 @@ export class PullRequestModel {
     } else if (
       reviewers
         .filter(r => r.isRequired)
-        .every(r => r.vote === 10 || r.vote === 5)
+        .every(r => r.vote === 10 || r.vote === 5) && isAllPoliciesOk
     ) {
       indicatorData.statusProps = {
         ...Statuses.Success,
@@ -410,7 +412,7 @@ export function getPullRequestThreadAsync(
               item.comment = new PullRequestComment();
 
               item.comment.totalcomment =
-                threads !== undefined ? threads.length : 0;
+                threads !== undefined ? threads.filter(x => !x.isDeleted).length : 0;
               item.comment.terminatedComment =
                 terminatedThread !== undefined ? terminatedThread.length : 0;
             }
@@ -528,11 +530,11 @@ export function getPullRequestPolicyAsync(
               policies.map(policy => {
 
                 if (
-                    policy.settings.scope[0].repositoryId === item.gitPullRequest.repository.id &&
-                    (
-                      (policy.settings.scope[0].matchKind === "Exact" && policy.settings.scope[0].refName === item.gitPullRequest.targetRefName) ||
-                      (policy.settings.scope[0].matchKind === "Prefix" && item.gitPullRequest.targetRefName.startsWith(policy.settings.scope[0].refName))
-                    )
+                  policy.settings.scope[0].repositoryId === item.gitPullRequest.repository.id &&
+                  (
+                    (policy.settings.scope[0].matchKind === "Exact" && policy.settings.scope[0].refName === item.gitPullRequest.targetRefName) ||
+                    (policy.settings.scope[0].matchKind === "Prefix" && item.gitPullRequest.targetRefName.startsWith(policy.settings.scope[0].refName))
+                  )
                 ) {
                   const pullRequestPolicy = new PullRequestPolicy();
 
@@ -575,13 +577,12 @@ export function getPullRequestPolicyAsync(
                         x => x.id === reviewerId
                       );
 
-                      if(reviewerFound !== undefined){
-                        if(reviewerFound.isContainer === undefined || reviewerFound.isContainer === false)
-                        {
+                      if (reviewerFound !== undefined) {
+                        if (reviewerFound.isContainer === undefined || reviewerFound.isContainer === false) {
                           pullRequestRequiredReviewer.displayName = reviewerFound.displayName;
                         } else {
                           let name = reviewerFound!.displayName!.split("\\");
-                          if(name.length > 0){
+                          if (name.length > 0) {
                             pullRequestRequiredReviewer.displayName = name[name.length - 1];
                           }
                         }
@@ -614,7 +615,7 @@ export function getPullRequestPolicyAsync(
                     }
 
                     pullRequestPolicy.isReviewersApprovedOk =
-                      reviewerCount === pullRequestPolicy.minimumApproverCount;
+                      reviewerCount >= pullRequestPolicy.minimumApproverCount!;
                     pullRequestPolicy.reviewerCount = reviewerCount;
                   } else if (
                     pullRequestPolicy.displayName === "Work item linking"
@@ -625,7 +626,7 @@ export function getPullRequestPolicyAsync(
                   ) {
                     pullRequestPolicy.isCommentOk =
                       item.comment.totalcomment -
-                        item.comment.terminatedComment ===
+                      item.comment.terminatedComment ===
                       0;
                   } else if (
                     pullRequestPolicy.displayName === "Require a merge strategy"
@@ -781,15 +782,15 @@ export function processPolicyBuildAsync(
                         .sort(x => x.buildNumberRevision)
                         .reverse()[0];
 
-                        const parameters = JSON.parse(build.parameters);
+                      const parameters = JSON.parse(build.parameters);
 
                       policy.isBuildOk =
                         item.gitPullRequest.pullRequestId.toString() ===
-                          parameters["system.pullRequest.pullRequestId"] &&
+                        parameters["system.pullRequest.pullRequestId"] &&
                         policy.refName ===
-                          parameters["system.pullRequest.targetBranch"] &&
+                        parameters["system.pullRequest.targetBranch"] &&
                         build.status === BuildStatus.Completed &&
-                        build.result === BuildResult.Succeeded;
+                        (build.result === BuildResult.Succeeded || build.result === BuildResult.PartiallySucceeded);
                     }
                   })
                   .catch(error => {
