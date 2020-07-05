@@ -615,7 +615,7 @@ export function getPullRequestPolicyAsync(
                     }
 
                     pullRequestPolicy.isReviewersApprovedOk =
-                      reviewerCount >== pullRequestPolicy.minimumApproverCount;
+                      reviewerCount >= pullRequestPolicy.minimumApproverCount!;
                     pullRequestPolicy.reviewerCount = reviewerCount;
                   } else if (
                     pullRequestPolicy.displayName === "Work item linking"
