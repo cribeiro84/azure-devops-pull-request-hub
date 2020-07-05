@@ -30,6 +30,7 @@ import {
   BuildStatus,
   BuildResult
 } from "azure-devops-extension-api/Build/Build";
+import { hasPullRequestFailure } from "../models/constants";
 
 export const refsPreffix = "refs/heads/";
 
@@ -203,6 +204,7 @@ export class PullRequestModel {
   public comment: PullRequestComment;
   public policies: PullRequestPolicy[] = [];
   public isAllPoliciesOk?: boolean;
+  public hasFailures: boolean = false;
 
   constructor(
     public gitPullRequest: GitPullRequest,
@@ -213,7 +215,7 @@ export class PullRequestModel {
     this.setupPullRequest();
   }
 
-  private async setupPullRequest() {
+  public async setupPullRequest() {
     this.baseHostUrl = `${this.baseUrl}${this.projectName}`;
     this.title = `${this.gitPullRequest.pullRequestId} - ${this.gitPullRequest.title}`;
     this.sourceBranch = new BranchDropDownItem(
@@ -240,6 +242,7 @@ export class PullRequestModel {
       8
     );
     this.lastCommitUrl = `${this.baseHostUrl}/_git/${this.gitPullRequest.repository.name}/commit/${this.gitPullRequest.lastMergeSourceCommit.commitId}?refName=GB${this.gitPullRequest.sourceRefName}`;
+    this.hasFailures = hasPullRequestFailure(this);
   }
 
   private getCurrentUserVoteStatus(
@@ -272,7 +275,15 @@ export class PullRequestModel {
       return indicatorData;
     }
 
-    if (reviewers.some(r => r.vote === -10)) {
+    if (this.hasFailures)
+    {
+      indicatorData.statusProps = {
+        ...Statuses.Failed,
+        ariaLabel: "Pull Request is in failure status."
+      };
+      indicatorData.label = "Pull Request is in failure status.";
+    }
+    else if (reviewers.some(r => r.vote === -10)) {
       indicatorData.statusProps = {
         ...Statuses.Failed,
         ariaLabel: "One or more of the reviewers has rejected."
@@ -424,6 +435,8 @@ export function getPullRequestThreadAsync(
             console.log(error);
             reject(error);
           });
+
+          item.setupPullRequest();
 
         return item;
       })
@@ -697,6 +710,14 @@ export function getPullRequestPolicyAsync(
                     (p.isWorkItemOk === undefined || p.isWorkItemOk)
                 );
               }
+              else
+              {
+                item.isAllPoliciesOk = true;
+              }
+
+              console.log(item);
+
+              item.setupPullRequest();
             }
           })
           .catch(error => {
