@@ -715,8 +715,6 @@ export function getPullRequestPolicyAsync(
                 item.isAllPoliciesOk = true;
               }
 
-              console.log(item);
-
               item.setupPullRequest();
             }
           })
@@ -799,19 +797,21 @@ export function processPolicyBuildAsync(
                   )
                   .then(builds => {
                     if (builds !== undefined && builds.length > 0) {
-                      const build = builds
-                        .sort(x => x.buildNumberRevision)
-                        .reverse()[0];
+                      const build = builds[0];
 
-                      const parameters = JSON.parse(build.parameters);
+                        console.log(build);
+
+                        console.log(parseInt(build.triggerInfo["pr.number"]));
+                        console.log(item.gitPullRequest.pullRequestId);
+                        console.log(build.status);
+                        console.log(build.result);
 
                       policy.isBuildOk =
-                        item.gitPullRequest.pullRequestId.toString() ===
-                        parameters["system.pullRequest.pullRequestId"] &&
-                        policy.refName ===
-                        parameters["system.pullRequest.targetBranch"] &&
+                        parseInt(build.triggerInfo["pr.number"]) === item.gitPullRequest.pullRequestId &&
                         build.status === BuildStatus.Completed &&
                         (build.result === BuildResult.Succeeded || build.result === BuildResult.PartiallySucceeded);
+
+                        console.log(policy.isBuildOk);
                     }
                   })
                   .catch(error => {

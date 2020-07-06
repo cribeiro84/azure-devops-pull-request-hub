@@ -203,6 +203,7 @@ export function DetailsColumn(
           />
 
           <Icon
+            key={`pr-${tableItem.gitPullRequest.pullRequestId}`}
             className={
               tableItem.isAllPoliciesOk !== undefined
                 ? tableItem.isAllPoliciesOk
@@ -215,16 +216,19 @@ export function DetailsColumn(
               renderContent: () => {
                 return (
                   <table className="table-border-spacing">
+                    <thead>
                     <tr>
                       <td colSpan={2}>
                         <b>Policies</b>
                       </td>
                     </tr>
+                    </thead>
+                    <tbody>
                     {tableItem.policies !== undefined &&
                     tableItem.policies.length > 0 ? (
                       tableItem.policies.map(policy => {
                         return policy.isReviewersApprovedOk !== undefined ? (
-                            <tr>
+                            <tr key={`pr-status1-tr-${policy.id}-${tableItem.gitPullRequest.pullRequestId}`}>
                               <td className="td-vertical-align">
                               <span className={`fabric-icon ms-Icon--${policy.isReviewersApprovedOk ? "StatusCircleCheckmark icon-green" : "StatusCircleErrorX icon-red"}`} />
                               </td>
@@ -234,7 +238,7 @@ export function DetailsColumn(
                               </td>
                             </tr>
                         ) : policy.isRequiredReviewerOk !== undefined ? (
-                            <tr>
+                          <tr key={`pr-status2-tr-${policy.id}-${tableItem.gitPullRequest.pullRequestId}`}>
                               <td className="td-vertical-align">
                               <span className={`fabric-icon ms-Icon--${policy.isRequiredReviewerOk ? "StatusCircleCheckmark icon-green" : "StatusCircleErrorX icon-red"}`} />
                               </td>
@@ -249,7 +253,7 @@ export function DetailsColumn(
                               </td>
                             </tr>
                         ) : policy.isWorkItemOk !== undefined ? (
-                            <tr>
+                          <tr key={`pr-status3-tr-${policy.id}-${tableItem.gitPullRequest.pullRequestId}`}>
                               <td className="td-vertical-align">
                               <span className={`fabric-icon ms-Icon--${policy.isWorkItemOk ? "StatusCircleCheckmark icon-green" : "StatusCircleErrorX icon-red"}`} />
                               </td>
@@ -258,7 +262,7 @@ export function DetailsColumn(
                               </td>
                             </tr>
                         ) : policy.isCommentOk !== undefined ? (
-                            <tr>
+                          <tr key={`pr-status4-tr-${policy.id}-${tableItem.gitPullRequest.pullRequestId}`}>
                               <td className="td-vertical-align">
                               <span className={`fabric-icon ms-Icon--${policy.isCommentOk ? "StatusCircleCheckmark icon-green" : "StatusCircleErrorX icon-red"}`} />
                               </td>
@@ -267,19 +271,20 @@ export function DetailsColumn(
                               </td>
                             </tr>
                         ) : policy.isBuildOk !== undefined ? (
-                            <tr>
+                          <tr key={`pr-status5-tr-${policy.id}-${tableItem.gitPullRequest.pullRequestId}`}>
                               <td className="td-vertical-align">
                               <span className={`fabric-icon ms-Icon--${policy.isBuildOk ? "StatusCircleCheckmark icon-green" : "StatusCircleErrorX icon-red"}`} />
                               </td>
-                              <td className="span-tooltip">Build succeeded</td>
+                              <td className="span-tooltip">Build {policy.isBuildOk ? "" : "not"} succeeded</td>
                             </tr>
                         ) : null;
                       })
                     ) : (
-                      <tr>
+                      <tr key={`pr-status6-tr-nopolicy-${tableItem.gitPullRequest.pullRequestId}`}>
                         <td colSpan={2}>- No policies</td>
                       </tr>
                     )}
+                    </tbody>
                   </table>
                 );
               }
