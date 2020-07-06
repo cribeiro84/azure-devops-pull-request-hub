@@ -30,6 +30,7 @@ import {
   BuildStatus,
   BuildResult
 } from "azure-devops-extension-api/Build/Build";
+import { hasPullRequestFailure } from "../models/constants";
 
 export const refsPreffix = "refs/heads/";
 
@@ -203,6 +204,7 @@ export class PullRequestModel {
   public comment: PullRequestComment;
   public policies: PullRequestPolicy[] = [];
   public isAllPoliciesOk?: boolean;
+  public hasFailures: boolean = false;
 
   constructor(
     public gitPullRequest: GitPullRequest,
@@ -213,7 +215,7 @@ export class PullRequestModel {
     this.setupPullRequest();
   }
 
-  private async setupPullRequest() {
+  public async setupPullRequest() {
     this.baseHostUrl = `${this.baseUrl}${this.projectName}`;
     this.title = `${this.gitPullRequest.pullRequestId} - ${this.gitPullRequest.title}`;
     this.sourceBranch = new BranchDropDownItem(
@@ -240,6 +242,7 @@ export class PullRequestModel {
       8
     );
     this.lastCommitUrl = `${this.baseHostUrl}/_git/${this.gitPullRequest.repository.name}/commit/${this.gitPullRequest.lastMergeSourceCommit.commitId}?refName=GB${this.gitPullRequest.sourceRefName}`;
+    this.hasFailures = hasPullRequestFailure(this);
   }
 
   private getCurrentUserVoteStatus(
@@ -272,7 +275,15 @@ export class PullRequestModel {
       return indicatorData;
     }
 
-    if (reviewers.some(r => r.vote === -10)) {
+    if (this.hasFailures)
+    {
+      indicatorData.statusProps = {
+        ...Statuses.Failed,
+        ariaLabel: "Pull Request is in failure status."
+      };
+      indicatorData.label = "Pull Request is in failure status.";
+    }
+    else if (reviewers.some(r => r.vote === -10)) {
       indicatorData.statusProps = {
         ...Statuses.Failed,
         ariaLabel: "One or more of the reviewers has rejected."
@@ -424,6 +435,8 @@ export function getPullRequestThreadAsync(
             console.log(error);
             reject(error);
           });
+
+          item.setupPullRequest();
 
         return item;
       })
@@ -697,6 +710,12 @@ export function getPullRequestPolicyAsync(
                     (p.isWorkItemOk === undefined || p.isWorkItemOk)
                 );
               }
+              else
+              {
+                item.isAllPoliciesOk = true;
+              }
+
+              item.setupPullRequest();
             }
           })
           .catch(error => {
@@ -778,19 +797,21 @@ export function processPolicyBuildAsync(
                   )
                   .then(builds => {
                     if (builds !== undefined && builds.length > 0) {
-                      const build = builds
-                        .sort(x => x.buildNumberRevision)
-                        .reverse()[0];
+                      const build = builds[0];
 
-                      const parameters = JSON.parse(build.parameters);
+                        console.log(build);
+
+                        console.log(parseInt(build.triggerInfo["pr.number"]));
+                        console.log(item.gitPullRequest.pullRequestId);
+                        console.log(build.status);
+                        console.log(build.result);
 
                       policy.isBuildOk =
-                        item.gitPullRequest.pullRequestId.toString() ===
-                        parameters["system.pullRequest.pullRequestId"] &&
-                        policy.refName ===
-                        parameters["system.pullRequest.targetBranch"] &&
+                        parseInt(build.triggerInfo["pr.number"]) === item.gitPullRequest.pullRequestId &&
                         build.status === BuildStatus.Completed &&
                         (build.result === BuildResult.Succeeded || build.result === BuildResult.PartiallySucceeded);
+
+                        console.log(policy.isBuildOk);
                     }
                   })
                   .catch(error => {
