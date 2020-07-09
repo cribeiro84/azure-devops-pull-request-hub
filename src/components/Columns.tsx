@@ -11,7 +11,7 @@ import { css } from "azure-devops-ui/Util";
 import { Ago } from "azure-devops-ui/Ago";
 import { Duration } from "azure-devops-ui/Duration";
 import { Tooltip } from "azure-devops-ui/TooltipEx";
-import { ReviewerVoteIconStatus } from "./ReviewerVoteIconStatus";
+import { ReviewerVoteIconStatus, GetVoteIconColor } from "./ReviewerVoteIconStatus";
 import { VssPersona } from "azure-devops-ui/VssPersona";
 import { getStatusSizeValue } from "../models/constants";
 import { PullRequestPillInfo } from "./PullRequestPillInfo";
@@ -386,7 +386,7 @@ export function ReviewersColumn(
                 >
                   <div className="relative reviewer-vote-item">
                     <VssPersona
-                      className="icon-margin"
+                      className={`icon-margin repos-pr-reviewer-vote-avatar ${GetVoteIconColor(reviewer)}`}
                       imageUrl={reviewer._links.avatar.href}
                       size={"small"}
                     />
