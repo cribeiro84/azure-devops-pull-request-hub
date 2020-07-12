@@ -4,7 +4,7 @@ import { PillGroupOverflow } from "azure-devops-ui/PillGroup";
 import { CommonServiceIds } from "azure-devops-extension-api";
 import { ZeroDataActionType } from "azure-devops-ui/ZeroData";
 import { PullRequestAsyncStatus } from "azure-devops-extension-api/Git/Git";
-import * as Data from "../tabs/PulRequestsTabData"
+import * as PullRequestModel from "../models/PullRequestModel";
 
 export const AZDEVOPS_CLOUD_API_ORGANIZATION = "https://dev.azure.com";
 export const AZDEVOPS_CLOUD_API_ORGANIZATION_OLD =
@@ -21,7 +21,7 @@ export const isLocalhost = Boolean(
     )
 );
 
-export function hasPullRequestFailure(pullRequest: Data.PullRequestModel): boolean {
+export function hasPullRequestFailure(pullRequest: PullRequestModel.PullRequestModel): boolean {
   const prMergeStatus = pullRequest.gitPullRequest.mergeStatus;
   return (
     prMergeStatus === PullRequestAsyncStatus.Conflicts ||
@@ -37,15 +37,14 @@ export function hasPullRequestFailure(pullRequest: Data.PullRequestModel): boole
   * @param pullRequestList - Pull request model
   * @returns true to present the icon
   */
-export function hasPullRequestReviewerRequired(pullRequest: Data.PullRequestModel, voted: boolean): boolean {
-
+export function hasPullRequestReviewerRequired(pullRequest: PullRequestModel.PullRequestModel, voted: boolean): boolean {
   let prRevierwRequired = false;
 
   if(pullRequest.gitPullRequest.reviewers !== undefined &&
-    pullRequest.gitPullRequest.reviewers.length > 0){
+    pullRequest.gitPullRequest.reviewers.length > 0) {
       const reviewersFilterd = pullRequest.gitPullRequest.reviewers.filter(r => r.isRequired !== undefined);
 
-      if(reviewersFilterd !== undefined && reviewersFilterd.length > 0){
+      if(reviewersFilterd !== undefined && reviewersFilterd.length > 0) {
         prRevierwRequired = (voted === true) ?
           reviewersFilterd.some(x => x.isRequired && x.vote === 0)
           : reviewersFilterd.every(x => x.isRequired && x.vote !== 0);

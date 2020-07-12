@@ -2,16 +2,15 @@ import * as React from "react";
 
 import { Pill } from "azure-devops-ui/Pill";
 import { getPillSizeValue, getPillVariantValue, hasPullRequestFailure, hasPullRequestReviewerRequired } from "../models/constants";
-import * as Data from "../tabs/PulRequestsTabData";
+import * as PullRequestModel from "../models/PullRequestModel";
 import { PullRequestAsyncStatus } from "azure-devops-extension-api/Git/Git";
-import { PullRequestModel } from "../tabs/PulRequestsTabData";
 import { ConditionalChildren } from "azure-devops-ui/ConditionalChildren";
 import { PillGroup } from "azure-devops-ui/PillGroup";
 
 import "./Columns.scss";
 
 export function PullRequestPillInfo(props: any): JSX.Element {
-  const pullRequest: PullRequestModel = props.pullRequest;
+  const pullRequest: PullRequestModel.PullRequestModel = props.pullRequest;
 
   return (
     <PillGroup>
@@ -40,7 +39,7 @@ export function PullRequestPillInfo(props: any): JSX.Element {
 }
 
 function getPullRequestFailureDescription(
-  pullRequest: Data.PullRequestModel
+  pullRequest: PullRequestModel.PullRequestModel
 ): string {
   const prMergeStatus = pullRequest.gitPullRequest.mergeStatus;
   switch (prMergeStatus) {

@@ -16,6 +16,7 @@ import { VssPersona } from "azure-devops-ui/VssPersona";
 import { getStatusSizeValue } from "../models/constants";
 import { PullRequestPillInfo } from "./PullRequestPillInfo";
 import { Link } from "office-ui-fabric-react";
+import * as PullRequestModel from "../models/PullRequestModel";
 
 export function openNewWindowTab(targetUrl: string): void {
   window.open(targetUrl, "_blank");
@@ -24,8 +25,8 @@ export function openNewWindowTab(targetUrl: string): void {
 export function StatusColumn(
   rowIndex: number,
   columnIndex: number,
-  tableColumn: ITableColumn<Data.PullRequestModel>,
-  tableItem: Data.PullRequestModel
+  tableColumn: ITableColumn<PullRequestModel.PullRequestModel>,
+  tableItem: PullRequestModel.PullRequestModel
 ): JSX.Element {
   return (
     <TwoLineTableCell
@@ -56,8 +57,8 @@ export function StatusColumn(
 export function TitleColumn(
   rowIndex: number,
   columnIndex: number,
-  tableColumn: ITableColumn<Data.PullRequestModel>,
-  tableItem: Data.PullRequestModel
+  tableColumn: ITableColumn<PullRequestModel.PullRequestModel>,
+  tableItem: PullRequestModel.PullRequestModel
 ): JSX.Element {
   const tooltip = `from ${tableItem.sourceBranch!.branchName} into ${
     tableItem.targetBranch!.branchName
@@ -139,8 +140,8 @@ export function TitleColumn(
 export function DetailsColumn(
   rowIndex: number,
   columnIndex: number,
-  tableColumn: ITableColumn<Data.PullRequestModel>,
-  tableItem: Data.PullRequestModel
+  tableColumn: ITableColumn<PullRequestModel.PullRequestModel>,
+  tableItem: PullRequestModel.PullRequestModel
 ): JSX.Element {
   const onClickLastCommitHandler = (
     event: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>
@@ -203,7 +204,6 @@ export function DetailsColumn(
           />
 
           <Icon
-            key={`pr-${tableItem.gitPullRequest.pullRequestId}`}
             className={
               tableItem.isAllPoliciesOk !== undefined
                 ? tableItem.isAllPoliciesOk
@@ -339,8 +339,8 @@ export function DetailsColumn(
 export function ReviewersColumn(
   rowIndex: number,
   columnIndex: number,
-  tableColumn: ITableColumn<Data.PullRequestModel>,
-  tableItem: Data.PullRequestModel
+  tableColumn: ITableColumn<PullRequestModel.PullRequestModel>,
+  tableItem: PullRequestModel.PullRequestModel
 ): JSX.Element {
   return (
     <TwoLineTableCell
@@ -407,8 +407,8 @@ export function ReviewersColumn(
 export function DateColumn(
   rowIndex: number,
   columnIndex: number,
-  tableColumn: ITableColumn<Data.PullRequestModel>,
-  tableItem: Data.PullRequestModel
+  tableColumn: ITableColumn<PullRequestModel.PullRequestModel>,
+  tableItem: PullRequestModel.PullRequestModel
 ): JSX.Element {
   return (
     <TwoLineTableCell

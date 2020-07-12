@@ -1,7 +1,7 @@
 import "./PullRequestTab.scss";
 
 import * as React from "react";
-import { produce } from "immer";
+//import { produce } from "immer";
 
 import {
   AZDEVOPS_CLOUD_API_ORGANIZATION,
@@ -9,13 +9,14 @@ import {
   AZDEVOPS_CLOUD_API_ORGANIZATION_OLD,
   getCommonServiceIdsValue,
   getZeroDataActionTypeValue,
-  getStatusSizeValue
+  getStatusSizeValue,
 } from "../models/constants";
 
 import { Spinner, SpinnerSize } from "office-ui-fabric-react";
 
 // Custom
 import * as Data from "./PulRequestsTabData";
+import * as PullRequestModel from "../models/PullRequestModel";
 
 // Azure DevOps SDK
 import * as DevOps from "azure-devops-extension-sdk";
@@ -26,7 +27,7 @@ import { CoreRestClient } from "azure-devops-extension-api/Core/CoreClient";
 import { GitRestClient } from "azure-devops-extension-api/Git/GitClient";
 import {
   IdentityRefWithVote,
-  GitRepository
+  GitRepository,
 } from "azure-devops-extension-api/Git/Git";
 
 // Azure DevOps UI
@@ -38,15 +39,15 @@ import { Dialog } from "azure-devops-ui/Dialog";
 import {
   Filter,
   FILTER_CHANGE_EVENT,
-  IFilterItemState
+  IFilterItemState,
 } from "azure-devops-ui/Utilities/Filter";
 import {
   DropdownMultiSelection,
-  DropdownSelection
+  DropdownSelection,
 } from "azure-devops-ui/Utilities/DropdownSelection";
 import {
   ObservableArray,
-  IReadonlyObservableValue
+  IReadonlyObservableValue,
 } from "azure-devops-ui/Core/Observable";
 import { Card } from "azure-devops-ui/Card";
 import { Status, Statuses } from "azure-devops-ui/Status";
@@ -57,24 +58,20 @@ import { ObservableValue } from "azure-devops-ui/Core/Observable";
 import { IProjectInfo } from "azure-devops-extension-api/Common/CommonServices";
 import {
   TeamProjectReference,
-  ProjectInfo
+  ProjectInfo,
 } from "azure-devops-extension-api/Core/Core";
 import { IListBoxItem } from "azure-devops-ui/ListBox";
-import { getPullRequestDetailsAsync } from "./PulRequestsTabData";
-import { getPullRequestThreadAsync } from "./PulRequestsTabData";
-import { getPullRequestWorkItemAsync } from "./PulRequestsTabData";
-import { getPullRequestPolicyAsync } from "./PulRequestsTabData";
 import { FilterBarHub } from "../components/FilterBarHub";
 import { hasPullRequestFailure } from "../models/constants";
 
 export class PullRequestsTab extends React.Component<
   {},
   Data.IPullRequestsTabState
-  > {
+> {
   private baseUrl: string = "";
   private prRowSelecion = new ListSelection({
     selectOnFocus: true,
-    multiSelect: false
+    multiSelect: false,
   });
   private isDialogOpen = new ObservableValue<boolean>(false);
   private filter: Filter;
@@ -87,8 +84,8 @@ export class PullRequestsTab extends React.Component<
   private selectedMyApprovalStatuses = new DropdownMultiSelection();
   private selectedAlternateStatusPr = new DropdownMultiSelection();
   private pullRequestItemProvider = new ObservableArray<
-    | Data.PullRequestModel
-    | IReadonlyObservableValue<Data.PullRequestModel | undefined>
+    | PullRequestModel.PullRequestModel
+    | IReadonlyObservableValue<PullRequestModel.PullRequestModel | undefined>
   >();
 
   private readonly gitClient: GitRestClient;
@@ -113,7 +110,7 @@ export class PullRequestsTab extends React.Component<
       reviewerList: [],
       loading: true,
       errorMessage: "",
-      pullRequestCount: 0
+      pullRequestCount: 0,
     };
 
     this.filter = new Filter();
@@ -141,7 +138,7 @@ export class PullRequestsTab extends React.Component<
 
   private async initializeState() {
     this.setState({
-      pullRequests: []
+      pullRequests: [],
     });
   }
 
@@ -155,13 +152,13 @@ export class PullRequestsTab extends React.Component<
         const currentProject = await projectService.getProject();
 
         this.getTeamProjects()
-          .then(projects => {
+          .then((projects) => {
             this.setState({
-              projects
+              projects,
             });
 
             this.selectedProject.select(
-              projects.findIndex(p => {
+              projects.findIndex((p) => {
                 return p.id === currentProject!.id;
               })
             );
@@ -172,26 +169,27 @@ export class PullRequestsTab extends React.Component<
                 if (storedRepos !== null) {
                   storedRepos.forEach((repo: string) => {
                     this.selectedRepos.select(
-                      repositories.findIndex(p => {
+                      repositories.findIndex((p) => {
                         return p.id === repo;
                       })
                     );
                   });
                 }
 
-                this.getAllPullRequests().catch(error =>
+                this.getAllPullRequests()
+                .catch((error) =>
                   this.handleError(error)
                 );
               })
-              .catch(error => {
+              .catch((error) => {
                 this.handleError(error);
               });
           })
-          .catch(error => {
+          .catch((error) => {
             this.handleError(error);
           });
       })
-      .catch(error => {
+      .catch((error) => {
         this.handleError(error);
       });
   }
@@ -200,13 +198,15 @@ export class PullRequestsTab extends React.Component<
     console.log(error);
     this.setState({
       loading: false,
-      errorMessage: "There was an error during the extension load: " + error
+      errorMessage: "There was an error during the extension load: " + error,
     });
   }
 
-  private async getRepositories(project: IProjectInfo | TeamProjectReference): Promise<GitRepository[]> {
+  private async getRepositories(
+    project: IProjectInfo | TeamProjectReference
+  ): Promise<GitRepository[]> {
     this.setState({
-      currentProject: project
+      currentProject: project,
     });
 
     const repos = (
@@ -222,7 +222,7 @@ export class PullRequestsTab extends React.Component<
     });
 
     this.setState({
-      repositories: repos
+      repositories: repos,
     });
 
     return repos;
@@ -238,7 +238,7 @@ export class PullRequestsTab extends React.Component<
   }
 
   private storeSelectedRepositores(repositores: string[]) {
-    localStorage.setItem("PRMH_SelectedRepos", JSON.stringify(repositores))
+    localStorage.setItem("PRMH_SelectedRepos", JSON.stringify(repositores));
   }
 
   private async getOrganizationBaseUrl() {
@@ -264,14 +264,14 @@ export class PullRequestsTab extends React.Component<
     } else {
       const baseUrlFormat = `${AZDEVOPS_CLOUD_API_ORGANIZATION}/${AZDEVOPS_API_ORGANIZATION_RESOURCE}/?accountName=${
         DevOps.getHost().name
-        }&api-version=5.0-preview.1`;
+      }&api-version=5.0-preview.1`;
 
       await fetch(baseUrlFormat)
-        .then(res => res.json())
-        .then(result => {
+        .then((res) => res.json())
+        .then((result) => {
           this.baseUrl = result.locationUrl;
         })
-        .catch(error => {
+        .catch((error) => {
           this.handleError(
             "Unable to fetch Organization's URL. Details: " + error
           );
@@ -281,11 +281,13 @@ export class PullRequestsTab extends React.Component<
     console.log("Set base URL: " + this.baseUrl);
   }
 
-  private reloadPullRequestItemProvider(newList: Data.PullRequestModel[]) {
+  private reloadPullRequestItemProvider(
+    newList: PullRequestModel.PullRequestModel[]
+  ) {
     this.pullRequestItemProvider.splice(0, this.pullRequestItemProvider.length);
     this.pullRequestItemProvider.push(...newList);
     this.setState({
-      pullRequestCount: newList.length
+      pullRequestCount: newList.length,
     });
   }
 
@@ -304,6 +306,7 @@ export class PullRequestsTab extends React.Component<
   }
 
   private async getAllPullRequests() {
+    const self = this;
     this.setState({ loading: true });
     const { repositories, pullRequests } = this.state;
 
@@ -313,12 +316,12 @@ export class PullRequestsTab extends React.Component<
     newPullRequestList.splice(0, newPullRequestList.length);
 
     this.pullRequestItemProvider = new ObservableArray<
-      | Data.PullRequestModel
-      | IReadonlyObservableValue<Data.PullRequestModel | undefined>
+      | PullRequestModel.PullRequestModel
+      | IReadonlyObservableValue<PullRequestModel.PullRequestModel | undefined>
     >([]);
 
     Promise.all(
-      repositories.map(async r => {
+      repositories.map(async (r) => {
         const criteria = Object.assign({}, Data.pullRequestCriteria);
 
         const loadedPullRequests = await this.gitClient.getPullRequests(
@@ -329,29 +332,36 @@ export class PullRequestsTab extends React.Component<
         return loadedPullRequests;
       })
     )
-      .then(loadedPullRequests => {
-        loadedPullRequests.map(pr => {
+      .then((loadedPullRequests) => {
+        loadedPullRequests.map((pr) => {
           if (!pr || pr.length === 0) {
             return pr;
           }
 
           newPullRequestList.push(
-            ...Data.PullRequestModel.getModels(
+            ...PullRequestModel.PullRequestModel.getModels(
               pr,
               this.state.currentProject!.name,
-              this.baseUrl
+              this.baseUrl,
+              (_updatedPr) => {
+                const { pullRequests } = self.state;
+                self.reloadPullRequestItemProvider(pullRequests);
+              }
             )
           );
           return pr;
         });
       })
-      .catch(error => {
+      .catch((error) => {
         this.handleError(error);
       })
       .finally(() => {
         if (newPullRequestList.length > 0) {
           newPullRequestList = newPullRequestList.sort(
-            (a: Data.PullRequestModel, b: Data.PullRequestModel) => {
+            (
+              a: PullRequestModel.PullRequestModel,
+              b: PullRequestModel.PullRequestModel
+            ) => {
               return (
                 a.gitPullRequest.creationDate.getTime() -
                 b.gitPullRequest.creationDate.getTime()
@@ -360,47 +370,11 @@ export class PullRequestsTab extends React.Component<
           );
 
           this.setState({
-            pullRequests: newPullRequestList
+            pullRequests: newPullRequestList,
           });
+
+          this.loadLists();
         }
-
-        this.loadLists();
-
-        const pullRequestDetails = getPullRequestDetailsAsync(
-          newPullRequestList
-        );
-
-        const pullRequestThread = getPullRequestThreadAsync(newPullRequestList);
-
-        const pullRequestWorkItem = getPullRequestWorkItemAsync(
-          newPullRequestList
-        );
-
-        const pullRequestPolicy = getPullRequestPolicyAsync(newPullRequestList);
-
-        Promise.all([
-          pullRequestDetails,
-          pullRequestThread,
-          pullRequestWorkItem,
-          pullRequestPolicy
-        ])
-          .then(updated => {
-            this.setState(
-              produce<Data.IPullRequestsTabState>(
-                (draftObject: { pullRequests: Data.PullRequestModel[] }) => {
-                  draftObject.pullRequests = updated[0];
-                }
-              )
-            );
-
-            this.filterPullRequests();
-          })
-          .catch(error => {
-            console.log(
-              "There was an error fetching addtional details for the PRs. Error: " +
-              error
-            );
-          });
       });
   }
 
@@ -457,7 +431,7 @@ export class PullRequestsTab extends React.Component<
     let filteredPullRequest = pullRequests;
 
     if (filterPullRequestTitle && filterPullRequestTitle.length > 0) {
-      filteredPullRequest = pullRequests.filter(pr => {
+      filteredPullRequest = pullRequests.filter((pr) => {
         const found =
           pr
             .title!.toLocaleLowerCase()
@@ -467,8 +441,8 @@ export class PullRequestsTab extends React.Component<
     }
 
     if (repositoriesFilter && repositoriesFilter.length > 0) {
-      filteredPullRequest = filteredPullRequest.filter(pr => {
-        const found = repositoriesFilter!.some(r => {
+      filteredPullRequest = filteredPullRequest.filter((pr) => {
+        const found = repositoriesFilter!.some((r) => {
           return pr.gitPullRequest.repository.id === r;
         });
 
@@ -477,8 +451,8 @@ export class PullRequestsTab extends React.Component<
     }
 
     if (sourceBranchFilter && sourceBranchFilter.length > 0) {
-      filteredPullRequest = filteredPullRequest.filter(pr => {
-        const found = sourceBranchFilter.some(r => {
+      filteredPullRequest = filteredPullRequest.filter((pr) => {
+        const found = sourceBranchFilter.some((r) => {
           return pr.sourceBranch!.displayName === r;
         });
 
@@ -487,8 +461,8 @@ export class PullRequestsTab extends React.Component<
     }
 
     if (targetBranchFilter && targetBranchFilter.length > 0) {
-      filteredPullRequest = filteredPullRequest.filter(pr => {
-        const found = targetBranchFilter.some(r => {
+      filteredPullRequest = filteredPullRequest.filter((pr) => {
+        const found = targetBranchFilter.some((r) => {
           return pr.targetBranch!.displayName === r;
         });
 
@@ -497,8 +471,8 @@ export class PullRequestsTab extends React.Component<
     }
 
     if (createdByFilter && createdByFilter.length > 0) {
-      filteredPullRequest = filteredPullRequest.filter(pr => {
-        const found = createdByFilter.some(r => {
+      filteredPullRequest = filteredPullRequest.filter((pr) => {
+        const found = createdByFilter.some((r) => {
           return pr.gitPullRequest.createdBy.id === r;
         });
 
@@ -507,9 +481,9 @@ export class PullRequestsTab extends React.Component<
     }
 
     if (reviewersFilter && reviewersFilter.length > 0) {
-      filteredPullRequest = filteredPullRequest.filter(pr => {
-        const found = reviewersFilter.some(r => {
-          return pr.gitPullRequest.reviewers.some(rv => {
+      filteredPullRequest = filteredPullRequest.filter((pr) => {
+        const found = reviewersFilter.some((r) => {
+          return pr.gitPullRequest.reviewers.some((rv) => {
             return rv.id === r;
           });
         });
@@ -518,8 +492,8 @@ export class PullRequestsTab extends React.Component<
     }
 
     if (myApprovalStatusFilter && myApprovalStatusFilter.length > 0) {
-      filteredPullRequest = filteredPullRequest.filter(pr => {
-        const found = myApprovalStatusFilter.some(vote => {
+      filteredPullRequest = filteredPullRequest.filter((pr) => {
+        const found = myApprovalStatusFilter.some((vote) => {
           return (
             pr.myApprovalStatus ===
             (parseInt(vote, 10) as Data.ReviewerVoteOption)
@@ -533,8 +507,8 @@ export class PullRequestsTab extends React.Component<
       selectedAlternateStatusPrFilter &&
       selectedAlternateStatusPrFilter.length > 0
     ) {
-      filteredPullRequest = filteredPullRequest.filter(pr => {
-        const found = selectedAlternateStatusPrFilter.some(item => {
+      filteredPullRequest = filteredPullRequest.filter((pr) => {
+        const found = selectedAlternateStatusPrFilter.some((item) => {
           return (
             // tslint:disable-next-line:triple-equals
             (pr.gitPullRequest.isDraft === true && item == 0) ||
@@ -555,7 +529,7 @@ export class PullRequestsTab extends React.Component<
     list: Array<Data.BranchDropDownItem | IdentityRef | IdentityRefWithVote>,
     value: any
   ): boolean {
-    return list.some(item => {
+    return list.some((item) => {
       if (item.hasOwnProperty("id")) {
         const convertedValue = item as IdentityRef;
         return convertedValue.id.localeCompare(value) === 0;
@@ -568,12 +542,14 @@ export class PullRequestsTab extends React.Component<
     });
   }
 
-  private populateFilterBarFields = (pullRequests: Data.PullRequestModel[]) => {
+  private populateFilterBarFields = (
+    pullRequests: PullRequestModel.PullRequestModel[]
+  ) => {
     let {
       sourceBranchList,
       targetBranchList,
       createdByList,
-      reviewerList
+      reviewerList,
     } = this.state;
 
     sourceBranchList = [];
@@ -581,7 +557,7 @@ export class PullRequestsTab extends React.Component<
     createdByList = [];
     reviewerList = [];
 
-    pullRequests.map(pr => {
+    pullRequests.map((pr) => {
       let found = this.hasFilterValue(
         createdByList,
         pr.gitPullRequest.createdBy.id
@@ -613,7 +589,7 @@ export class PullRequestsTab extends React.Component<
         pr.gitPullRequest.reviewers &&
         pr.gitPullRequest.reviewers.length > 0
       ) {
-        pr.gitPullRequest.reviewers.map(r => {
+        pr.gitPullRequest.reviewers.map((r) => {
           found = this.hasFilterValue(reviewerList, r.id);
 
           if (found === false) {
@@ -636,19 +612,19 @@ export class PullRequestsTab extends React.Component<
       "selectedAuthors",
       "selectedReviewers",
       "selectedSourceBranches",
-      "selectedTargetBranches"
+      "selectedTargetBranches",
     ];
     const selectionFilterObjects = [
       this.selectedAuthors,
       this.selectedReviewers,
       this.selectedSourceBranches,
-      this.selectedTargetBranches
+      this.selectedTargetBranches,
     ];
     const selectedItemsObjectList = [
       createdByList,
       reviewerList,
       sourceBranchList,
-      targetBranchList
+      targetBranchList,
     ];
 
     selectionObjectList.forEach((objectKey, index) => {
@@ -679,12 +655,12 @@ export class PullRequestsTab extends React.Component<
       sourceBranchList,
       targetBranchList,
       createdByList,
-      reviewerList
+      reviewerList,
     });
   };
 
   refresh = async () => {
-    await this.getAllPullRequests().catch(error => this.handleError(error));
+    await this.getAllPullRequests().catch((error) => this.handleError(error));
   };
 
   onHelpDismiss = () => {
@@ -700,7 +676,7 @@ export class PullRequestsTab extends React.Component<
       targetBranchList,
       reviewerList,
       loading,
-      errorMessage
+      errorMessage,
     } = this.state;
 
     if (loading === true) {
@@ -750,16 +726,16 @@ export class PullRequestsTab extends React.Component<
 
   resetErrorMessage() {
     this.setState({
-      errorMessage: ""
+      errorMessage: "",
     });
   }
 
   async selectedProjectChanged(
-    event: React.SyntheticEvent<HTMLElement, Event>,
+    _event: React.SyntheticEvent<HTMLElement, Event>,
     item: IListBoxItem<TeamProjectReference | ProjectInfo>
   ) {
     const { projects } = this.state;
-    const projectIndex = projects.findIndex(p => {
+    const projectIndex = projects.findIndex((p) => {
       return p.id === item.id;
     });
 
@@ -791,12 +767,12 @@ export class PullRequestsTab extends React.Component<
           className="flex-grow bolt-table-card"
           contentProps={{ contentPadding: false }}
           titleProps={{
-            text: `Pull Requests (${this.pullRequestItemProvider.value.length})`
+            text: `Pull Requests (${this.pullRequestItemProvider.value.length})`,
           }}
           headerCommandBarItems={this.listHeaderColumns}
         >
           <React.Fragment>
-            <Table<Data.PullRequestModel>
+            <Table<PullRequestModel.PullRequestModel>
               columns={Data.columns}
               itemProvider={this.pullRequestItemProvider}
               showLines={true}
@@ -814,8 +790,8 @@ export class PullRequestsTab extends React.Component<
                   footerButtonProps={[
                     {
                       text: "Close",
-                      onClick: this.onHelpDismiss
-                    }
+                      onClick: this.onHelpDismiss,
+                    },
                   ]}
                   onDismiss={this.onHelpDismiss}
                 >
@@ -886,20 +862,20 @@ export class PullRequestsTab extends React.Component<
         this.refresh();
       },
       iconProps: {
-        iconName: "fabric-icon ms-Icon--Refresh"
-      }
+        iconName: "fabric-icon ms-Icon--Refresh",
+      },
     },
     {
       id: "help",
       text: "Help",
-      isPrimary: true,
+      isPrimary: false,
       onActivate: () => {
         this.isDialogOpen.value = true;
       },
       iconProps: {
-        iconName: "fabric-icon ms-Icon--Help"
-      }
-    }
+        iconName: "fabric-icon ms-Icon--Help",
+      },
+    },
   ];
 }
 
