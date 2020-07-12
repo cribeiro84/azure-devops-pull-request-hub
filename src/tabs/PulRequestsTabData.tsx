@@ -8,7 +8,7 @@ import { IStatusProps } from "azure-devops-ui/Status";
 import { IColor } from "azure-devops-ui/Utilities/Color";
 import { IProjectInfo } from "azure-devops-extension-api/Common/CommonServices";
 import { IdentityRef } from "azure-devops-extension-api/WebApi/WebApi";
-import { TeamProjectReference } from "azure-devops-extension-api/Core/Core";
+import { TeamProjectReference, WebApiTagDefinition } from "azure-devops-extension-api/Core/Core";
 import { ITableColumn } from "azure-devops-ui/Table";
 import {
   StatusColumn,
@@ -231,20 +231,37 @@ export interface IPullRequestsTabState {
   sourceBranchList: BranchDropDownItem[];
   targetBranchList: BranchDropDownItem[];
   reviewerList: IdentityRefWithVote[];
+  tagList: WebApiTagDefinition[];
   loading: boolean;
   errorMessage: string;
   pullRequestCount: number;
 }
 
 export function sortMethod(
-  a: BranchDropDownItem | IdentityRef,
-  b: BranchDropDownItem | IdentityRef
+  a: BranchDropDownItem | IdentityRef | WebApiTagDefinition,
+  b: BranchDropDownItem | IdentityRef | WebApiTagDefinition
 ) {
-  if (a.displayName! < b.displayName!) {
-    return -1;
+  if (a.hasOwnProperty("displayName"))
+  {
+    const convertedA = a as BranchDropDownItem | IdentityRef;
+    const convertedB = b as BranchDropDownItem | IdentityRef;
+    if (convertedA.displayName! < convertedB.displayName!) {
+      return -1;
+    }
+    if (convertedA.displayName! > convertedB.displayName!) {
+      return 1;
+    }
   }
-  if (a.displayName! > b.displayName!) {
-    return 1;
+  else if (a.hasOwnProperty("name"))
+  {
+    const convertedA = a as WebApiTagDefinition;
+    const convertedB = b as WebApiTagDefinition;
+    if (convertedA.name < convertedB.name) {
+      return -1;
+    }
+    if (convertedA.name > convertedB.name) {
+      return 1;
+    }
   }
   return 0;
 }

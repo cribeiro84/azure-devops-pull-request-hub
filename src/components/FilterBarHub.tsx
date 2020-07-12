@@ -5,7 +5,8 @@ import { KeywordFilterBarItem } from "azure-devops-ui/TextFilterBarItem";
 import { DropdownFilterBarItem } from "azure-devops-ui/Dropdown";
 import {
   TeamProjectReference,
-  ProjectInfo
+  ProjectInfo,
+  WebApiTagDefinition
 } from "azure-devops-extension-api/Core/Core";
 import { Filter } from "azure-devops-ui/Utilities/Filter";
 import { IListBoxItem } from "azure-devops-ui/ListBox";
@@ -26,10 +27,10 @@ import { getStatusSizeValue, getStatusIcon } from "../models/constants";
 
 export const myApprovalStatuses = Object.keys(Data.ReviewerVoteOption)
   .filter(value => !isNaN(parseInt(value, 10)))
-  .map(item => {
+  .map((item) => {
     return {
       id: item,
-      text: ""
+      text: getVoteDescription(parseInt(item, 10))
     };
   });
 
@@ -62,6 +63,8 @@ export interface IFilterHubProps {
   selectedReviewers: DropdownMultiSelection;
   selectedMyApprovalStatuses: DropdownMultiSelection;
   selectedAlternateStatusPr: DropdownMultiSelection;
+  tagList: WebApiTagDefinition[];
+  selectedTags: DropdownMultiSelection;
 }
 
 export function FilterBarHub(props: IFilterHubProps): JSX.Element {
@@ -185,8 +188,8 @@ export function FilterBarHub(props: IFilterHubProps): JSX.Element {
           renderItem={(
             rowIndex: number,
             columnIndex: number,
-            tableColumn: ITableColumn<IListBoxItem<any>>,
-            tableItem: IListBoxItem<string>
+            tableColumn: ITableColumn<IListBoxItem<{}>>,
+            tableItem: IListBoxItem<{}>
           ): JSX.Element => (
             <td key={rowIndex} className="bolt-list-box-text bolt-list-box-text-multi-select asi-container">
               <Status
@@ -198,7 +201,7 @@ export function FilterBarHub(props: IFilterHubProps): JSX.Element {
               <span className="margin-left-8">{getVoteDescription(parseInt(tableItem.id!, 10))}</span>
             </td>
           )}
-          placeholder="My Approval Status"
+          placeholder={"My Approval Status"}
         />
       </React.Fragment>
 
@@ -209,6 +212,21 @@ export function FilterBarHub(props: IFilterHubProps): JSX.Element {
           items={alternateStatusPr}
           selection={props.selectedAlternateStatusPr}
           placeholder="Alternate Status"
+        />
+      </React.Fragment>
+
+      <React.Fragment>
+        <DropdownFilterBarItem
+          filterItemKey="selectedTags"
+          filter={props.filter}
+          items={props.tagList.sort(Data.sortMethod).map(i => {
+            return {
+              id: i.id,
+              text: i.name
+            };
+          })}
+          selection={props.selectedTags}
+          placeholder="Tags"
         />
       </React.Fragment>
     </FilterBar>

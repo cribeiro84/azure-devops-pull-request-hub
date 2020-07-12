@@ -59,6 +59,7 @@ import { IProjectInfo } from "azure-devops-extension-api/Common/CommonServices";
 import {
   TeamProjectReference,
   ProjectInfo,
+  WebApiTagDefinition,
 } from "azure-devops-extension-api/Core/Core";
 import { IListBoxItem } from "azure-devops-ui/ListBox";
 import { FilterBarHub } from "../components/FilterBarHub";
@@ -83,6 +84,7 @@ export class PullRequestsTab extends React.Component<
   private selectedReviewers = new DropdownMultiSelection();
   private selectedMyApprovalStatuses = new DropdownMultiSelection();
   private selectedAlternateStatusPr = new DropdownMultiSelection();
+  private selectedTags = new DropdownMultiSelection();
   private pullRequestItemProvider = new ObservableArray<
     | PullRequestModel.PullRequestModel
     | IReadonlyObservableValue<PullRequestModel.PullRequestModel | undefined>
@@ -108,6 +110,7 @@ export class PullRequestsTab extends React.Component<
       sourceBranchList: [],
       targetBranchList: [],
       reviewerList: [],
+      tagList: [],
       loading: true,
       errorMessage: "",
       pullRequestCount: 0,
@@ -344,7 +347,10 @@ export class PullRequestsTab extends React.Component<
               this.state.currentProject!.name,
               this.baseUrl,
               (_updatedPr) => {
-                const { pullRequests } = self.state;
+                const { pullRequests, tagList } = self.state;
+                _updatedPr.labels.filter(t => !this.hasFilterValue(tagList, t.id)).map(t => {
+                  return tagList.push(t);
+                });
                 self.reloadPullRequestItemProvider(pullRequests);
               }
             )
@@ -427,6 +433,10 @@ export class PullRequestsTab extends React.Component<
     const selectedAlternateStatusPrFilter = this.filter.getFilterItemValue<
       number[]
     >("selectedAlternateStatusPr");
+
+    const selectedTagsFilter = this.filter.getFilterItemValue<
+      number[]
+    >("selectedTags");
 
     let filteredPullRequest = pullRequests;
 
@@ -522,16 +532,30 @@ export class PullRequestsTab extends React.Component<
       });
     }
 
+    if (
+      selectedTagsFilter &&
+      selectedTagsFilter.length > 0
+    ) {
+      filteredPullRequest = filteredPullRequest.filter((pr) => {
+        const found = selectedTagsFilter.some((item) => {
+          return (
+            this.hasFilterValue(pr.labels, item)
+          );
+        });
+        return found;
+      });
+    }
+
     this.reloadPullRequestItemProvider(filteredPullRequest);
   }
 
   private hasFilterValue(
-    list: Array<Data.BranchDropDownItem | IdentityRef | IdentityRefWithVote>,
+    list: Array<Data.BranchDropDownItem | IdentityRef | IdentityRefWithVote | WebApiTagDefinition>,
     value: any
   ): boolean {
     return list.some((item) => {
       if (item.hasOwnProperty("id")) {
-        const convertedValue = item as IdentityRef;
+        const convertedValue = item as IdentityRef | WebApiTagDefinition;
         return convertedValue.id.localeCompare(value) === 0;
       } else if (item.hasOwnProperty("branchName")) {
         const convertedValue = item as Data.BranchDropDownItem;
@@ -677,6 +701,7 @@ export class PullRequestsTab extends React.Component<
       reviewerList,
       loading,
       errorMessage,
+      tagList
     } = this.state;
 
     if (loading === true) {
@@ -707,6 +732,8 @@ export class PullRequestsTab extends React.Component<
           selectedReviewers={this.selectedReviewers}
           selectedMyApprovalStatuses={this.selectedMyApprovalStatuses}
           selectedAlternateStatusPr={this.selectedAlternateStatusPr}
+          tagList={tagList}
+          selectedTags={this.selectedTags}
         />
 
         {errorMessage.length > 0 ? (

@@ -18,6 +18,7 @@ import {
 } from "azure-devops-extension-api/Build/Build";
 import { hasPullRequestFailure } from "./constants";
 import { BranchDropDownItem, ReviewerVoteOption, IStatusIndicatorData, PullRequestComment, PullRequestPolicy, PullRequestRequiredReviewer } from "../tabs/PulRequestsTabData";
+import { WebApiTagDefinition } from "azure-devops-extension-api/Core/Core";
 
 export class PullRequestModel {
   private baseHostUrl: string = "";
@@ -41,6 +42,7 @@ export class PullRequestModel {
   public policies: PullRequestPolicy[] = [];
   public isAllPoliciesOk?: boolean;
   public hasFailures: boolean = false;
+  public labels: WebApiTagDefinition[] = [];
 
   constructor(
     public gitPullRequest: GitPullRequest,
@@ -73,6 +75,9 @@ export class PullRequestModel {
       this.triggerState();
     });
     this.processPolicyBuildAsync().finally(() => {
+      this.triggerState();
+    });
+    this.getLabels().finally(() => {
       this.triggerState();
     });
   }
@@ -195,15 +200,17 @@ export class PullRequestModel {
     const gitClient: GitRestClient = getClient(GitRestClient);
     let self = this;
 
-    await new Promise<GitPullRequest>((resolve) => {
+    return new Promise<GitPullRequest>((resolve) => {
       return gitClient
-        .getPullRequestById(self.gitPullRequest.pullRequestId)
+        .getPullRequest(self.gitPullRequest.repository.id, self.gitPullRequest.pullRequestId)
         .then((value) => {
+          self.isAutoCompleteSet = value.autoCompleteSetBy !== undefined;
+
           if (value.lastMergeCommit === undefined) {
             return;
           }
+
           self.lastCommitDetails = value.lastMergeCommit;
-          self.isAutoCompleteSet = value.autoCompleteSetBy !== undefined;
         })
         .catch((error) => {
           console.log(
@@ -540,6 +547,21 @@ export class PullRequestModel {
         });
       }
     }
+  }
+
+  private async getLabels() {
+    const gitClient: GitRestClient = getClient(GitRestClient);
+    let self = this;
+
+    await gitClient.getPullRequestLabels(self.gitPullRequest.repository.id, this.gitPullRequest.pullRequestId)
+      .then(data => {
+        self.labels = data;
+      }).catch((error) => {
+        console.log(
+          "There was an error calling the builds (method: processPolicyBuildAsync)."
+        );
+        console.log(error);
+      });
   }
 
   public static getModels(

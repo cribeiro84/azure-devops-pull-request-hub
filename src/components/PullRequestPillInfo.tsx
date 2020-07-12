@@ -30,7 +30,7 @@ export function PullRequestPillInfo(props: any): JSX.Element {
         </Pill>
       </ConditionalChildren>
       <ConditionalChildren renderChildren={hasPullRequestReviewerRequired(pullRequest, true)}>
-        <Pill className="pill pill-requiredred" variant={getPillVariantValue("outlined")} size={getPillSizeValue("medium")} >
+        <Pill className="pill pill-required" variant={getPillVariantValue("outlined")} size={getPillSizeValue("medium")} >
           review required
         </Pill>
       </ConditionalChildren>
