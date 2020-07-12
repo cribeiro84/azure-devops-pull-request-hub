@@ -5,6 +5,21 @@ import { IdentityRefWithVote } from "azure-devops-extension-api/Git/Git";
 import { Statuses, Status } from "azure-devops-ui/Status";
 import { getStatusSizeValue } from "../models/constants";
 
+export function GetVoteIconColor(reviewer: IdentityRefWithVote): string {
+  switch (Data.ReviewerVoteOption[reviewer.vote]) {
+    case "Approved":
+      return "repos-pr-reviewer-vote-approvedLightColor";
+    case "ApprovedWithSuggestions":
+      return "repos-pr-reviewer-vote-approvedWithSuggestionsLightColor";
+    case "Rejected":
+      return "repos-pr-reviewer-vote-rejectedLightColor";
+    case "WaitingForAuthor":
+      return "repos-pr-reviewer-vote-waitingAuthorLightColor";
+  }
+
+  return "repos-pr-reviewer-vote-noVoteLightColor";
+};
+
 export function ReviewerVoteIconStatus(props: any): JSX.Element {
   let voteStatusIcon = Statuses.Waiting;
   const reviewer: IdentityRefWithVote = props.reviewer;

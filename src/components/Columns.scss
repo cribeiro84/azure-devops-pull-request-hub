@@ -26,12 +26,6 @@
   color: rgb(241, 112, 123);
 }
 
-.pill-requiredred.outlined {
-  background-color: transparent;
-  border-color: rgb(241, 112, 123);
-  color: rgb(241, 112, 123);
-}
-
 .pill-required.outlined {
   background-color: transparent;
   border-color: rgb(146, 144, 144);
@@ -87,4 +81,33 @@
 
 .table-border-spacing{
   border-spacing: 0px;
+}
+
+.repos-pr-reviewer-vote-avatar img {
+  border-style: solid;
+  border-width: 2px;
+}
+
+.repos-pr-reviewer-vote-approvedLightColor img {
+  border-color: rgb(88,162,101);
+}
+
+.repos-pr-reviewer-vote-approvedWithSuggestionsLightColor img {
+  border-color: rgb(88,162,101);
+}
+
+.repos-pr-reviewer-vote-approvedWithSuggestionsLightColor img {
+  border-color: rgb(88,162,101);
+}
+
+.repos-pr-reviewer-vote-noVoteLightColor img {
+  border-color: rgb(18, 117, 200);
+}
+
+.repos-pr-reviewer-vote-waitingAuthorLightColor img {
+  border-color: rgb(212,127,68);
+}
+
+.repos-pr-reviewer-vote-rejectedLightColor img {
+  border-color: rgb(203,75,73);
 }

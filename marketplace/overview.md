@@ -20,6 +20,7 @@ Manage your Pull Requests of all your projects and repositories at a single plac
   - Reviewers
   - Your vote status
   - Alternate Status: Is Draft, Conflicts, Auto-Complete
+  - Tags
 - Continue where you left - When you click to review a Pull Request (it always opens in a **new window**) the row will be kept highlighted
 - Easily identify the reviewers of that Pull Request
 - Last Commit push date
@@ -38,6 +39,16 @@ Manage your Pull Requests of all your projects and repositories at a single plac
   - New badge (Pill) for your voted PRs with new changes
 
 ## Updates (dd/MM/yyyy)
+
+### 12/07/2020
+
+- UI tweaks
+- Code refactoring
+- New features
+  - Tag list
+  - Better async calls to fetch PR details
+  - Column status sync with Policies and reviewers vote
+  - Filter by Tags
 
 ### 03/02/2020
 
