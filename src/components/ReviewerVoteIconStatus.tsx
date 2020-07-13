@@ -6,6 +6,12 @@ import { Statuses, Status } from "azure-devops-ui/Status";
 import { getStatusSizeValue } from "../models/constants";
 
 export function GetVoteIconColor(reviewer: IdentityRefWithVote): string {
+
+  // We don't need to have a circle for the reviewers that are not required.
+  if (!reviewer.isRequired) {
+    return '';
+  }
+
   switch (Data.ReviewerVoteOption[reviewer.vote]) {
     case "Approved":
       return "repos-pr-reviewer-vote-approvedLightColor";
