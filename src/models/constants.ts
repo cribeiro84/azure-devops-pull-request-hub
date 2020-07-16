@@ -6,6 +6,7 @@ import { ZeroDataActionType } from "azure-devops-ui/ZeroData";
 import { PullRequestAsyncStatus } from "azure-devops-extension-api/Git/Git";
 import * as PullRequestModel from "../models/PullRequestModel";
 
+export const STORED_CACHE_KEY_PREFIX = "ado_filter_cache_";
 export const AZDEVOPS_CLOUD_API_ORGANIZATION = "https://dev.azure.com";
 export const AZDEVOPS_CLOUD_API_ORGANIZATION_OLD =
   "https://[org].visualstudio.com";

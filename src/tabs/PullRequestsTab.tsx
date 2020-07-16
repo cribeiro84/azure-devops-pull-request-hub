@@ -10,6 +10,7 @@ import {
   getCommonServiceIdsValue,
   getZeroDataActionTypeValue,
   getStatusSizeValue,
+  STORED_CACHE_KEY_PREFIX,
 } from "../models/constants";
 
 import { Spinner, SpinnerSize } from "office-ui-fabric-react";
@@ -240,10 +241,6 @@ export class PullRequestsTab extends React.Component<
     return null;
   }
 
-  private storeSelectedRepositores(repositores: string[]) {
-    localStorage.setItem("PRMH_SelectedRepos", JSON.stringify(repositores));
-  }
-
   private async getOrganizationBaseUrl() {
     const oldOrgUrlFormat = AZDEVOPS_CLOUD_API_ORGANIZATION_OLD.replace(
       "[org]",
@@ -399,44 +396,15 @@ export class PullRequestsTab extends React.Component<
   private filterPullRequests() {
     const { pullRequests } = this.state;
 
-    const repos = this.filter.getFilterItemValue<string[]>("selectedRepos");
-    let repositoriesFilter = repos;
-    if (repos === undefined) {
-      const storedRepos = this.getStoredSelectedRepositores();
-      if (storedRepos !== null) {
-        repositoriesFilter = storedRepos;
-      }
-    } else {
-      this.storeSelectedRepositores(repos);
-    }
-
-    const filterPullRequestTitle = this.filter.getFilterItemValue<string>(
-      "pullRequestTitle"
-    );
-    const sourceBranchFilter = this.filter.getFilterItemValue<string[]>(
-      "selectedSourceBranches"
-    );
-    const targetBranchFilter = this.filter.getFilterItemValue<string[]>(
-      "selectedTargetBranches"
-    );
-    const createdByFilter = this.filter.getFilterItemValue<string[]>(
-      "selectedAuthors"
-    );
-    const reviewersFilter = this.filter.getFilterItemValue<string[]>(
-      "selectedReviewers"
-    );
-
-    const myApprovalStatusFilter = this.filter.getFilterItemValue<string[]>(
-      "selectedMyApprovalStatuses"
-    );
-
-    const selectedAlternateStatusPrFilter = this.filter.getFilterItemValue<
-      number[]
-    >("selectedAlternateStatusPr");
-
-    const selectedTagsFilter = this.filter.getFilterItemValue<
-      number[]
-    >("selectedTags");
+    const repositoriesFilter = this.getFilterData<string[]>("selectedRepos");
+    const filterPullRequestTitle = this.getFilterData<string>("pullRequestTitle");
+    const sourceBranchFilter = this.getFilterData<string[]>("selectedSourceBranches");
+    const targetBranchFilter = this.getFilterData<string[]>("selectedTargetBranches");
+    const createdByFilter = this.getFilterData<string[]>("selectedAuthors");
+    const reviewersFilter = this.getFilterData<string[]>("selectedReviewers");
+    const myApprovalStatusFilter = this.getFilterData<string[]>("selectedMyApprovalStatuses");
+    const selectedAlternateStatusPrFilter = this.getFilterData<number[]>("selectedAlternateStatusPr");
+    const selectedTagsFilter = this.getFilterData<number[]>("selectedTags");
 
     let filteredPullRequest = pullRequests;
 
@@ -547,6 +515,34 @@ export class PullRequestsTab extends React.Component<
     }
 
     this.reloadPullRequestItemProvider(filteredPullRequest);
+  }
+
+  private getFilterData<T>(key: string): T | undefined {
+    let filterData = this.filter.getFilterItemValue<T>(key);
+
+    if (filterData === undefined) {
+      const cachedData = this.getFilterFromCache<T>(key);
+      if (cachedData !== null) {
+        filterData = cachedData;
+      }
+    } else {
+      this.storeFilterData(key, filterData);
+    }
+
+    return ;
+  }
+
+  private storeFilterData(key: string, data: any): void {
+    localStorage.setItem(`${STORED_CACHE_KEY_PREFIX}${key}`, JSON.stringify(data));
+  }
+
+  private getFilterFromCache<T>(key: string): T | undefined {
+    const dataInStorage = localStorage.getItem(`${STORED_CACHE_KEY_PREFIX}${key}`);
+    if (dataInStorage !== null) {
+      return JSON.parse(dataInStorage) as T;
+    }
+
+    return undefined;
   }
 
   private hasFilterValue(
