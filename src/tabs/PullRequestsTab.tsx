@@ -121,10 +121,11 @@ export class PullRequestsTab extends React.Component<
   }
 
   public async componentDidMount() {
-    DevOps.init().then(async () => {
-      this.initializeState();
-      this.setupFilter();
-      await this.initializePage();
+    DevOps.init()
+      .then(async () => {
+        this.initializeState();
+        this.setupFilter();
+        await this.initializePage();
     });
   }
 
@@ -181,9 +182,9 @@ export class PullRequestsTab extends React.Component<
                 }
 
                 this.getAllPullRequests()
-                .catch((error) =>
-                  this.handleError(error)
-                );
+                  .catch((error) =>
+                    this.handleError(error)
+                  );
               })
               .catch((error) => {
                 this.handleError(error);
@@ -344,11 +345,14 @@ export class PullRequestsTab extends React.Component<
               this.state.currentProject!.name,
               this.baseUrl,
               (_updatedPr) => {
-                const { pullRequests, tagList } = self.state;
+                const { tagList } = self.state;
                 _updatedPr.labels.filter(t => !this.hasFilterValue(tagList, t.id)).map(t => {
                   return tagList.push(t);
                 });
-                self.reloadPullRequestItemProvider(pullRequests);
+
+                  setTimeout(() => {
+                    self.filterPullRequests();
+                  }, 10);
               }
             )
           );
@@ -680,7 +684,8 @@ export class PullRequestsTab extends React.Component<
   };
 
   refresh = async () => {
-    await this.getAllPullRequests().catch((error) => this.handleError(error));
+    await this.getAllPullRequests()
+      .catch((error) => this.handleError(error));
   };
 
   onHelpDismiss = () => {

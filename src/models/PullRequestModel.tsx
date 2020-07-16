@@ -1,10 +1,8 @@
 import {
   GitPullRequest,
-
-
   IdentityRefWithVote,
   GitCommitRef,
-  CommentThreadStatus
+  CommentThreadStatus,
 } from "azure-devops-extension-api/Git/Git";
 import * as DevOps from "azure-devops-extension-sdk";
 import { Statuses } from "azure-devops-ui/Status";
@@ -14,10 +12,17 @@ import { PolicyRestClient } from "azure-devops-extension-api/Policy/PolicyClient
 import { BuildRestClient } from "azure-devops-extension-api/Build/BuildClient";
 import {
   BuildStatus,
-  BuildResult
+  BuildResult,
 } from "azure-devops-extension-api/Build/Build";
 import { hasPullRequestFailure } from "./constants";
-import { BranchDropDownItem, ReviewerVoteOption, IStatusIndicatorData, PullRequestComment, PullRequestPolicy, PullRequestRequiredReviewer } from "../tabs/PulRequestsTabData";
+import {
+  BranchDropDownItem,
+  ReviewerVoteOption,
+  IStatusIndicatorData,
+  PullRequestComment,
+  PullRequestPolicy,
+  PullRequestRequiredReviewer,
+} from "../tabs/PulRequestsTabData";
 import { WebApiTagDefinition } from "azure-devops-extension-api/Core/Core";
 
 export class PullRequestModel {
@@ -43,6 +48,7 @@ export class PullRequestModel {
   public isAllPoliciesOk?: boolean;
   public hasFailures: boolean = false;
   public labels: WebApiTagDefinition[] = [];
+  private loadingData: boolean = false;
 
   constructor(
     public gitPullRequest: GitPullRequest,
@@ -59,29 +65,31 @@ export class PullRequestModel {
     this.initializeData();
   }
 
-  public async setupPullRequest() {
-    this.initializeData();
-    this.getPullRequestAdditionalDetailsAsync()
-      .finally(() => {
-        this.triggerState();
-      });
-    this.getPullRequestThreadAsync().finally(() => {
-      this.triggerState();
-    });
-    this.getPullRequestWorkItemAsync().finally(() => {
-      this.triggerState();
-    });
-    this.getPullRequestPolicyAsync().finally(() => {
-      this.triggerState();
-    });
-    this.processPolicyBuildAsync().finally(() => {
-      this.triggerState();
-    });
-    this.getLabels().finally(() => {
-      this.triggerState();
-    });
+  public isStillLoading() {
+    return this.loadingData;
   }
 
+  private callTriggerState() {
+    this.loadingData = false;
+    this.triggerState();
+  }
+
+  public async setupPullRequest() {
+    this.initializeData();
+
+    this.loadingData = true;
+    Promise.all(
+      [
+        this.getPullRequestAdditionalDetailsAsync(),
+        this.getPullRequestThreadAsync(),
+        this.getPullRequestWorkItemAsync(),
+        this.getPullRequestPolicyAsync(),
+        this.processPolicyBuildAsync(),
+        this.getLabels()
+      ]).finally(() => {
+        this.callTriggerState();
+      });
+  }
 
   private initializeData() {
     this.baseHostUrl = `${this.baseUrl}${this.projectName}`;
@@ -113,7 +121,6 @@ export class PullRequestModel {
     this.hasFailures = hasPullRequestFailure(this);
   }
 
-
   private getCurrentUserVoteStatus(
     reviewers: IdentityRefWithVote[]
   ): ReviewerVoteOption {
@@ -130,7 +137,6 @@ export class PullRequestModel {
 
     return voteResult;
   }
-
 
   private getStatusIndicatorData(
     reviewers: IdentityRefWithVote[],
@@ -151,40 +157,39 @@ export class PullRequestModel {
         ariaLabel: "Pull Request is in failure status.",
       };
       indicatorData.label = "Pull Request is in failure status.";
-    }
-    else if (reviewers.some((r) => r.vote === -10)) {
+    } else if (reviewers.some((r) => r.vote === -10)) {
       indicatorData.statusProps = {
         ...Statuses.Failed,
         ariaLabel: "One or more of the reviewers has rejected.",
       };
       indicatorData.label = "One or more of the reviewers has rejected.";
-    }
-    else if (reviewers.some((r) => r.vote === -5)) {
+    } else if (reviewers.some((r) => r.vote === -5)) {
       indicatorData.statusProps = {
         ...Statuses.Warning,
         ariaLabel: "One or more of the reviewers is waiting for the author.",
       };
       indicatorData.label =
         "One or more of the reviewers is waiting for the author.";
-    }
-    else if (reviewers
-      .filter((r) => r.isRequired)
-      .every((r) => r.vote === 10 || r.vote === 5) &&
-      isAllPoliciesOk) {
+    } else if (
+      reviewers
+        .filter((r) => r.isRequired)
+        .every((r) => r.vote === 10 || r.vote === 5) &&
+      isAllPoliciesOk
+    ) {
       indicatorData.statusProps = {
         ...Statuses.Success,
         ariaLabel: "Ready for completion",
       };
       indicatorData.label = "Success";
-    }
-    else if (reviewers.filter((r) => r.isRequired).every((r) => r.vote === 0)) {
+    } else if (
+      reviewers.filter((r) => r.isRequired).every((r) => r.vote === 0)
+    ) {
       indicatorData.statusProps = {
         ...Statuses.Waiting,
         ariaLabel: "Waiting Review of required Reviewers",
       };
       indicatorData.label = "Waiting Review";
-    }
-    else if (reviewers.filter((r) => r.isRequired).some((r) => r.vote > 0)) {
+    } else if (reviewers.filter((r) => r.isRequired).some((r) => r.vote > 0)) {
       indicatorData.statusProps = {
         ...Statuses.Running,
         ariaLabel: "Waiting remaining required reviewers",
@@ -195,32 +200,31 @@ export class PullRequestModel {
     return indicatorData;
   }
 
-
   private async getPullRequestAdditionalDetailsAsync() {
     const gitClient: GitRestClient = getClient(GitRestClient);
     let self = this;
 
-    return new Promise<GitPullRequest>((resolve) => {
-      return gitClient
-        .getPullRequest(self.gitPullRequest.repository.id, self.gitPullRequest.pullRequestId)
-        .then((value) => {
-          self.isAutoCompleteSet = value.autoCompleteSetBy !== undefined;
+    return gitClient
+      .getPullRequest(
+        self.gitPullRequest.repository.id,
+        self.gitPullRequest.pullRequestId
+      )
+      .then((value) => {
+        self.isAutoCompleteSet = value.autoCompleteSetBy !== undefined;
 
-          if (value.lastMergeCommit === undefined) {
-            return;
-          }
+        if (value.lastMergeCommit === undefined) {
+          return;
+        }
 
-          self.lastCommitDetails = value.lastMergeCommit;
-        })
-        .catch((error) => {
-          console.log(
-            `There was an error calling the Pull Request details (method: getPullRequestAdditionalDetailsAsync).`
-          );
-          console.log(error);
-        });
-    });
+        self.lastCommitDetails = value.lastMergeCommit;
+      })
+      .catch((error) => {
+        console.log(
+          `There was an error calling the Pull Request details (method: getPullRequestAdditionalDetailsAsync).`
+        );
+        console.log(error);
+      });
   }
-
 
   private async getPullRequestThreadAsync() {
     const gitClient: GitRestClient = getClient(GitRestClient);
@@ -235,7 +239,8 @@ export class PullRequestModel {
         if (value !== undefined) {
           const threads = value.filter((x) => x.status !== undefined);
           const terminatedThread = value.filter(
-            (x) => x.status !== undefined &&
+            (x) =>
+              x.status !== undefined &&
               (x.status === CommentThreadStatus.Closed ||
                 x.status === CommentThreadStatus.WontFix ||
                 x.status === CommentThreadStatus.Fixed)
@@ -259,7 +264,6 @@ export class PullRequestModel {
       });
   }
 
-
   private async getPullRequestWorkItemAsync() {
     const gitClient: GitRestClient = getClient(GitRestClient);
     let self = this;
@@ -281,12 +285,11 @@ export class PullRequestModel {
       });
   }
 
-
   private async getPullRequestPolicyAsync() {
     const gitPolicy: PolicyRestClient = getClient(PolicyRestClient);
     let self = this;
 
-    await gitPolicy
+    return gitPolicy
       .getPolicyConfigurations(self.projectName)
       .then((value) => {
         if (value === undefined || value.length === 0) {
@@ -294,7 +297,8 @@ export class PullRequestModel {
         }
 
         const policies = value.filter(
-          (x) => x.isBlocking &&
+          (x) =>
+            x.isBlocking &&
             x.isEnabled &&
             !x.isDeleted &&
             x.settings !== undefined &&
@@ -305,15 +309,17 @@ export class PullRequestModel {
 
         if (policies !== undefined && policies.length > 0) {
           policies.map((policy) => {
-            if (policy.settings.scope[0].repositoryId ===
-              self.gitPullRequest.repository.id &&
+            if (
+              policy.settings.scope[0].repositoryId ===
+                self.gitPullRequest.repository.id &&
               ((policy.settings.scope[0].matchKind === "Exact" &&
                 policy.settings.scope[0].refName ===
-                self.gitPullRequest.targetRefName) ||
+                  self.gitPullRequest.targetRefName) ||
                 (policy.settings.scope[0].matchKind === "Prefix" &&
                   self.gitPullRequest.targetRefName.startsWith(
                     policy.settings.scope[0].refName
-                  )))) {
+                  )))
+            ) {
               const pullRequestPolicy = new PullRequestPolicy();
 
               pullRequestPolicy.id = policy.id;
@@ -337,9 +343,11 @@ export class PullRequestModel {
               pullRequestPolicy.buildDefinitionId =
                 policy.settings.buildDefinitionId;
 
-              if (policy.settings.requiredReviewerIds !== undefined &&
+              if (
+                policy.settings.requiredReviewerIds !== undefined &&
                 policy.settings.requiredReviewerIds instanceof Array &&
-                policy.settings.requiredReviewerIds.length > 0) {
+                policy.settings.requiredReviewerIds.length > 0
+              ) {
                 pullRequestPolicy.requiredReviewers = [];
                 const requiredReviewersId = policy.settings
                   .requiredReviewerIds as Array<string>;
@@ -353,12 +361,13 @@ export class PullRequestModel {
                   );
 
                   if (reviewerFound !== undefined) {
-                    if (reviewerFound.isContainer === undefined ||
-                      reviewerFound.isContainer === false) {
+                    if (
+                      reviewerFound.isContainer === undefined ||
+                      reviewerFound.isContainer === false
+                    ) {
                       pullRequestRequiredReviewer.displayName =
                         reviewerFound.displayName;
-                    }
-                    else {
+                    } else {
                       let name = reviewerFound!.displayName!.split("\\");
                       if (name.length > 0) {
                         pullRequestRequiredReviewer.displayName =
@@ -375,18 +384,21 @@ export class PullRequestModel {
                 });
               }
 
-              if (pullRequestPolicy.displayName === "Minimum number of reviewers") {
+              if (
+                pullRequestPolicy.displayName === "Minimum number of reviewers"
+              ) {
                 let reviewerCount = 0;
 
                 if (pullRequestPolicy.creatorVoteCounts) {
                   reviewerCount = self.gitPullRequest.reviewers.filter(
-                    (x) => (x.vote === 10 || x.vote === 5) &&
+                    (x) =>
+                      (x.vote === 10 || x.vote === 5) &&
                       (x.isContainer === undefined || x.isContainer === false)
                   ).length;
-                }
-                else {
+                } else {
                   reviewerCount = self.gitPullRequest.reviewers.filter(
-                    (x) => (x.vote === 10 || x.vote === 5) &&
+                    (x) =>
+                      (x.vote === 10 || x.vote === 5) &&
                       (x.isContainer === undefined ||
                         x.isContainer === false) &&
                       x.id !== self.gitPullRequest.createdBy.id
@@ -396,45 +408,49 @@ export class PullRequestModel {
                 pullRequestPolicy.isReviewersApprovedOk =
                   reviewerCount >= pullRequestPolicy.minimumApproverCount!;
                 pullRequestPolicy.reviewerCount = reviewerCount;
-              }
-              else if (pullRequestPolicy.displayName === "Work item linking") {
+              } else if (
+                pullRequestPolicy.displayName === "Work item linking"
+              ) {
                 pullRequestPolicy.isWorkItemOk = self.existWorkItem;
-              }
-              else if (pullRequestPolicy.displayName === "Comment requirements") {
+              } else if (
+                pullRequestPolicy.displayName === "Comment requirements"
+              ) {
                 pullRequestPolicy.isCommentOk =
                   self.comment.totalcomment - self.comment.terminatedComment ===
                   0;
-              }
-              else if (pullRequestPolicy.displayName === "Require a merge strategy") {
+              } else if (
+                pullRequestPolicy.displayName === "Require a merge strategy"
+              ) {
                 // TODO
-              }
-              else if (pullRequestPolicy.displayName === "Build") {
+              } else if (pullRequestPolicy.displayName === "Build") {
                 // TODO
-              }
-              else if (pullRequestPolicy.displayName === "Status") {
+              } else if (pullRequestPolicy.displayName === "Status") {
                 // TODO
-              }
-              else if (pullRequestPolicy.displayName === "Required reviewers") {
+              } else if (
+                pullRequestPolicy.displayName === "Required reviewers"
+              ) {
                 let reviewers;
 
                 if (pullRequestPolicy.creatorVoteCounts) {
                   reviewers = self.gitPullRequest.reviewers.filter(
                     (x) => x.vote === 10 || x.vote === 5
                   );
-                }
-                else {
+                } else {
                   reviewers = self.gitPullRequest.reviewers.filter(
-                    (x) => (x.vote === 10 || x.vote === 5) &&
+                    (x) =>
+                      (x.vote === 10 || x.vote === 5) &&
                       x.id !== self.gitPullRequest.createdBy.id
                   );
                 }
 
                 let reviewerCount = 0;
 
-                if (pullRequestPolicy.requiredReviewers !== undefined &&
+                if (
+                  pullRequestPolicy.requiredReviewers !== undefined &&
                   pullRequestPolicy.requiredReviewers.length > 0 &&
                   reviewers !== undefined &&
-                  reviewers.length > 0) {
+                  reviewers.length > 0
+                ) {
                   reviewers.forEach((reviewer) => {
                     pullRequestPolicy.requiredReviewers!.forEach(
                       (requiredReviewer) => {
@@ -461,7 +477,8 @@ export class PullRequestModel {
 
           if (self.policies !== undefined && self.policies.length > 0) {
             self.isAllPoliciesOk = self.policies.every(
-              (p) => (p.isBuildOk === undefined || p.isBuildOk) &&
+              (p) =>
+                (p.isBuildOk === undefined || p.isBuildOk) &&
                 (p.isCommentOk === undefined || p.isCommentOk) &&
                 (p.isRequiredReviewerOk === undefined ||
                   p.isRequiredReviewerOk) &&
@@ -469,8 +486,7 @@ export class PullRequestModel {
                   p.isReviewersApprovedOk) &&
                 (p.isWorkItemOk === undefined || p.isWorkItemOk)
             );
-          }
-          else {
+          } else {
             self.isAllPoliciesOk = true;
           }
         }
@@ -482,7 +498,6 @@ export class PullRequestModel {
         console.log(error);
       });
   }
-
 
   private async processPolicyBuildAsync() {
     const build: BuildRestClient = getClient(BuildRestClient);
@@ -529,7 +544,7 @@ export class PullRequestModel {
 
                   policy.isBuildOk =
                     parseInt(build.triggerInfo["pr.number"]) ===
-                    self.gitPullRequest.pullRequestId &&
+                      self.gitPullRequest.pullRequestId &&
                     build.status === BuildStatus.Completed &&
                     (build.result === BuildResult.Succeeded ||
                       build.result === BuildResult.PartiallySucceeded);
@@ -553,10 +568,15 @@ export class PullRequestModel {
     const gitClient: GitRestClient = getClient(GitRestClient);
     let self = this;
 
-    await gitClient.getPullRequestLabels(self.gitPullRequest.repository.id, this.gitPullRequest.pullRequestId)
-      .then(data => {
+    await gitClient
+      .getPullRequestLabels(
+        self.gitPullRequest.repository.id,
+        this.gitPullRequest.pullRequestId
+      )
+      .then((data) => {
         self.labels = data;
-      }).catch((error) => {
+      })
+      .catch((error) => {
         console.log(
           "There was an error calling the builds (method: processPolicyBuildAsync)."
         );
@@ -573,7 +593,9 @@ export class PullRequestModel {
     const modelList: PullRequestModel[] = [];
 
     pullRequestList!.map((pr) => {
-      modelList.push(new PullRequestModel(pr, projectName, baseUrl, callbackState));
+      modelList.push(
+        new PullRequestModel(pr, projectName, baseUrl, callbackState)
+      );
 
       return pr;
     });
