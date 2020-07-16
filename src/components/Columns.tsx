@@ -18,11 +18,12 @@ import {
 import { VssPersona } from "azure-devops-ui/VssPersona";
 import { getStatusSizeValue } from "../models/constants";
 import { PullRequestPillInfo } from "./PullRequestPillInfo";
-import { Link } from "office-ui-fabric-react";
+import { Link, Spinner, SpinnerSize } from "office-ui-fabric-react";
 import * as PullRequestModel from "../models/PullRequestModel";
 import { PillGroup } from "azure-devops-ui/PillGroup";
 import { Pill } from "azure-devops-ui/Pill";
 import { ConditionalChildren } from "azure-devops-ui/ConditionalChildren";
+import { Observer } from "azure-devops-ui/Observer";
 
 export function openNewWindowTab(targetUrl: string): void {
   window.open(targetUrl, "_blank");
@@ -48,11 +49,19 @@ export function StatusColumn(
           disabled={true}
           subtle={true}
         >
-          <Status
-            {...tableItem.pullRequestProgressStatus!.statusProps}
-            className="icon-large-margin"
-            size={getStatusSizeValue("l")}
-          />
+          <Observer isStillLoading={tableItem.isStillLoading()}>
+            {(props: { isStillLoading: boolean }) => {
+              return props.isStillLoading ? (
+                <Spinner size={SpinnerSize.medium} />
+              ) : (
+                <Status
+                  {...tableItem.pullRequestProgressStatus!.statusProps}
+                  className="icon-large-margin"
+                  size={getStatusSizeValue("l")}
+                />
+              );
+            }}
+          </Observer>
         </Button>
       }
       line2={<div />}
