@@ -46,8 +46,8 @@ export function hasPullRequestReviewerRequired(pullRequest: PullRequestModel.Pul
 
       if(reviewersFilterd !== undefined && reviewersFilterd.length > 0) {
         prRevierwRequired = (voted === true) ?
-          reviewersFilterd.some(x => x.isRequired && x.vote === 0)
-          : reviewersFilterd.every(x => x.isRequired && x.vote !== 0);
+          reviewersFilterd.some(x => x.isRequired === true && x.vote === 0)
+          : reviewersFilterd.every(x => x.isRequired === true && x.vote !== 0);
       }
   }
 

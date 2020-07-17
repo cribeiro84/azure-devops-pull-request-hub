@@ -78,17 +78,16 @@ export class PullRequestModel {
     this.initializeData();
 
     this.loadingData = true;
-    Promise.all(
-      [
-        this.getPullRequestAdditionalDetailsAsync(),
-        this.getPullRequestThreadAsync(),
-        this.getPullRequestWorkItemAsync(),
-        this.getPullRequestPolicyAsync(),
-        this.processPolicyBuildAsync(),
-        this.getLabels()
-      ]).finally(() => {
-        this.callTriggerState();
-      });
+    Promise.all([
+      this.getPullRequestAdditionalDetailsAsync(),
+      this.getPullRequestThreadAsync(),
+      this.getPullRequestWorkItemAsync(),
+      this.getPullRequestPolicyAsync(),
+      this.processPolicyBuildAsync(),
+      this.getLabels()
+    ]).finally(() => {
+      this.callTriggerState();
+    });
   }
 
   private initializeData() {
@@ -147,10 +146,6 @@ export class PullRequestModel {
       statusProps: { ...Statuses.Waiting, ariaLabel: "Waiting Review" },
     };
 
-    if (!reviewers || reviewers.length === 0) {
-      return indicatorData;
-    }
-
     if (this.hasFailures) {
       indicatorData.statusProps = {
         ...Statuses.Failed,
@@ -171,9 +166,11 @@ export class PullRequestModel {
       indicatorData.label =
         "One or more of the reviewers is waiting for the author.";
     } else if (
-      reviewers
-        .filter((r) => r.isRequired)
-        .every((r) => r.vote === 10 || r.vote === 5) &&
+      (!reviewers ||
+        reviewers.length === 0 ||
+        reviewers
+          .filter((r) => r.isRequired === true)
+          .every((r) => r.vote === 10 || r.vote === 5)) &&
       isAllPoliciesOk
     ) {
       indicatorData.statusProps = {
@@ -189,7 +186,9 @@ export class PullRequestModel {
         ariaLabel: "Waiting Review of required Reviewers",
       };
       indicatorData.label = "Waiting Review";
-    } else if (reviewers.filter((r) => r.isRequired).some((r) => r.vote > 0)) {
+    } else if (
+      reviewers.filter((r) => r.isRequired === true).some((r) => r.vote > 0)
+    ) {
       indicatorData.statusProps = {
         ...Statuses.Running,
         ariaLabel: "Waiting remaining required reviewers",
