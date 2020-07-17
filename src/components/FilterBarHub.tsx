@@ -74,6 +74,7 @@ export function FilterBarHub(props: IFilterHubProps): JSX.Element {
         filterItemKey="pullRequestTitle"
         placeholder={"Search Pull Requests"}
         filter={props.filter}
+        clearable={true}
       />
 
       <React.Fragment>

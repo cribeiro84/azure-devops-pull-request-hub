@@ -121,11 +121,10 @@ export class PullRequestsTab extends React.Component<
   }
 
   public async componentDidMount() {
-    DevOps.init()
-      .then(async () => {
-        this.initializeState();
-        this.setupFilter();
-        await this.initializePage();
+    DevOps.init().then(async () => {
+      this.initializeState();
+      this.setupFilter();
+      await this.initializePage();
     });
   }
 
@@ -181,10 +180,9 @@ export class PullRequestsTab extends React.Component<
                   });
                 }
 
-                this.getAllPullRequests()
-                  .catch((error) =>
-                    this.handleError(error)
-                  );
+                this.getAllPullRequests().catch((error) =>
+                  this.handleError(error)
+                );
               })
               .catch((error) => {
                 this.handleError(error);
@@ -346,13 +344,15 @@ export class PullRequestsTab extends React.Component<
               this.baseUrl,
               (_updatedPr) => {
                 const { tagList } = self.state;
-                _updatedPr.labels.filter(t => !this.hasFilterValue(tagList, t.id)).map(t => {
-                  return tagList.push(t);
-                });
+                _updatedPr.labels
+                  .filter((t) => !this.hasFilterValue(tagList, t.id))
+                  .map((t) => {
+                    return tagList.push(t);
+                  });
 
-                  setTimeout(() => {
-                    self.filterPullRequests();
-                  }, 10);
+                setTimeout(() => {
+                  self.filterPullRequests();
+                }, 10);
               }
             )
           );
@@ -398,17 +398,39 @@ export class PullRequestsTab extends React.Component<
   }
 
   private filterPullRequests() {
-    const { pullRequests } = this.state;
+    const { pullRequests, repositories } = this.state;
 
     const repositoriesFilter = this.getFilterData<string[]>("selectedRepos");
-    const filterPullRequestTitle = this.getFilterData<string>("pullRequestTitle");
-    const sourceBranchFilter = this.getFilterData<string[]>("selectedSourceBranches");
-    const targetBranchFilter = this.getFilterData<string[]>("selectedTargetBranches");
+    const filterPullRequestTitle = this.getFilterData<string>(
+      "pullRequestTitle"
+    );
+    const sourceBranchFilter = this.getFilterData<string[]>(
+      "selectedSourceBranches"
+    );
+    const targetBranchFilter = this.getFilterData<string[]>(
+      "selectedTargetBranches"
+    );
     const createdByFilter = this.getFilterData<string[]>("selectedAuthors");
     const reviewersFilter = this.getFilterData<string[]>("selectedReviewers");
-    const myApprovalStatusFilter = this.getFilterData<string[]>("selectedMyApprovalStatuses");
-    const selectedAlternateStatusPrFilter = this.getFilterData<number[]>("selectedAlternateStatusPr");
+    const myApprovalStatusFilter = this.getFilterData<string[]>(
+      "selectedMyApprovalStatuses"
+    );
+    const selectedAlternateStatusPrFilter = this.getFilterData<number[]>(
+      "selectedAlternateStatusPr"
+    );
     const selectedTagsFilter = this.getFilterData<number[]>("selectedTags");
+
+    if (
+      repositoriesFilter &&
+      repositoriesFilter.length > 0 &&
+      this.selectedRepos.selectedCount === 0
+    ) {
+      repositoriesFilter.map((r) => {
+        this.selectedRepos.select(repositories.findIndex(filterItem => filterItem.id === r));
+
+        return r;
+      });
+    }
 
     let filteredPullRequest = pullRequests;
 
@@ -504,15 +526,10 @@ export class PullRequestsTab extends React.Component<
       });
     }
 
-    if (
-      selectedTagsFilter &&
-      selectedTagsFilter.length > 0
-    ) {
+    if (selectedTagsFilter && selectedTagsFilter.length > 0) {
       filteredPullRequest = filteredPullRequest.filter((pr) => {
         const found = selectedTagsFilter.some((item) => {
-          return (
-            this.hasFilterValue(pr.labels, item)
-          );
+          return this.hasFilterValue(pr.labels, item);
         });
         return found;
       });
@@ -533,15 +550,20 @@ export class PullRequestsTab extends React.Component<
       this.storeFilterData(key, filterData);
     }
 
-    return ;
+    return filterData;
   }
 
   private storeFilterData(key: string, data: any): void {
-    localStorage.setItem(`${STORED_CACHE_KEY_PREFIX}${key}`, JSON.stringify(data));
+    localStorage.setItem(
+      `${STORED_CACHE_KEY_PREFIX}${key}`,
+      JSON.stringify(data)
+    );
   }
 
   private getFilterFromCache<T>(key: string): T | undefined {
-    const dataInStorage = localStorage.getItem(`${STORED_CACHE_KEY_PREFIX}${key}`);
+    const dataInStorage = localStorage.getItem(
+      `${STORED_CACHE_KEY_PREFIX}${key}`
+    );
     if (dataInStorage !== null) {
       return JSON.parse(dataInStorage) as T;
     }
@@ -550,7 +572,12 @@ export class PullRequestsTab extends React.Component<
   }
 
   private hasFilterValue(
-    list: Array<Data.BranchDropDownItem | IdentityRef | IdentityRefWithVote | WebApiTagDefinition>,
+    list: Array<
+      | Data.BranchDropDownItem
+      | IdentityRef
+      | IdentityRefWithVote
+      | WebApiTagDefinition
+    >,
     value: any
   ): boolean {
     return list.some((item) => {
@@ -684,8 +711,7 @@ export class PullRequestsTab extends React.Component<
   };
 
   refresh = async () => {
-    await this.getAllPullRequests()
-      .catch((error) => this.handleError(error));
+    await this.getAllPullRequests().catch((error) => this.handleError(error));
   };
 
   onHelpDismiss = () => {
@@ -702,7 +728,7 @@ export class PullRequestsTab extends React.Component<
       reviewerList,
       loading,
       errorMessage,
-      tagList
+      tagList,
     } = this.state;
 
     if (loading === true) {
