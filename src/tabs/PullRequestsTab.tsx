@@ -152,6 +152,7 @@ export class PullRequestsTab extends React.Component<
 
   clearSavedFilter() {
     localStorage.clear();
+    this.filter.reset();
     this.refresh();
   }
 
@@ -897,7 +898,10 @@ export class PullRequestsTab extends React.Component<
 
   getRenderContent() {
     const { pullRequestCount, pullRequests } = this.state;
-    if (pullRequestCount === 0 && pullRequests.filter(pr => pr.isStillLoading() === true).length === 0) {
+    if (
+      pullRequestCount === 0 &&
+      pullRequests.filter((pr) => pr.isStillLoading() === true).length === 0
+    ) {
       return (
         <ZeroData
           primaryText="Yeah! No Pull Request to be reviewed. Well done!"
