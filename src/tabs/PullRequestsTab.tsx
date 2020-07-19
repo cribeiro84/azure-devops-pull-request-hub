@@ -69,6 +69,7 @@ import {
   alternateStatusPr,
 } from "../components/FilterBarHub";
 import { hasPullRequestFailure } from "../models/constants";
+import { ContentSize } from "azure-devops-ui/Callout";
 
 export class PullRequestsTab extends React.Component<
   {},
@@ -942,7 +943,8 @@ export class PullRequestsTab extends React.Component<
             {(props: { isDialogOpen: boolean }) => {
               return props.isDialogOpen ? (
                 <Dialog
-                  titleProps={{ text: "Help" }}
+                  titleProps={{ text: "Help!" }}
+                  contentSize={ContentSize.Auto}
                   footerButtonProps={[
                     {
                       text: "Close",
@@ -952,52 +954,76 @@ export class PullRequestsTab extends React.Component<
                   onDismiss={this.onHelpDismiss}
                 >
                   <strong>Statuses legend:</strong>
-                  <div className="flex-column" style={{ minWidth: "120px" }}>
-                    <div className="body-m secondary-text">
-                      <Status
-                        {...Statuses.Waiting}
-                        key="waiting"
-                        size={getStatusSizeValue("m")}
-                        className="status-example flex-self-center "
-                      />
-                      &nbsp;No one has voted yet.
+                  <div
+                    className="flex-column"
+                    style={{ minWidth: "120px" }}
+                  >
+                    <div className="flex-row body-m secondary-text margin-top-8">
+                      <div className="flex-column" style={{ width: "40px" }}>
+                        <Status
+                          {...Statuses.Waiting}
+                          key="waiting"
+                          size={getStatusSizeValue("m")}
+                          className="status-example flex-self-center "
+                        />
+                      </div>
+                      <div className="flex-column">
+                        &nbsp;No one has voted yet.
+                      </div>
                     </div>
-                    <div className="body-m secondary-text">
-                      <Status
-                        {...Statuses.Running}
-                        key="running"
-                        size={getStatusSizeValue("m")}
-                        className="status-example flex-self-center "
-                      />
-                      &nbsp;Review in progress, not all required reviwers have
-                      approved.
+                    <div className="flex-row body-m secondary-text margin-top-8">
+                      <div className="flex-column" style={{ width: "40px" }}>
+                        <Status
+                          {...Statuses.Running}
+                          key="running"
+                          size={getStatusSizeValue("m")}
+                          className="status-example flex-self-center "
+                        />
+                      </div>
+                      <div className="flex-column">
+                        &nbsp;Review in progress, not all required reviwers have
+                        approved or policies are passed.
+                      </div>
                     </div>
-                    <div className="body-m secondary-text">
-                      <Status
-                        {...Statuses.Success}
-                        key="success"
-                        size={getStatusSizeValue("m")}
-                        className="status-example flex-self-center "
-                      />
-                      &nbsp;Ready for completion.
+                    <div className="flex-row body-m secondary-text margin-top-8">
+                      <div className="flex-column" style={{ width: "40px" }}>
+                        <Status
+                          {...Statuses.Success}
+                          key="success"
+                          size={getStatusSizeValue("m")}
+                          className="status-example flex-self-center "
+                        />
+                      </div>
+                      <div className="flex-column">
+                        &nbsp;Ready for completion.
+                      </div>
                     </div>
-                    <div className="body-m secondary-text">
-                      <Status
-                        {...Statuses.Warning}
-                        key="warning"
-                        size={getStatusSizeValue("m")}
-                        className="status-example flex-self-center "
-                      />
-                      &nbsp;At least one reviewer is Waiting For Author.
+                    <div className="flex-row body-m secondary-text margin-top-8">
+                      <div className="flex-column" style={{ width: "40px" }}>
+                        <Status
+                          {...Statuses.Warning}
+                          key="warning"
+                          size={getStatusSizeValue("m")}
+                          className="status-example flex-self-center "
+                        />
+                      </div>
+                      <div className="flex-column">
+                        &nbsp;At least one reviewer is Waiting For Author.
+                      </div>
                     </div>
-                    <div className="body-m secondary-text">
-                      <Status
-                        {...Statuses.Failed}
-                        key="failed"
-                        size={getStatusSizeValue("m")}
-                        className="status-example flex-self-center "
-                      />
-                      &nbsp;One or more members has rejected.
+                    <div className="flex-row body-m secondary-text margin-top-8">
+                      <div className="flex-column" style={{ width: "40px" }}>
+                        <Status
+                          {...Statuses.Failed}
+                          key="failed"
+                          size={getStatusSizeValue("m")}
+                          className="status-example flex-self-center "
+                        />
+                      </div>
+                      <div className="flex-column">
+                        &nbsp;One or more members has rejected or there is a
+                        failure in some policy or status.
+                      </div>
                     </div>
                   </div>
                 </Dialog>
