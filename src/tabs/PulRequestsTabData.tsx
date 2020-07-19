@@ -222,6 +222,11 @@ export const pullRequestCriteria: GitPullRequestSearchCriteria = {
   targetRefName: "",
 };
 
+export interface IKeyValueData {
+  id: string,
+  text: string
+}
+
 export interface IPullRequestsTabState {
   projects: TeamProjectReference[];
   currentProject?: IProjectInfo | TeamProjectReference | undefined;

@@ -442,16 +442,14 @@ export function ReviewersColumn(
                   renderContent={() => (
                     <div className="flex-row rhythm-horizontal-4">
                       <div className="flex-column">
-                        <div className="flex-row flex-center justify-center">
+                        <div className="flex-row justify-start">
                           <VssPersona
-                            className="icon-margin"
                             imageUrl={reviewer._links.avatar.href}
-                            size={"small"}
+                            size={"medium"}
                             displayName={reviewer.displayName}
                           />
-                          <span>{reviewer.displayName}</span>
+                          <span className="margin-8">{reviewer.displayName}</span>
                         </div>
-                        <br />
                         <div className="flex-row flex-center justify-start margin-top-8">
                           <ReviewerVoteIconStatus reviewer={reviewer} />
                           &nbsp;

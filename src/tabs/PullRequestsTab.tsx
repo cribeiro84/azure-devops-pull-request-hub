@@ -63,7 +63,11 @@ import {
   WebApiTagDefinition,
 } from "azure-devops-extension-api/Core/Core";
 import { IListBoxItem } from "azure-devops-ui/ListBox";
-import { FilterBarHub } from "../components/FilterBarHub";
+import {
+  FilterBarHub,
+  myApprovalStatuses,
+  alternateStatusPr,
+} from "../components/FilterBarHub";
 import { hasPullRequestFailure } from "../models/constants";
 
 export class PullRequestsTab extends React.Component<
@@ -146,6 +150,11 @@ export class PullRequestsTab extends React.Component<
     });
   }
 
+  clearSavedFilter() {
+    localStorage.clear();
+    this.refresh();
+  }
+
   private async initializePage() {
     this.getOrganizationBaseUrl()
       .then(async () => {
@@ -168,18 +177,7 @@ export class PullRequestsTab extends React.Component<
             );
 
             this.getRepositories(currentProject!)
-              .then((repositories) => {
-                const storedRepos = this.getStoredSelectedRepositores();
-                if (storedRepos !== null) {
-                  storedRepos.forEach((repo: string) => {
-                    this.selectedRepos.select(
-                      repositories.findIndex((p) => {
-                        return p.id === repo;
-                      })
-                    );
-                  });
-                }
-
+              .then(() => {
                 this.getAllPullRequests().catch((error) =>
                   this.handleError(error)
                 );
@@ -229,15 +227,6 @@ export class PullRequestsTab extends React.Component<
     });
 
     return repos;
-  }
-
-  private getStoredSelectedRepositores(): string[] | null {
-    const reposInStorage = localStorage.getItem("PRMH_SelectedRepos");
-    if (reposInStorage !== null) {
-      return JSON.parse(reposInStorage);
-    }
-
-    return null;
   }
 
   private async getOrganizationBaseUrl() {
@@ -343,11 +332,14 @@ export class PullRequestsTab extends React.Component<
               this.state.currentProject!.name,
               this.baseUrl,
               (_updatedPr) => {
-                const { tagList } = self.state;
+                let { tagList } = self.state;
                 _updatedPr.labels
                   .filter((t) => !this.hasFilterValue(tagList, t.id))
                   .map((t) => {
-                    return tagList.push(t);
+                    tagList.push(t);
+                    tagList = tagList.sort(Data.sortMethod);
+
+                    return tagList;
                   });
 
                 setTimeout(() => {
@@ -398,8 +390,18 @@ export class PullRequestsTab extends React.Component<
   }
 
   private filterPullRequests() {
-    const { pullRequests, repositories } = this.state;
+    const {
+      projects,
+      pullRequests,
+      repositories,
+      sourceBranchList,
+      targetBranchList,
+      createdByList,
+      reviewerList,
+      tagList,
+    } = this.state;
 
+    const projectFilter = this.getFilterData<string[]>("selectedProject");
     const repositoriesFilter = this.getFilterData<string[]>("selectedRepos");
     const filterPullRequestTitle = this.getFilterData<string>(
       "pullRequestTitle"
@@ -415,22 +417,83 @@ export class PullRequestsTab extends React.Component<
     const myApprovalStatusFilter = this.getFilterData<string[]>(
       "selectedMyApprovalStatuses"
     );
-    const selectedAlternateStatusPrFilter = this.getFilterData<number[]>(
+    const selectedAlternateStatusPrFilter = this.getFilterData<string[]>(
       "selectedAlternateStatusPr"
     );
-    const selectedTagsFilter = this.getFilterData<number[]>("selectedTags");
+    const selectedTagsFilter = this.getFilterData<string[]>("selectedTags");
 
-    if (
-      repositoriesFilter &&
-      repositoriesFilter.length > 0 &&
-      this.selectedRepos.selectedCount === 0
-    ) {
-      repositoriesFilter.map((r) => {
-        this.selectedRepos.select(repositories.findIndex(filterItem => filterItem.id === r));
-
-        return r;
-      });
-    }
+    this.loadSavedFilterValues<string | undefined, TeamProjectReference>({
+      filterItems: projectFilter,
+      objectList: projects,
+      selectedItems: this.selectedProject,
+      getObjectPredicate: (filterItem) => {
+        return filterItem.id;
+      },
+    });
+    this.loadSavedFilterValues<string | undefined, GitRepository>({
+      filterItems: repositoriesFilter,
+      objectList: repositories,
+      selectedItems: this.selectedRepos,
+      getObjectPredicate: (filterItem) => {
+        return filterItem.id;
+      },
+    });
+    this.loadSavedFilterValues<string | undefined, Data.BranchDropDownItem>({
+      filterItems: sourceBranchFilter,
+      objectList: sourceBranchList,
+      selectedItems: this.selectedSourceBranches,
+      getObjectPredicate: (filterItem) => {
+        return filterItem.displayName;
+      },
+    });
+    this.loadSavedFilterValues<string | undefined, Data.BranchDropDownItem>({
+      filterItems: targetBranchFilter,
+      objectList: targetBranchList,
+      selectedItems: this.selectedTargetBranches,
+      getObjectPredicate: (filterItem) => {
+        return filterItem.displayName;
+      },
+    });
+    this.loadSavedFilterValues<string | undefined, IdentityRef>({
+      filterItems: createdByFilter,
+      objectList: createdByList,
+      selectedItems: this.selectedAuthors,
+      getObjectPredicate: (filterItem) => {
+        return filterItem.id;
+      },
+    });
+    this.loadSavedFilterValues<string | undefined, IdentityRefWithVote>({
+      filterItems: reviewersFilter,
+      objectList: reviewerList,
+      selectedItems: this.selectedReviewers,
+      getObjectPredicate: (filterItem) => {
+        return filterItem.id;
+      },
+    });
+    this.loadSavedFilterValues<string | undefined, Data.IKeyValueData>({
+      filterItems: myApprovalStatusFilter,
+      objectList: myApprovalStatuses,
+      selectedItems: this.selectedMyApprovalStatuses,
+      getObjectPredicate: (filterItem) => {
+        return filterItem.id;
+      },
+    });
+    this.loadSavedFilterValues<string | undefined, Data.IKeyValueData>({
+      filterItems: selectedAlternateStatusPrFilter,
+      objectList: alternateStatusPr,
+      selectedItems: this.selectedMyApprovalStatuses,
+      getObjectPredicate: (filterItem) => {
+        return filterItem.id;
+      },
+    });
+    this.loadSavedFilterValues<string | undefined, WebApiTagDefinition>({
+      filterItems: selectedTagsFilter,
+      objectList: tagList,
+      selectedItems: this.selectedTags,
+      getObjectPredicate: (filterItem) => {
+        return filterItem.id;
+      },
+    });
 
     let filteredPullRequest = pullRequests;
 
@@ -515,11 +578,11 @@ export class PullRequestsTab extends React.Component<
         const found = selectedAlternateStatusPrFilter.some((item) => {
           return (
             // tslint:disable-next-line:triple-equals
-            (pr.gitPullRequest.isDraft === true && item == 0) ||
+            (pr.gitPullRequest.isDraft === true && item === "0") ||
             // tslint:disable-next-line:triple-equals
-            (hasPullRequestFailure(pr) === true && item == 1) ||
+            (hasPullRequestFailure(pr) === true && item === "1") ||
             // tslint:disable-next-line:triple-equals
-            (pr.isAutoCompleteSet === true && item == 2)
+            (pr.isAutoCompleteSet === true && item === "2")
           );
         });
         return found;
@@ -536,6 +599,36 @@ export class PullRequestsTab extends React.Component<
     }
 
     this.reloadPullRequestItemProvider(filteredPullRequest);
+  }
+
+  loadSavedFilterValues<T extends string | number | undefined, Y extends any>({
+    filterItems,
+    objectList,
+    selectedItems,
+    getObjectPredicate,
+  }: {
+    filterItems: T[] | undefined;
+    objectList: any[];
+    selectedItems: DropdownMultiSelection | DropdownSelection;
+    getObjectPredicate: (filterItem: Y) => T;
+  }) {
+    if (
+      filterItems &&
+      filterItems.length > 0 &&
+      selectedItems.selectedCount === 0
+    ) {
+      filterItems.forEach((r) => {
+        var foundIndex = objectList.findIndex((v) => {
+          return getObjectPredicate(v) === r;
+        });
+
+        if (foundIndex >= 0) {
+          selectedItems.select(foundIndex);
+        }
+
+        return r;
+      });
+    }
   }
 
   private getFilterData<T>(key: string): T | undefined {
@@ -720,6 +813,7 @@ export class PullRequestsTab extends React.Component<
 
   public render(): JSX.Element {
     const {
+      pullRequests,
       projects,
       repositories,
       createdByList,
@@ -743,6 +837,10 @@ export class PullRequestsTab extends React.Component<
     return (
       <div className="flex-column">
         <FilterBarHub
+          filterPullRequests={() => {
+            this.clearSavedFilter();
+          }}
+          pullRequests={pullRequests}
           filter={this.filter}
           selectedProjectChanged={this.selectedProjectChanged}
           selectedProject={this.selectedProject}
@@ -798,8 +896,8 @@ export class PullRequestsTab extends React.Component<
   }
 
   getRenderContent() {
-    const { pullRequestCount } = this.state;
-    if (pullRequestCount === 0) {
+    const { pullRequestCount, pullRequests } = this.state;
+    if (pullRequestCount === 0 && pullRequests.filter(pr => pr.isStillLoading() === true).length === 0) {
       return (
         <ZeroData
           primaryText="Yeah! No Pull Request to be reviewed. Well done!"
@@ -917,6 +1015,18 @@ export class PullRequestsTab extends React.Component<
       },
       iconProps: {
         iconName: "fabric-icon ms-Icon--Refresh",
+      },
+    },
+    {
+      id: "clearSavedFilters",
+      text: "Clear Saved Filters",
+      className: "clear-filter-button",
+      isPrimary: true,
+      onActivate: () => {
+        this.clearSavedFilter();
+      },
+      iconProps: {
+        iconName: "fabric-icon ms-Icon--Clear",
       },
     },
     {
