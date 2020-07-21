@@ -229,7 +229,7 @@ export interface IKeyValueData {
 
 export interface IPullRequestsTabState {
   projects: TeamProjectReference[];
-  currentProject?: IProjectInfo | TeamProjectReference | undefined;
+  currentProject: IProjectInfo | TeamProjectReference | undefined;
   pullRequests: PullRequestModel[];
   repositories: GitRepository[];
   createdByList: IdentityRef[];
@@ -243,8 +243,8 @@ export interface IPullRequestsTabState {
 }
 
 export function sortMethod(
-  a: BranchDropDownItem | IdentityRef | WebApiTagDefinition,
-  b: BranchDropDownItem | IdentityRef | WebApiTagDefinition
+  a: BranchDropDownItem | IdentityRef | WebApiTagDefinition | GitRepository | TeamProjectReference,
+  b: BranchDropDownItem | IdentityRef | WebApiTagDefinition | GitRepository | TeamProjectReference
 ) {
   if (a.hasOwnProperty("displayName"))
   {
@@ -259,8 +259,8 @@ export function sortMethod(
   }
   else if (a.hasOwnProperty("name"))
   {
-    const convertedA = a as WebApiTagDefinition;
-    const convertedB = b as WebApiTagDefinition;
+    const convertedA = a as WebApiTagDefinition | GitRepository | TeamProjectReference;
+    const convertedB = b as WebApiTagDefinition | GitRepository | TeamProjectReference;
     if (convertedA.name < convertedB.name) {
       return -1;
     }
