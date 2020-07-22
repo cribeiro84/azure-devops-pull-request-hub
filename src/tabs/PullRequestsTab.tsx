@@ -1,7 +1,6 @@
 import "./PullRequestTab.scss";
 
 import * as React from "react";
-//import { produce } from "immer";
 
 import {
   AZDEVOPS_CLOUD_API_ORGANIZATION,
@@ -10,6 +9,7 @@ import {
   getCommonServiceIdsValue,
   getZeroDataActionTypeValue,
   getStatusSizeValue,
+  FILTER_STORE_KEY_NAME,
 } from "../models/constants";
 
 import { Spinner, SpinnerSize } from "office-ui-fabric-react";
@@ -31,9 +31,9 @@ import {
 } from "azure-devops-extension-api/Git/Git";
 
 // Azure DevOps UI
+import { Toast } from "azure-devops-ui/Toast";
 import { MessageCard, MessageCardSeverity } from "azure-devops-ui/MessageCard";
 import { ListSelection } from "azure-devops-ui/List";
-import { IHeaderCommandBarItem } from "azure-devops-ui/HeaderCommandBar";
 import { Observer } from "azure-devops-ui/Observer";
 import { Dialog } from "azure-devops-ui/Dialog";
 import {
@@ -64,11 +64,14 @@ import {
 import { IListBoxItem } from "azure-devops-ui/ListBox";
 import { FilterBarHub } from "../components/FilterBarHub";
 import { hasPullRequestFailure } from "../models/constants";
+import { ContentSize } from "azure-devops-ui/Callout";
+import { IHeaderCommandBarItem } from "azure-devops-ui/HeaderCommandBar";
 
 export class PullRequestsTab extends React.Component<
   {},
   Data.IPullRequestsTabState
 > {
+  private toastRef: React.RefObject<Toast> = React.createRef<Toast>();
   private baseUrl: string = "";
   private prRowSelecion = new ListSelection({
     selectOnFocus: true,
@@ -114,21 +117,26 @@ export class PullRequestsTab extends React.Component<
       loading: true,
       errorMessage: "",
       pullRequestCount: 0,
+      showToastMessage: false,
+      toastMessageToShow: "",
     };
 
     this.filter = new Filter();
   }
 
   public async componentDidMount() {
-    DevOps.init()
-      .then(async () => {
-        this.initializeState();
-        this.setupFilter();
-        await this.initializePage();
+    DevOps.init().then(async () => {
+      this.initializeState();
+      this.setupFilter();
+      await this.initializePage();
     });
   }
 
   componentWillUnmount() {
+    this.unloadFilter();
+  }
+
+  private unloadFilter() {
     this.filter.unsubscribe(() => {
       this.filterPullRequests();
     }, FILTER_CHANGE_EVENT);
@@ -146,44 +154,67 @@ export class PullRequestsTab extends React.Component<
     });
   }
 
+  private showToastMessage(message: string) {
+    this.setState({ showToastMessage: true, toastMessageToShow: message });
+
+    setTimeout(() => {
+      this.toastRef.current!.fadeOut().promise.then(() => {
+        this.setState({ showToastMessage: false, toastMessageToShow: message });
+      });
+    }, 5000);
+  }
+
+  saveCurrentFilters() {
+    const currentFilter = this.filter.getState();
+    localStorage.setItem(FILTER_STORE_KEY_NAME, JSON.stringify(currentFilter));
+    this.showToastMessage("Current selected filters have been saved.");
+  }
+
+  clearSavedFilter() {
+    this.showToastMessage("Saved filters have been removed.");
+    localStorage.removeItem(FILTER_STORE_KEY_NAME);
+    this.filter.reset();
+    this.refresh();
+  }
+
   private async initializePage() {
+    const self = this;
     this.getOrganizationBaseUrl()
       .then(async () => {
         const projectService = await DevOps.getService<IProjectPageService>(
           getCommonServiceIdsValue("ProjectPageService")
         );
 
-        const currentProject = await projectService.getProject();
+        const storedSavedFilter = localStorage.getItem(FILTER_STORE_KEY_NAME);
+        let currentProjectId: string | undefined;
+
+        if (storedSavedFilter && storedSavedFilter.length > 0) {
+          const savedFilterState = JSON.parse(storedSavedFilter);
+          self.filter.setState(savedFilterState);
+
+          currentProjectId = self.filter.getFilterItemValue<string>(
+            "selectedProject"
+          );
+        }
 
         this.getTeamProjects()
-          .then((projects) => {
+          .then(async (projects) => {
             this.setState({
               projects,
             });
 
-            this.selectedProject.select(
-              projects.findIndex((p) => {
-                return p.id === currentProject!.id;
-              })
-            );
+            const currentProject =
+              currentProjectId && currentProjectId.length > 0
+                ? currentProjectId[0]
+                : (await projectService.getProject())!.id;
 
-            this.getRepositories(currentProject!)
-              .then((repositories) => {
-                const storedRepos = this.getStoredSelectedRepositores();
-                if (storedRepos !== null) {
-                  storedRepos.forEach((repo: string) => {
-                    this.selectedRepos.select(
-                      repositories.findIndex((p) => {
-                        return p.id === repo;
-                      })
-                    );
-                  });
-                }
+            const projectIndex = self.changeProjectSelectionTo(currentProject);
 
-                this.getAllPullRequests()
-                  .catch((error) =>
-                    this.handleError(error)
-                  );
+            this.getRepositories(projects[projectIndex])
+              .then(() => {
+                this.getAllPullRequests().catch((error) =>
+                  this.handleError(error)
+                );
               })
               .catch((error) => {
                 this.handleError(error);
@@ -215,34 +246,13 @@ export class PullRequestsTab extends React.Component<
 
     const repos = (
       await this.gitClient.getRepositories(project.name, true)
-    ).sort((a: GitRepository, b: GitRepository) => {
-      if (a.name < b.name) {
-        return -1;
-      }
-      if (a.name > b.name) {
-        return 1;
-      }
-      return 0;
-    });
+    ).sort(Data.sortMethod);
 
     this.setState({
       repositories: repos,
     });
 
     return repos;
-  }
-
-  private getStoredSelectedRepositores(): string[] | null {
-    const reposInStorage = localStorage.getItem("PRMH_SelectedRepos");
-    if (reposInStorage !== null) {
-      return JSON.parse(reposInStorage);
-    }
-
-    return null;
-  }
-
-  private storeSelectedRepositores(repositores: string[]) {
-    localStorage.setItem("PRMH_SelectedRepos", JSON.stringify(repositores));
   }
 
   private async getOrganizationBaseUrl() {
@@ -296,23 +306,15 @@ export class PullRequestsTab extends React.Component<
   }
 
   private async getTeamProjects(): Promise<TeamProjectReference[]> {
-    return (await this.coreClient.getProjects()).sort(
-      (a: TeamProjectReference, b: TeamProjectReference) => {
-        if (a.name < b.name) {
-          return -1;
-        }
-        if (a.name > b.name) {
-          return 1;
-        }
-        return 0;
-      }
-    );
+    return (await this.coreClient.getProjects()).sort(Data.sortMethod);
   }
 
   private async getAllPullRequests() {
     const self = this;
     this.setState({ loading: true });
-    const { repositories, pullRequests } = this.state;
+    const { currentProject, repositories, pullRequests } = this.state;
+
+    this.changeProjectSelectionTo(currentProject!.id);
 
     let newPullRequestList = Object.assign([], pullRequests);
 
@@ -348,14 +350,19 @@ export class PullRequestsTab extends React.Component<
               this.state.currentProject!.name,
               this.baseUrl,
               (_updatedPr) => {
-                const { tagList } = self.state;
-                _updatedPr.labels.filter(t => !this.hasFilterValue(tagList, t.id)).map(t => {
-                  return tagList.push(t);
-                });
+                let { tagList } = self.state;
+                _updatedPr.labels
+                  .filter((t) => !this.hasFilterValue(tagList, t.id))
+                  .map((t) => {
+                    tagList.push(t);
+                    tagList = tagList.sort(Data.sortMethod);
 
-                  setTimeout(() => {
-                    self.filterPullRequests();
-                  }, 10);
+                    return tagList;
+                  });
+
+                setTimeout(() => {
+                  self.filterPullRequests();
+                }, 10);
               }
             )
           );
@@ -382,9 +389,13 @@ export class PullRequestsTab extends React.Component<
           this.setState({
             pullRequests: newPullRequestList,
           });
-
-          this.loadLists();
+        } else {
+          this.setState({
+            pullRequests: [],
+          });
         }
+
+        this.loadLists();
       });
   }
 
@@ -397,23 +408,16 @@ export class PullRequestsTab extends React.Component<
 
     this.populateFilterBarFields(pullRequests);
     this.setState({ loading: false });
+
     this.filterPullRequests();
   }
 
   private filterPullRequests() {
     const { pullRequests } = this.state;
 
-    const repos = this.filter.getFilterItemValue<string[]>("selectedRepos");
-    let repositoriesFilter = repos;
-    if (repos === undefined) {
-      const storedRepos = this.getStoredSelectedRepositores();
-      if (storedRepos !== null) {
-        repositoriesFilter = storedRepos;
-      }
-    } else {
-      this.storeSelectedRepositores(repos);
-    }
-
+    const repositoriesFilter = this.filter.getFilterItemValue<string[]>(
+      "selectedRepos"
+    );
     const filterPullRequestTitle = this.filter.getFilterItemValue<string>(
       "pullRequestTitle"
     );
@@ -429,18 +433,15 @@ export class PullRequestsTab extends React.Component<
     const reviewersFilter = this.filter.getFilterItemValue<string[]>(
       "selectedReviewers"
     );
-
     const myApprovalStatusFilter = this.filter.getFilterItemValue<string[]>(
       "selectedMyApprovalStatuses"
     );
-
     const selectedAlternateStatusPrFilter = this.filter.getFilterItemValue<
-      number[]
+      string[]
     >("selectedAlternateStatusPr");
-
-    const selectedTagsFilter = this.filter.getFilterItemValue<
-      number[]
-    >("selectedTags");
+    const selectedTagsFilter = this.filter.getFilterItemValue<string[]>(
+      "selectedTags"
+    );
 
     let filteredPullRequest = pullRequests;
 
@@ -525,26 +526,21 @@ export class PullRequestsTab extends React.Component<
         const found = selectedAlternateStatusPrFilter.some((item) => {
           return (
             // tslint:disable-next-line:triple-equals
-            (pr.gitPullRequest.isDraft === true && item == 0) ||
+            (pr.gitPullRequest.isDraft === true && item === "0") ||
             // tslint:disable-next-line:triple-equals
-            (hasPullRequestFailure(pr) === true && item == 1) ||
+            (hasPullRequestFailure(pr) === true && item === "1") ||
             // tslint:disable-next-line:triple-equals
-            (pr.isAutoCompleteSet === true && item == 2)
+            (pr.isAutoCompleteSet === true && item === "2")
           );
         });
         return found;
       });
     }
 
-    if (
-      selectedTagsFilter &&
-      selectedTagsFilter.length > 0
-    ) {
+    if (selectedTagsFilter && selectedTagsFilter.length > 0) {
       filteredPullRequest = filteredPullRequest.filter((pr) => {
         const found = selectedTagsFilter.some((item) => {
-          return (
-            this.hasFilterValue(pr.labels, item)
-          );
+          return this.hasFilterValue(pr.labels, item);
         });
         return found;
       });
@@ -553,8 +549,43 @@ export class PullRequestsTab extends React.Component<
     this.reloadPullRequestItemProvider(filteredPullRequest);
   }
 
+  loadSavedFilterValues<T extends string | number | undefined, Y extends any>({
+    filterItems,
+    objectList,
+    selectedItems,
+    getObjectPredicate,
+  }: {
+    filterItems: T[] | undefined;
+    objectList: any[];
+    selectedItems: DropdownMultiSelection | DropdownSelection;
+    getObjectPredicate: (filterItem: Y) => T;
+  }) {
+    if (
+      filterItems &&
+      filterItems.length > 0 &&
+      selectedItems.selectedCount === 0
+    ) {
+      filterItems.forEach((r) => {
+        var foundIndex = objectList.findIndex((v) => {
+          return getObjectPredicate(v) === r;
+        });
+
+        if (foundIndex >= 0) {
+          selectedItems.select(foundIndex);
+        }
+
+        return r;
+      });
+    }
+  }
+
   private hasFilterValue(
-    list: Array<Data.BranchDropDownItem | IdentityRef | IdentityRefWithVote | WebApiTagDefinition>,
+    list: Array<
+      | Data.BranchDropDownItem
+      | IdentityRef
+      | IdentityRefWithVote
+      | WebApiTagDefinition
+    >,
     value: any
   ): boolean {
     return list.some((item) => {
@@ -688,8 +719,7 @@ export class PullRequestsTab extends React.Component<
   };
 
   refresh = async () => {
-    await this.getAllPullRequests()
-      .catch((error) => this.handleError(error));
+    await this.getAllPullRequests().catch((error) => this.handleError(error));
   };
 
   onHelpDismiss = () => {
@@ -698,6 +728,8 @@ export class PullRequestsTab extends React.Component<
 
   public render(): JSX.Element {
     const {
+      currentProject,
+      pullRequests,
       projects,
       repositories,
       createdByList,
@@ -706,7 +738,7 @@ export class PullRequestsTab extends React.Component<
       reviewerList,
       loading,
       errorMessage,
-      tagList
+      tagList,
     } = this.state;
 
     if (loading === true) {
@@ -721,6 +753,11 @@ export class PullRequestsTab extends React.Component<
     return (
       <div className="flex-column">
         <FilterBarHub
+          currentProject={currentProject!}
+          filterPullRequests={() => {
+            this.refresh();
+          }}
+          pullRequests={pullRequests}
           filter={this.filter}
           selectedProjectChanged={this.selectedProjectChanged}
           selectedProject={this.selectedProject}
@@ -767,17 +804,36 @@ export class PullRequestsTab extends React.Component<
     item: IListBoxItem<TeamProjectReference | ProjectInfo>
   ) {
     const { projects } = this.state;
+    this.filter.reset();
+    const projectIndex = this.changeProjectSelectionTo(item.id);
+
+    this.getRepositories(projects[projectIndex]).then(() => {
+      this.refresh();
+    });
+  }
+
+  changeProjectSelectionTo(id: string): number {
+    const { projects } = this.state;
     const projectIndex = projects.findIndex((p) => {
-      return p.id === item.id;
+      return p.id === id;
     });
 
-    await this.getRepositories(projects[projectIndex]);
-    this.refresh();
+    this.selectedProject.select(projectIndex);
+
+    return projectIndex;
   }
 
   getRenderContent() {
-    const { pullRequestCount } = this.state;
-    if (pullRequestCount === 0) {
+    const {
+      pullRequestCount,
+      pullRequests,
+      showToastMessage,
+      toastMessageToShow,
+    } = this.state;
+    if (
+      pullRequestCount === 0 &&
+      pullRequests.filter((pr) => pr.isStillLoading() === true).length === 0
+    ) {
       return (
         <ZeroData
           primaryText="Yeah! No Pull Request to be reviewed. Well done!"
@@ -803,6 +859,9 @@ export class PullRequestsTab extends React.Component<
           }}
           headerCommandBarItems={this.listHeaderColumns}
         >
+          {showToastMessage && (
+            <Toast ref={this.toastRef} message={toastMessageToShow} />
+          )}
           <React.Fragment>
             <Table<PullRequestModel.PullRequestModel>
               columns={Data.columns}
@@ -818,7 +877,8 @@ export class PullRequestsTab extends React.Component<
             {(props: { isDialogOpen: boolean }) => {
               return props.isDialogOpen ? (
                 <Dialog
-                  titleProps={{ text: "Help" }}
+                  titleProps={{ text: "Help!" }}
+                  contentSize={ContentSize.Auto}
                   footerButtonProps={[
                     {
                       text: "Close",
@@ -829,51 +889,72 @@ export class PullRequestsTab extends React.Component<
                 >
                   <strong>Statuses legend:</strong>
                   <div className="flex-column" style={{ minWidth: "120px" }}>
-                    <div className="body-m secondary-text">
-                      <Status
-                        {...Statuses.Waiting}
-                        key="waiting"
-                        size={getStatusSizeValue("m")}
-                        className="status-example flex-self-center "
-                      />
-                      &nbsp;No one has voted yet.
+                    <div className="flex-row body-m secondary-text margin-top-8">
+                      <div className="flex-column" style={{ width: "40px" }}>
+                        <Status
+                          {...Statuses.Waiting}
+                          key="waiting"
+                          size={getStatusSizeValue("m")}
+                          className="status-example flex-self-center "
+                        />
+                      </div>
+                      <div className="flex-column">
+                        &nbsp;No one has voted yet.
+                      </div>
                     </div>
-                    <div className="body-m secondary-text">
-                      <Status
-                        {...Statuses.Running}
-                        key="running"
-                        size={getStatusSizeValue("m")}
-                        className="status-example flex-self-center "
-                      />
-                      &nbsp;Review in progress, not all required reviwers have
-                      approved.
+                    <div className="flex-row body-m secondary-text margin-top-8">
+                      <div className="flex-column" style={{ width: "40px" }}>
+                        <Status
+                          {...Statuses.Running}
+                          key="running"
+                          size={getStatusSizeValue("m")}
+                          className="status-example flex-self-center "
+                        />
+                      </div>
+                      <div className="flex-column">
+                        &nbsp;Review in progress, not all required reviwers have
+                        approved or policies are passed.
+                      </div>
                     </div>
-                    <div className="body-m secondary-text">
-                      <Status
-                        {...Statuses.Success}
-                        key="success"
-                        size={getStatusSizeValue("m")}
-                        className="status-example flex-self-center "
-                      />
-                      &nbsp;Ready for completion.
+                    <div className="flex-row body-m secondary-text margin-top-8">
+                      <div className="flex-column" style={{ width: "40px" }}>
+                        <Status
+                          {...Statuses.Success}
+                          key="success"
+                          size={getStatusSizeValue("m")}
+                          className="status-example flex-self-center "
+                        />
+                      </div>
+                      <div className="flex-column">
+                        &nbsp;Ready for completion.
+                      </div>
                     </div>
-                    <div className="body-m secondary-text">
-                      <Status
-                        {...Statuses.Warning}
-                        key="warning"
-                        size={getStatusSizeValue("m")}
-                        className="status-example flex-self-center "
-                      />
-                      &nbsp;At least one reviewer is Waiting For Author.
+                    <div className="flex-row body-m secondary-text margin-top-8">
+                      <div className="flex-column" style={{ width: "40px" }}>
+                        <Status
+                          {...Statuses.Warning}
+                          key="warning"
+                          size={getStatusSizeValue("m")}
+                          className="status-example flex-self-center "
+                        />
+                      </div>
+                      <div className="flex-column">
+                        &nbsp;At least one reviewer is Waiting For Author.
+                      </div>
                     </div>
-                    <div className="body-m secondary-text">
-                      <Status
-                        {...Statuses.Failed}
-                        key="failed"
-                        size={getStatusSizeValue("m")}
-                        className="status-example flex-self-center "
-                      />
-                      &nbsp;One or more members has rejected.
+                    <div className="flex-row body-m secondary-text margin-top-8">
+                      <div className="flex-column" style={{ width: "40px" }}>
+                        <Status
+                          {...Statuses.Failed}
+                          key="failed"
+                          size={getStatusSizeValue("m")}
+                          className="status-example flex-self-center "
+                        />
+                      </div>
+                      <div className="flex-column">
+                        &nbsp;One or more members has rejected or there is a
+                        failure in some policy or status.
+                      </div>
                     </div>
                   </div>
                 </Dialog>
@@ -888,8 +969,9 @@ export class PullRequestsTab extends React.Component<
   private listHeaderColumns: IHeaderCommandBarItem[] = [
     {
       id: "refresh",
-      text: "Refresh",
+      text: "",
       isPrimary: true,
+      tooltipProps: { text: "Refresh the list" },
       onActivate: () => {
         this.refresh();
       },
@@ -898,9 +980,36 @@ export class PullRequestsTab extends React.Component<
       },
     },
     {
+      id: "saveCurrentFilter",
+      text: "",
+      className: "save-filter-button",
+      isPrimary: true,
+      tooltipProps: { text: "Save Current Filters" },
+      onActivate: () => {
+        this.saveCurrentFilters();
+      },
+      iconProps: {
+        iconName: "fabric-icon ms-Icon--Save",
+      },
+    },
+    {
+      id: "clearSavedFilters",
+      text: "",
+      className: "clear-filter-button",
+      isPrimary: true,
+      tooltipProps: { text: "Clear Saved Filters" },
+      onActivate: () => {
+        this.clearSavedFilter();
+      },
+      iconProps: {
+        iconName: "fabric-icon ms-Icon--Clear",
+      },
+    },
+    {
       id: "help",
       text: "Help",
       isPrimary: false,
+      tooltipProps: { text: "Help" },
       onActivate: () => {
         this.isDialogOpen.value = true;
       },

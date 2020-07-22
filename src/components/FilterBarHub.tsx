@@ -6,17 +6,17 @@ import { DropdownFilterBarItem } from "azure-devops-ui/Dropdown";
 import {
   TeamProjectReference,
   ProjectInfo,
-  WebApiTagDefinition
+  WebApiTagDefinition,
 } from "azure-devops-extension-api/Core/Core";
 import { Filter } from "azure-devops-ui/Utilities/Filter";
 import { IListBoxItem } from "azure-devops-ui/ListBox";
 import {
   DropdownSelection,
-  DropdownMultiSelection
+  DropdownMultiSelection,
 } from "azure-devops-ui/Utilities/DropdownSelection";
 import {
   GitRepository,
-  IdentityRefWithVote
+  IdentityRefWithVote,
 } from "azure-devops-extension-api/Git/Git";
 import * as Data from "../tabs/PulRequestsTabData";
 import { IdentityRef } from "azure-devops-extension-api/WebApi/WebApi";
@@ -24,26 +24,38 @@ import { getVoteDescription } from "./Columns";
 import { ITableColumn } from "azure-devops-ui/Table";
 import { Status } from "azure-devops-ui/Status";
 import { getStatusSizeValue, getStatusIcon } from "../models/constants";
+import { PullRequestModel } from "../models/PullRequestModel";
+import { Spinner } from "office-ui-fabric-react";
+import { IProjectInfo } from "azure-devops-extension-api";
 
-export const myApprovalStatuses = Object.keys(Data.ReviewerVoteOption)
-  .filter(value => !isNaN(parseInt(value, 10)))
+export const myApprovalStatuses: Data.IKeyValueData[] = Object.keys(
+  Data.ReviewerVoteOption
+)
+  .filter((value) => !isNaN(parseInt(value, 10)))
   .map((item) => {
     return {
       id: item,
-      text: getVoteDescription(parseInt(item, 10))
+      text: getVoteDescription(parseInt(item, 10)),
     };
   });
 
-export const alternateStatusPr = Object.keys(Data.AlternateStatusPr)
-  .filter(value => !isNaN(parseInt(value, 10)))
-  .map(item => {
+export const alternateStatusPr: Data.IKeyValueData[] = Object.keys(
+  Data.AlternateStatusPr
+)
+  .filter((value) => !isNaN(parseInt(value, 10)))
+  .map((item) => {
     return {
       id: item,
-      text: Object.values(Data.AlternateStatusPr)[parseInt(item, 10)].toString()
+      text: Object.values(Data.AlternateStatusPr)[
+        parseInt(item, 10)
+      ].toString(),
     };
   });
 
 export interface IFilterHubProps {
+  filterPullRequests: () => void;
+  currentProject: IProjectInfo | TeamProjectReference;
+  pullRequests: PullRequestModel[];
   projects: TeamProjectReference[];
   filter: Filter;
   selectedProjectChanged: (
@@ -69,26 +81,29 @@ export interface IFilterHubProps {
 
 export function FilterBarHub(props: IFilterHubProps): JSX.Element {
   return (
-    <FilterBar filter={props.filter}>
+    <FilterBar filter={props.filter} onDismissClicked={() => {
+      props.filterPullRequests();
+    }}>
       <KeywordFilterBarItem
-        filterItemKey="pullRequestTitle"
-        placeholder={"Search Pull Requests"}
+        filterItemKey={`pullRequestTitle`}
+        placeholder={"Search Pull Requests by Name or ID"}
         filter={props.filter}
+        clearable={true}
       />
 
       <React.Fragment>
         <DropdownFilterBarItem
-          filterItemKey="selectedProject"
+          filterItemKey={`selectedProject`}
           onSelect={props.selectedProjectChanged}
           filter={props.filter}
           selection={props.selectedProject}
           placeholder="Projects"
           showFilterBox={true}
           noItemsText="No project found"
-          items={props.projects.map(i => {
+          items={props.projects.map((i) => {
             return {
               id: i.id,
-              text: i.name
+              text: i.name,
             };
           })}
         />
@@ -96,16 +111,16 @@ export function FilterBarHub(props: IFilterHubProps): JSX.Element {
 
       <React.Fragment>
         <DropdownFilterBarItem
-          filterItemKey="selectedRepos"
+          filterItemKey={`selectedRepos`}
           filter={props.filter}
           selection={props.selectedRepos}
           placeholder="Repositories"
           showFilterBox={true}
           noItemsText="No repository found"
-          items={props.repositories.map(i => {
+          items={props.repositories.map((i) => {
             return {
               id: i.id,
-              text: i.name
+              text: i.name,
             };
           })}
         />
@@ -113,14 +128,14 @@ export function FilterBarHub(props: IFilterHubProps): JSX.Element {
 
       <React.Fragment>
         <DropdownFilterBarItem
-          filterItemKey="selectedSourceBranches"
+          filterItemKey={`selectedSourceBranches`}
           filter={props.filter}
           showFilterBox={true}
           noItemsText="No source branch found"
-          items={props.sourceBranchList.map(i => {
+          items={props.sourceBranchList.map((i) => {
             return {
               id: i.displayName,
-              text: i.displayName
+              text: i.displayName,
             };
           })}
           selection={props.selectedSourceBranches}
@@ -130,14 +145,14 @@ export function FilterBarHub(props: IFilterHubProps): JSX.Element {
 
       <React.Fragment>
         <DropdownFilterBarItem
-          filterItemKey="selectedTargetBranches"
+          filterItemKey={`selectedTargetBranches`}
           filter={props.filter}
           showFilterBox={true}
           noItemsText="No target branch found"
-          items={props.targetBranchList.map(i => {
+          items={props.targetBranchList.map((i) => {
             return {
               id: i.displayName,
-              text: i.displayName
+              text: i.displayName,
             };
           })}
           selection={props.selectedTargetBranches}
@@ -147,14 +162,14 @@ export function FilterBarHub(props: IFilterHubProps): JSX.Element {
 
       <React.Fragment>
         <DropdownFilterBarItem
-          filterItemKey="selectedAuthors"
+          filterItemKey={`selectedAuthors`}
           noItemsText="No one found"
           filter={props.filter}
           showFilterBox={true}
-          items={props.createdByList.map(i => {
+          items={props.createdByList.map((i) => {
             return {
               id: i.id,
-              text: i.displayName
+              text: i.displayName,
             };
           })}
           selection={props.selectedAuthors}
@@ -164,14 +179,14 @@ export function FilterBarHub(props: IFilterHubProps): JSX.Element {
 
       <React.Fragment>
         <DropdownFilterBarItem
-          filterItemKey="selectedReviewers"
+          filterItemKey={`selectedReviewers`}
           noItemsText="No one found"
           filter={props.filter}
           showFilterBox={true}
-          items={props.reviewerList.map(i => {
+          items={props.reviewerList.map((i) => {
             return {
               id: i.id,
-              text: i.displayName
+              text: i.displayName,
             };
           })}
           selection={props.selectedReviewers}
@@ -181,7 +196,7 @@ export function FilterBarHub(props: IFilterHubProps): JSX.Element {
 
       <React.Fragment>
         <DropdownFilterBarItem
-          filterItemKey="selectedMyApprovalStatuses"
+          filterItemKey={`selectedMyApprovalStatuses`}
           filter={props.filter}
           items={myApprovalStatuses}
           selection={props.selectedMyApprovalStatuses}
@@ -191,14 +206,19 @@ export function FilterBarHub(props: IFilterHubProps): JSX.Element {
             tableColumn: ITableColumn<IListBoxItem<{}>>,
             tableItem: IListBoxItem<{}>
           ): JSX.Element => (
-            <td key={rowIndex} className="bolt-list-box-text bolt-list-box-text-multi-select asi-container">
+            <td
+              key={rowIndex}
+              className="bolt-list-box-text bolt-list-box-text-multi-select asi-container"
+            >
               <Status
                 {...getStatusIcon(parseInt(tableItem.id!, 10))}
                 key="failed"
                 size={getStatusSizeValue("m")}
                 className="flex-self-center"
               />{" "}
-              <span className="margin-left-8">{getVoteDescription(parseInt(tableItem.id!, 10))}</span>
+              <span className="margin-left-8">
+                {getVoteDescription(parseInt(tableItem.id!, 10))}
+              </span>
             </td>
           )}
           placeholder={"My Approval Status"}
@@ -207,7 +227,7 @@ export function FilterBarHub(props: IFilterHubProps): JSX.Element {
 
       <React.Fragment>
         <DropdownFilterBarItem
-          filterItemKey="selectedAlternateStatusPr"
+          filterItemKey={`selectedAlternateStatusPr`}
           filter={props.filter}
           items={alternateStatusPr}
           selection={props.selectedAlternateStatusPr}
@@ -216,18 +236,23 @@ export function FilterBarHub(props: IFilterHubProps): JSX.Element {
       </React.Fragment>
 
       <React.Fragment>
-        <DropdownFilterBarItem
-          filterItemKey="selectedTags"
-          filter={props.filter}
-          items={props.tagList.sort(Data.sortMethod).map(i => {
-            return {
-              id: i.id,
-              text: i.name
-            };
-          })}
-          selection={props.selectedTags}
-          placeholder="Tags"
-        />
+        {props.pullRequests.filter((pr) => pr.isStillLoading() === true)
+          .length > 0 ? (
+          <Spinner />
+        ) : (
+          <DropdownFilterBarItem
+            filterItemKey={`selectedTags`}
+            filter={props.filter}
+            items={props.tagList.map((i) => {
+              return {
+                id: i.id,
+                text: i.name,
+              };
+            })}
+            selection={props.selectedTags}
+            placeholder="Tags"
+          />
+        )}
       </React.Fragment>
     </FilterBar>
   );

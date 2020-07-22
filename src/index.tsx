@@ -69,7 +69,7 @@ export class App extends React.Component<{}, IHubContentState> {
           // @ts-ignore
           tabSize={useCompactPivots ? TabSize.Compact : TabSize.Tall}
         >
-          <Tab name="Active Pull Requests" id="pull-requests" />
+          <Tab name="Active" id="pull-requests" />
         </TabBar>
 
         <div className="page-content-left page-content-right page-content-top page-content-bottom">
