@@ -85,7 +85,7 @@ export function FilterBarHub(props: IFilterHubProps): JSX.Element {
       props.filterPullRequests();
     }}>
       <KeywordFilterBarItem
-        filterItemKey={`${props.currentProject.id}_pullRequestTitle`}
+        filterItemKey={`pullRequestTitle`}
         placeholder={"Search Pull Requests by Name or ID"}
         filter={props.filter}
         clearable={true}
@@ -111,7 +111,7 @@ export function FilterBarHub(props: IFilterHubProps): JSX.Element {
 
       <React.Fragment>
         <DropdownFilterBarItem
-          filterItemKey={`${props.currentProject.id}_selectedRepos`}
+          filterItemKey={`selectedRepos`}
           filter={props.filter}
           selection={props.selectedRepos}
           placeholder="Repositories"
@@ -128,7 +128,7 @@ export function FilterBarHub(props: IFilterHubProps): JSX.Element {
 
       <React.Fragment>
         <DropdownFilterBarItem
-          filterItemKey={`${props.currentProject.id}_selectedSourceBranches`}
+          filterItemKey={`selectedSourceBranches`}
           filter={props.filter}
           showFilterBox={true}
           noItemsText="No source branch found"
@@ -145,7 +145,7 @@ export function FilterBarHub(props: IFilterHubProps): JSX.Element {
 
       <React.Fragment>
         <DropdownFilterBarItem
-          filterItemKey={`${props.currentProject.id}_selectedTargetBranches`}
+          filterItemKey={`selectedTargetBranches`}
           filter={props.filter}
           showFilterBox={true}
           noItemsText="No target branch found"
@@ -162,7 +162,7 @@ export function FilterBarHub(props: IFilterHubProps): JSX.Element {
 
       <React.Fragment>
         <DropdownFilterBarItem
-          filterItemKey={`${props.currentProject.id}_selectedAuthors`}
+          filterItemKey={`selectedAuthors`}
           noItemsText="No one found"
           filter={props.filter}
           showFilterBox={true}
@@ -179,7 +179,7 @@ export function FilterBarHub(props: IFilterHubProps): JSX.Element {
 
       <React.Fragment>
         <DropdownFilterBarItem
-          filterItemKey={`${props.currentProject.id}_selectedReviewers`}
+          filterItemKey={`selectedReviewers`}
           noItemsText="No one found"
           filter={props.filter}
           showFilterBox={true}
@@ -196,7 +196,7 @@ export function FilterBarHub(props: IFilterHubProps): JSX.Element {
 
       <React.Fragment>
         <DropdownFilterBarItem
-          filterItemKey={`${props.currentProject.id}_selectedMyApprovalStatuses`}
+          filterItemKey={`selectedMyApprovalStatuses`}
           filter={props.filter}
           items={myApprovalStatuses}
           selection={props.selectedMyApprovalStatuses}
@@ -227,7 +227,7 @@ export function FilterBarHub(props: IFilterHubProps): JSX.Element {
 
       <React.Fragment>
         <DropdownFilterBarItem
-          filterItemKey={`${props.currentProject.id}_selectedAlternateStatusPr`}
+          filterItemKey={`selectedAlternateStatusPr`}
           filter={props.filter}
           items={alternateStatusPr}
           selection={props.selectedAlternateStatusPr}
@@ -241,7 +241,7 @@ export function FilterBarHub(props: IFilterHubProps): JSX.Element {
           <Spinner />
         ) : (
           <DropdownFilterBarItem
-            filterItemKey={`${props.currentProject.id}_selectedTags`}
+            filterItemKey={`selectedTags`}
             filter={props.filter}
             items={props.tagList.map((i) => {
               return {

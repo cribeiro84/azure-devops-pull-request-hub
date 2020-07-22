@@ -1,7 +1,6 @@
 import "./PullRequestTab.scss";
 
 import * as React from "react";
-//import { produce } from "immer";
 
 import {
   AZDEVOPS_CLOUD_API_ORGANIZATION,
@@ -10,7 +9,7 @@ import {
   getCommonServiceIdsValue,
   getZeroDataActionTypeValue,
   getStatusSizeValue,
-  STORED_CACHE_KEY_PREFIX,
+  FILTER_STORE_KEY_NAME,
 } from "../models/constants";
 
 import { Spinner, SpinnerSize } from "office-ui-fabric-react";
@@ -32,9 +31,9 @@ import {
 } from "azure-devops-extension-api/Git/Git";
 
 // Azure DevOps UI
+import { Toast } from "azure-devops-ui/Toast";
 import { MessageCard, MessageCardSeverity } from "azure-devops-ui/MessageCard";
 import { ListSelection } from "azure-devops-ui/List";
-import { IHeaderCommandBarItem } from "azure-devops-ui/HeaderCommandBar";
 import { Observer } from "azure-devops-ui/Observer";
 import { Dialog } from "azure-devops-ui/Dialog";
 import {
@@ -63,18 +62,16 @@ import {
   WebApiTagDefinition,
 } from "azure-devops-extension-api/Core/Core";
 import { IListBoxItem } from "azure-devops-ui/ListBox";
-import {
-  FilterBarHub,
-  myApprovalStatuses,
-  alternateStatusPr,
-} from "../components/FilterBarHub";
+import { FilterBarHub } from "../components/FilterBarHub";
 import { hasPullRequestFailure } from "../models/constants";
 import { ContentSize } from "azure-devops-ui/Callout";
+import { IHeaderCommandBarItem } from "azure-devops-ui/HeaderCommandBar";
 
 export class PullRequestsTab extends React.Component<
   {},
   Data.IPullRequestsTabState
 > {
+  private toastRef: React.RefObject<Toast> = React.createRef<Toast>();
   private baseUrl: string = "";
   private prRowSelecion = new ListSelection({
     selectOnFocus: true,
@@ -120,6 +117,8 @@ export class PullRequestsTab extends React.Component<
       loading: true,
       errorMessage: "",
       pullRequestCount: 0,
+      showToastMessage: false,
+      toastMessageToShow: "",
     };
 
     this.filter = new Filter();
@@ -144,9 +143,7 @@ export class PullRequestsTab extends React.Component<
   }
 
   private setupFilter() {
-    this.filter.subscribe((value, action) => {
-      console.log(value);
-      console.log(action);
+    this.filter.subscribe(() => {
       this.filterPullRequests();
     }, FILTER_CHANGE_EVENT);
   }
@@ -157,34 +154,63 @@ export class PullRequestsTab extends React.Component<
     });
   }
 
+  private showToastMessage(message: string) {
+    this.setState({ showToastMessage: true, toastMessageToShow: message });
+
+    setTimeout(() => {
+      this.toastRef.current!.fadeOut().promise.then(() => {
+        this.setState({ showToastMessage: false, toastMessageToShow: message });
+      });
+    }, 5000);
+  }
+
+  saveCurrentFilters() {
+    const currentFilter = this.filter.getState();
+    localStorage.setItem(FILTER_STORE_KEY_NAME, JSON.stringify(currentFilter));
+    this.showToastMessage("Current selected filters have been saved.");
+  }
+
   clearSavedFilter() {
-    localStorage.clear();
+    this.showToastMessage("Saved filters have been removed.");
+    localStorage.removeItem(FILTER_STORE_KEY_NAME);
     this.filter.reset();
     this.refresh();
   }
 
   private async initializePage() {
+    const self = this;
     this.getOrganizationBaseUrl()
       .then(async () => {
         const projectService = await DevOps.getService<IProjectPageService>(
           getCommonServiceIdsValue("ProjectPageService")
         );
 
-        const currentProject = await projectService.getProject();
+        const storedSavedFilter = localStorage.getItem(FILTER_STORE_KEY_NAME);
+        let currentProjectId: string | undefined;
+
+        if (storedSavedFilter && storedSavedFilter.length > 0) {
+          const savedFilterState = JSON.parse(storedSavedFilter);
+          self.filter.setState(savedFilterState);
+
+          currentProjectId = self.filter.getFilterItemValue<string>(
+            "selectedProject"
+          );
+        }
 
         this.getTeamProjects()
-          .then((projects) => {
+          .then(async (projects) => {
             this.setState({
               projects,
             });
 
-            this.selectedProject.select(
-              projects.findIndex((p) => {
-                return p.id === currentProject!.id;
-              })
-            );
+            const currentProject =
+              currentProjectId && currentProjectId.length > 0
+                ? currentProjectId[0]
+                : (await projectService.getProject())!.id;
 
-            this.getRepositories(currentProject!)
+            const projectIndex = self.changeProjectSelectionTo(currentProject);
+
+            this.getRepositories(projects[projectIndex])
               .then(() => {
                 this.getAllPullRequests().catch((error) =>
                   this.handleError(error)
@@ -286,8 +312,9 @@ export class PullRequestsTab extends React.Component<
   private async getAllPullRequests() {
     const self = this;
     this.setState({ loading: true });
+    const { currentProject, repositories, pullRequests } = this.state;
 
-    const { repositories, pullRequests } = this.state;
+    this.changeProjectSelectionTo(currentProject!.id);
 
     let newPullRequestList = Object.assign([], pullRequests);
 
@@ -386,112 +413,35 @@ export class PullRequestsTab extends React.Component<
   }
 
   private filterPullRequests() {
-    const {
-      projects,
-      pullRequests,
-      repositories,
-      sourceBranchList,
-      targetBranchList,
-      createdByList,
-      reviewerList,
-      tagList,
-    } = this.state;
-    const projectFilter = this.getFilterData<string[]>("selectedProject", false);
+    const { pullRequests } = this.state;
 
-    const repositoriesFilter = this.getFilterData<string[]>("selectedRepos");
+    const repositoriesFilter = this.filter.getFilterItemValue<string[]>(
+      "selectedRepos"
+    );
     const filterPullRequestTitle = this.filter.getFilterItemValue<string>(
       "pullRequestTitle"
     );
-    const sourceBranchFilter = this.getFilterData<string[]>(
+    const sourceBranchFilter = this.filter.getFilterItemValue<string[]>(
       "selectedSourceBranches"
     );
-    const targetBranchFilter = this.getFilterData<string[]>(
+    const targetBranchFilter = this.filter.getFilterItemValue<string[]>(
       "selectedTargetBranches"
     );
-    const createdByFilter = this.getFilterData<string[]>("selectedAuthors");
-    const reviewersFilter = this.getFilterData<string[]>("selectedReviewers");
-    const myApprovalStatusFilter = this.getFilterData<string[]>(
+    const createdByFilter = this.filter.getFilterItemValue<string[]>(
+      "selectedAuthors"
+    );
+    const reviewersFilter = this.filter.getFilterItemValue<string[]>(
+      "selectedReviewers"
+    );
+    const myApprovalStatusFilter = this.filter.getFilterItemValue<string[]>(
       "selectedMyApprovalStatuses"
     );
-    const selectedAlternateStatusPrFilter = this.getFilterData<string[]>(
-      "selectedAlternateStatusPr"
+    const selectedAlternateStatusPrFilter = this.filter.getFilterItemValue<
+      string[]
+    >("selectedAlternateStatusPr");
+    const selectedTagsFilter = this.filter.getFilterItemValue<string[]>(
+      "selectedTags"
     );
-    const selectedTagsFilter = this.getFilterData<string[]>("selectedTags");
-
-    this.loadSavedFilterValues<string | undefined, TeamProjectReference>({
-      filterItems: projectFilter,
-      objectList: projects,
-      selectedItems: this.selectedProject,
-      getObjectPredicate: (filterItem) => {
-        return filterItem.id;
-      },
-    });
-
-    this.loadSavedFilterValues<string | undefined, GitRepository>({
-      filterItems: repositoriesFilter,
-      objectList: repositories,
-      selectedItems: this.selectedRepos,
-      getObjectPredicate: (filterItem) => {
-        return filterItem.id;
-      },
-    });
-
-    this.loadSavedFilterValues<string | undefined, Data.BranchDropDownItem>({
-      filterItems: sourceBranchFilter,
-      objectList: sourceBranchList,
-      selectedItems: this.selectedSourceBranches,
-      getObjectPredicate: (filterItem) => {
-        return filterItem.displayName;
-      },
-    });
-    this.loadSavedFilterValues<string | undefined, Data.BranchDropDownItem>({
-      filterItems: targetBranchFilter,
-      objectList: targetBranchList,
-      selectedItems: this.selectedTargetBranches,
-      getObjectPredicate: (filterItem) => {
-        return filterItem.displayName;
-      },
-    });
-    this.loadSavedFilterValues<string | undefined, IdentityRef>({
-      filterItems: createdByFilter,
-      objectList: createdByList,
-      selectedItems: this.selectedAuthors,
-      getObjectPredicate: (filterItem) => {
-        return filterItem.id;
-      },
-    });
-    this.loadSavedFilterValues<string | undefined, IdentityRefWithVote>({
-      filterItems: reviewersFilter,
-      objectList: reviewerList,
-      selectedItems: this.selectedReviewers,
-      getObjectPredicate: (filterItem) => {
-        return filterItem.id;
-      },
-    });
-    this.loadSavedFilterValues<string | undefined, Data.IKeyValueData>({
-      filterItems: myApprovalStatusFilter,
-      objectList: myApprovalStatuses,
-      selectedItems: this.selectedMyApprovalStatuses,
-      getObjectPredicate: (filterItem) => {
-        return filterItem.id;
-      },
-    });
-    this.loadSavedFilterValues<string | undefined, Data.IKeyValueData>({
-      filterItems: selectedAlternateStatusPrFilter,
-      objectList: alternateStatusPr,
-      selectedItems: this.selectedMyApprovalStatuses,
-      getObjectPredicate: (filterItem) => {
-        return filterItem.id;
-      },
-    });
-    this.loadSavedFilterValues<string | undefined, WebApiTagDefinition>({
-      filterItems: selectedTagsFilter,
-      objectList: tagList,
-      selectedItems: this.selectedTags,
-      getObjectPredicate: (filterItem) => {
-        return filterItem.id;
-      },
-    });
 
     let filteredPullRequest = pullRequests;
 
@@ -627,59 +577,6 @@ export class PullRequestsTab extends React.Component<
         return r;
       });
     }
-  }
-
-  private getFilterData<T>(
-    key: string,
-    useCurrentProjectKey: boolean = true
-  ): T | undefined {
-    const { currentProject } = this.state;
-    const cacheKey = useCurrentProjectKey
-      ? `${currentProject!.id}_${key}`
-      : key;
-
-    let filterData = this.filter.getFilterItemValue<T>(cacheKey);
-
-    if (filterData === undefined) {
-      const cachedData = this.getFilterFromCache<T>(key, useCurrentProjectKey);
-      if (cachedData !== null) {
-        filterData = cachedData;
-      }
-    } else {
-      this.storeFilterData(key, filterData, useCurrentProjectKey);
-    }
-
-    return filterData;
-  }
-
-  private storeFilterData(
-    key: string,
-    data: any,
-    useCurrentProjectKey: boolean = true
-  ): void {
-    const { currentProject } = this.state;
-    const cacheKey = useCurrentProjectKey
-      ? `${STORED_CACHE_KEY_PREFIX}_${currentProject!.id}_${key}`
-      : key;
-
-    localStorage.setItem(cacheKey, JSON.stringify(data));
-  }
-
-  private getFilterFromCache<T>(
-    key: string,
-    useCurrentProjectKey: boolean = true
-  ): T | undefined {
-    const { currentProject } = this.state;
-    const cacheKey = useCurrentProjectKey
-      ? `${STORED_CACHE_KEY_PREFIX}_${currentProject!.id}_${key}`
-      : key;
-
-    const dataInStorage = localStorage.getItem(cacheKey);
-    if (dataInStorage !== null) {
-      return JSON.parse(dataInStorage) as T;
-    }
-
-    return undefined;
   }
 
   private hasFilterValue(
@@ -858,7 +755,7 @@ export class PullRequestsTab extends React.Component<
         <FilterBarHub
           currentProject={currentProject!}
           filterPullRequests={() => {
-            this.clearSavedFilter();
+            this.refresh();
           }}
           pullRequests={pullRequests}
           filter={this.filter}
@@ -905,20 +802,34 @@ export class PullRequestsTab extends React.Component<
   async selectedProjectChanged(
     _event: React.SyntheticEvent<HTMLElement, Event>,
     item: IListBoxItem<TeamProjectReference | ProjectInfo>
-  )
-  {
+  ) {
     const { projects } = this.state;
-    const projectIndex = projects.findIndex((p) => {
-      return p.id === item.id;
-    });
+    this.filter.reset();
+    const projectIndex = this.changeProjectSelectionTo(item.id);
 
     this.getRepositories(projects[projectIndex]).then(() => {
       this.refresh();
     });
   }
 
+  changeProjectSelectionTo(id: string): number {
+    const { projects } = this.state;
+    const projectIndex = projects.findIndex((p) => {
+      return p.id === id;
+    });
+
+    this.selectedProject.select(projectIndex);
+
+    return projectIndex;
+  }
+
   getRenderContent() {
-    const { pullRequestCount, pullRequests } = this.state;
+    const {
+      pullRequestCount,
+      pullRequests,
+      showToastMessage,
+      toastMessageToShow,
+    } = this.state;
     if (
       pullRequestCount === 0 &&
       pullRequests.filter((pr) => pr.isStillLoading() === true).length === 0
@@ -948,6 +859,9 @@ export class PullRequestsTab extends React.Component<
           }}
           headerCommandBarItems={this.listHeaderColumns}
         >
+          {showToastMessage && (
+            <Toast ref={this.toastRef} message={toastMessageToShow} />
+          )}
           <React.Fragment>
             <Table<PullRequestModel.PullRequestModel>
               columns={Data.columns}
@@ -1055,8 +969,9 @@ export class PullRequestsTab extends React.Component<
   private listHeaderColumns: IHeaderCommandBarItem[] = [
     {
       id: "refresh",
-      text: "Refresh",
+      text: "",
       isPrimary: true,
+      tooltipProps: { text: "Refresh the list" },
       onActivate: () => {
         this.refresh();
       },
@@ -1065,10 +980,24 @@ export class PullRequestsTab extends React.Component<
       },
     },
     {
+      id: "saveCurrentFilter",
+      text: "",
+      className: "save-filter-button",
+      isPrimary: true,
+      tooltipProps: { text: "Save Current Filters" },
+      onActivate: () => {
+        this.saveCurrentFilters();
+      },
+      iconProps: {
+        iconName: "fabric-icon ms-Icon--Save",
+      },
+    },
+    {
       id: "clearSavedFilters",
-      text: "Clear Saved Filters",
+      text: "",
       className: "clear-filter-button",
       isPrimary: true,
+      tooltipProps: { text: "Clear Saved Filters" },
       onActivate: () => {
         this.clearSavedFilter();
       },
@@ -1080,6 +1009,7 @@ export class PullRequestsTab extends React.Component<
       id: "help",
       text: "Help",
       isPrimary: false,
+      tooltipProps: { text: "Help" },
       onActivate: () => {
         this.isDialogOpen.value = true;
       },
