@@ -51,7 +51,7 @@ import {
 } from "azure-devops-ui/Core/Observable";
 import { Card } from "azure-devops-ui/Card";
 import { Status, Statuses } from "azure-devops-ui/Status";
-import { Table } from "azure-devops-ui/Table";
+import { Table, ColumnSorting, SortOrder, sortItems } from "azure-devops-ui/Table";
 import { ZeroData } from "azure-devops-ui/ZeroData";
 import { IdentityRef } from "azure-devops-extension-api/WebApi/WebApi";
 import { ObservableValue } from "azure-devops-ui/Core/Observable";
@@ -298,8 +298,7 @@ export class PullRequestsTab extends React.Component<
   private reloadPullRequestItemProvider(
     newList: PullRequestModel.PullRequestModel[]
   ) {
-    this.pullRequestItemProvider.splice(0, this.pullRequestItemProvider.length);
-    this.pullRequestItemProvider.push(...newList);
+    this.pullRequestItemProvider.splice(0, this.pullRequestItemProvider.length, ...newList);
     this.setState({
       pullRequestCount: newList.length,
     });
@@ -349,9 +348,9 @@ export class PullRequestsTab extends React.Component<
               pr,
               this.state.currentProject!.name,
               this.baseUrl,
-              (_updatedPr) => {
+              (updatedPr) => {
                 let { tagList } = self.state;
-                _updatedPr.labels
+                updatedPr.labels
                   .filter((t) => !this.hasFilterValue(tagList, t.id))
                   .map((t) => {
                     tagList.push(t);
@@ -360,9 +359,12 @@ export class PullRequestsTab extends React.Component<
                     return tagList;
                   });
 
-                setTimeout(() => {
-                  self.filterPullRequests();
-                }, 10);
+                this.setState({
+                  tagList
+                });
+
+                //this.pullRequestItemProvider.splice(0, this.pullRequestItemProvider.length, ...pullRequests);
+                this.filterPullRequests();
               }
             )
           );
@@ -830,6 +832,28 @@ export class PullRequestsTab extends React.Component<
       showToastMessage,
       toastMessageToShow,
     } = this.state;
+
+    // Create the sorting behavior (delegate that is called when a column is sorted).
+    const sortingBehavior = new ColumnSorting<PullRequestModel.PullRequestModel>(
+      (
+        columnIndex: number,
+        proposedSortOrder: SortOrder,
+        event: React.KeyboardEvent<HTMLElement> | React.MouseEvent<HTMLElement>
+      ) => {
+        this.pullRequestItemProvider.splice(
+          0,
+          this.pullRequestItemProvider.length,
+          ...sortItems<PullRequestModel.PullRequestModel>(
+            columnIndex,
+            proposedSortOrder,
+            this.sortFunctions,
+            Data.columns,
+            pullRequests
+          )
+        );
+      }
+    );
+
     if (
       pullRequestCount === 0 &&
       pullRequests.filter((pr) => pr.isStillLoading() === true).length === 0
@@ -864,6 +888,7 @@ export class PullRequestsTab extends React.Component<
           )}
           <React.Fragment>
             <Table<PullRequestModel.PullRequestModel>
+              behaviors={[sortingBehavior]}
               columns={Data.columns}
               itemProvider={this.pullRequestItemProvider}
               showLines={true}
@@ -965,6 +990,24 @@ export class PullRequestsTab extends React.Component<
       );
     }
   }
+
+  sortFunctions = [
+    null, //Status column
+    null, // Title column
+    // Sort on When column
+    (
+      item1: PullRequestModel.PullRequestModel,
+      item2: PullRequestModel.PullRequestModel
+    ): number => {
+      return (
+        item2.gitPullRequest.creationDate.getTime() -
+        item1.gitPullRequest.creationDate.getTime()
+      );
+    },
+
+    null, // Details column
+    null // Reviewers column
+  ];
 
   private listHeaderColumns: IHeaderCommandBarItem[] = [
     {

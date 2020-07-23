@@ -30,7 +30,10 @@ export class App extends React.Component<{}, IHubContentState> {
 
     this.state = {
       selectedTabId: "pull-requests",
-      fullScreenMode: false
+      fullScreenMode: false,
+      headerDescription: "",
+      useCompactPivots: false,
+      useLargeTitle: false
     };
   }
 
