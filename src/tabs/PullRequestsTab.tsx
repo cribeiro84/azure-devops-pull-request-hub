@@ -298,11 +298,7 @@ export class PullRequestsTab extends React.Component<
   private reloadPullRequestItemProvider(
     newList: PullRequestModel.PullRequestModel[]
   ) {
-    this.pullRequestItemProvider.splice(0, this.pullRequestItemProvider.length);
-    this.pullRequestItemProvider.push(...newList);
-    this.setState({
-      pullRequestCount: newList.length,
-    });
+    this.pullRequestItemProvider.splice(0, this.pullRequestItemProvider.length, ...newList);
   }
 
   private async getTeamProjects(): Promise<TeamProjectReference[]> {
@@ -364,7 +360,8 @@ export class PullRequestsTab extends React.Component<
                   tagList
                 });
 
-                this.pullRequestItemProvider.splice(0, this.pullRequestItemProvider.length, ...pullRequests);
+                //this.pullRequestItemProvider.splice(0, this.pullRequestItemProvider.length, ...pullRequests);
+                this.filterPullRequests();
               }
             )
           );
@@ -547,6 +544,10 @@ export class PullRequestsTab extends React.Component<
         return found;
       });
     }
+
+    this.setState({
+      pullRequestCount: filteredPullRequest.length,
+    });
 
     this.reloadPullRequestItemProvider(filteredPullRequest);
   }
