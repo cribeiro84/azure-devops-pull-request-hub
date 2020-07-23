@@ -27,18 +27,32 @@ Manage your Pull Requests of all your projects and repositories at a single plac
 - You can now manage all Pull Requests across all projects you have access to
 - Comments count + resolved ones (For instance: 1/2 resolved)
 - Pull Request policies check (Reviewers, build, so on)
+- Save current state
+  - Selected search filters
 
 ## Future releaes
 
 - Create New Pull Request button
 - Save current state
-  - Selected search filters
   - Last PR reviewed (highlight)
 - Work Items count
 - Where you left:
   - New badge (Pill) for your voted PRs with new changes
 
 ## Updates (dd/MM/yyyy)
+
+### 22/07/2020
+
+- UI tweaks
+- Performance improvements
+- Soring by Pull Request Creation Date (When column)
+
+### 21/07/2020
+
+- UI tweaks
+- Code refactoring
+- New features
+  - Save current filters
 
 ### 12/07/2020
 

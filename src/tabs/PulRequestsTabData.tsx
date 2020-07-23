@@ -8,8 +8,11 @@ import { IStatusProps } from "azure-devops-ui/Status";
 import { IColor } from "azure-devops-ui/Utilities/Color";
 import { IProjectInfo } from "azure-devops-extension-api/Common/CommonServices";
 import { IdentityRef } from "azure-devops-extension-api/WebApi/WebApi";
-import { TeamProjectReference, WebApiTagDefinition } from "azure-devops-extension-api/Core/Core";
-import { ITableColumn } from "azure-devops-ui/Table";
+import {
+  TeamProjectReference,
+  WebApiTagDefinition,
+} from "azure-devops-extension-api/Core/Core";
+import { ITableColumn, SortOrder } from "azure-devops-ui/Table";
 import {
   StatusColumn,
   TitleColumn,
@@ -121,6 +124,11 @@ export const columns: ITableColumn<PullRequestModel>[] = [
     readonly: true,
     renderCell: DateColumn,
     width: -10,
+    sortProps: {
+      ariaLabelAscending: "Sorted new to older",
+      ariaLabelDescending: "Sorted older to new",
+      sortOrder: SortOrder.descending
+    }
   },
   {
     className: "pipelines-two-line-cell",
@@ -223,8 +231,8 @@ export const pullRequestCriteria: GitPullRequestSearchCriteria = {
 };
 
 export interface IKeyValueData {
-  id: string,
-  text: string
+  id: string;
+  text: string;
 }
 
 export interface IPullRequestsTabState {
@@ -245,11 +253,20 @@ export interface IPullRequestsTabState {
 }
 
 export function sortMethod(
-  a: BranchDropDownItem | IdentityRef | WebApiTagDefinition | GitRepository | TeamProjectReference,
-  b: BranchDropDownItem | IdentityRef | WebApiTagDefinition | GitRepository | TeamProjectReference
+  a:
+    | BranchDropDownItem
+    | IdentityRef
+    | WebApiTagDefinition
+    | GitRepository
+    | TeamProjectReference,
+  b:
+    | BranchDropDownItem
+    | IdentityRef
+    | WebApiTagDefinition
+    | GitRepository
+    | TeamProjectReference
 ) {
-  if (a.hasOwnProperty("displayName"))
-  {
+  if (a.hasOwnProperty("displayName")) {
     const convertedA = a as BranchDropDownItem | IdentityRef;
     const convertedB = b as BranchDropDownItem | IdentityRef;
     if (convertedA.displayName! < convertedB.displayName!) {
@@ -258,11 +275,15 @@ export function sortMethod(
     if (convertedA.displayName! > convertedB.displayName!) {
       return 1;
     }
-  }
-  else if (a.hasOwnProperty("name"))
-  {
-    const convertedA = a as WebApiTagDefinition | GitRepository | TeamProjectReference;
-    const convertedB = b as WebApiTagDefinition | GitRepository | TeamProjectReference;
+  } else if (a.hasOwnProperty("name")) {
+    const convertedA = a as
+      | WebApiTagDefinition
+      | GitRepository
+      | TeamProjectReference;
+    const convertedB = b as
+      | WebApiTagDefinition
+      | GitRepository
+      | TeamProjectReference;
     if (convertedA.name < convertedB.name) {
       return -1;
     }
