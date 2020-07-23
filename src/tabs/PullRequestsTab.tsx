@@ -299,6 +299,9 @@ export class PullRequestsTab extends React.Component<
     newList: PullRequestModel.PullRequestModel[]
   ) {
     this.pullRequestItemProvider.splice(0, this.pullRequestItemProvider.length, ...newList);
+    this.setState({
+      pullRequestCount: newList.length,
+    });
   }
 
   private async getTeamProjects(): Promise<TeamProjectReference[]> {
@@ -346,7 +349,7 @@ export class PullRequestsTab extends React.Component<
               this.state.currentProject!.name,
               this.baseUrl,
               (updatedPr) => {
-                let { tagList, pullRequests } = self.state;
+                let { tagList } = self.state;
                 updatedPr.labels
                   .filter((t) => !this.hasFilterValue(tagList, t.id))
                   .map((t) => {
@@ -544,10 +547,6 @@ export class PullRequestsTab extends React.Component<
         return found;
       });
     }
-
-    this.setState({
-      pullRequestCount: filteredPullRequest.length,
-    });
 
     this.reloadPullRequestItemProvider(filteredPullRequest);
   }
