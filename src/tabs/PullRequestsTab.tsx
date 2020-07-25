@@ -28,6 +28,7 @@ import { GitRestClient } from "azure-devops-extension-api/Git/GitClient";
 import {
   IdentityRefWithVote,
   GitRepository,
+  PullRequestStatus,
 } from "azure-devops-extension-api/Git/Git";
 
 // Azure DevOps UI
@@ -67,8 +68,12 @@ import { hasPullRequestFailure } from "../models/constants";
 import { ContentSize } from "azure-devops-ui/Callout";
 import { IHeaderCommandBarItem } from "azure-devops-ui/HeaderCommandBar";
 
+export interface IPullRequestTabProps {
+  prType: PullRequestStatus;
+}
+
 export class PullRequestsTab extends React.Component<
-  {},
+  IPullRequestTabProps,
   Data.IPullRequestsTabState
 > {
   private toastRef: React.RefObject<Toast> = React.createRef<Toast>();
@@ -96,8 +101,10 @@ export class PullRequestsTab extends React.Component<
   private readonly gitClient: GitRestClient;
   private readonly coreClient: CoreRestClient;
 
-  constructor(props: {}) {
+  constructor(props: IPullRequestTabProps) {
     super(props);
+
+    console.log(props.prType.toString());
 
     this.selectedProjectChanged = this.selectedProjectChanged.bind(this);
 
@@ -327,7 +334,8 @@ export class PullRequestsTab extends React.Component<
 
     Promise.all(
       repositories.map(async (r) => {
-        const criteria = Object.assign({}, Data.pullRequestCriteria);
+        let criteria = Object.assign({}, Data.pullRequestCriteria);
+        criteria.status = this.props.prType;
 
         const loadedPullRequests = await this.gitClient.getPullRequests(
           r.id,
