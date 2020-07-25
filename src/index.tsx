@@ -55,9 +55,9 @@ export class App extends React.Component<{}, IHubContentState> {
             selectedTabId={this.selectedTabId}
             tabSize={TabSize.Tall}
           >
-            <Tab name="Active" id="active" />
-            <Tab name="Completed" id="completed" />
-            <Tab name="Abandoned" id="abandoned" />
+            <Tab name="Active" id="active" iconProps={{ iconName: "Inbox" }} />
+            <Tab name="Completed" id="completed" iconProps={{ iconName: "Completed" }} />
+            <Tab name="Abandoned" id="abandoned" iconProps={{ iconName: "ErrorBadge" }} />
           </TabBar>
 
           <div className="page-content-left page-content-right page-content-top page-content-bottom">

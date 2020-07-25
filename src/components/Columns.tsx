@@ -467,7 +467,7 @@ export function ReviewersColumn(
                         reviewer
                       )}`}
                       imageUrl={reviewer._links.avatar.href}
-                      size={"small"}
+                      size={"medium"}
                     />
                     <ReviewerVoteIconStatus
                       className="repos-pr-reviewer-vote absolute"

@@ -3,6 +3,7 @@ import {
   IdentityRefWithVote,
   GitCommitRef,
   CommentThreadStatus,
+  PullRequestStatus,
 } from "azure-devops-extension-api/Git/Git";
 import * as DevOps from "azure-devops-extension-sdk";
 import { Statuses } from "azure-devops-ui/Status";
@@ -78,16 +79,31 @@ export class PullRequestModel {
     this.initializeData();
 
     this.loadingData = true;
-    Promise.all([
-      this.getPullRequestAdditionalDetailsAsync(),
-      this.getPullRequestThreadAsync(),
-      this.getPullRequestWorkItemAsync(),
-      this.getPullRequestPolicyAsync(),
-      this.processPolicyBuildAsync(),
-      this.getLabels()
-    ]).finally(() => {
+    Promise.all([this.getAsyncCallList()]).finally(() => {
       this.callTriggerState();
     });
+  }
+
+  private getAsyncCallList(): Promise<any>[] {
+    const abandoned =
+      this.gitPullRequest.status === PullRequestStatus.Abandoned;
+    let callList = [];
+
+    if (!abandoned) {
+      callList.push(
+        ...[
+          this.getPullRequestAdditionalDetailsAsync(),
+          this.getPullRequestThreadAsync(),
+          this.getPullRequestWorkItemAsync(),
+          this.getPullRequestPolicyAsync(),
+          this.processPolicyBuildAsync(),
+        ]
+      );
+    }
+
+    callList.push(this.getLabels());
+
+    return callList;
   }
 
   private initializeData() {
