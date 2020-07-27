@@ -95,7 +95,6 @@ export function TitleColumn(
           <Button
             className="branch-button"
             text={tableItem.title}
-            iconProps={{ iconName: "BranchPullRequest" }}
             onClick={onClickPullRequestTitleHandler}
             tooltipProps={{ text: tooltip }}
             subtle={true}

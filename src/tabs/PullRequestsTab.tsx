@@ -582,12 +582,12 @@ export class PullRequestsTab extends React.Component<
       filteredPullRequest = filteredPullRequest.filter((pr) => {
         const found = selectedAlternateStatusPrFilter.some((item) => {
           return (
-            // tslint:disable-next-line:triple-equals
-            (pr.gitPullRequest.isDraft === true && item === "0") ||
-            // tslint:disable-next-line:triple-equals
-            (hasPullRequestFailure(pr) === true && item === "1") ||
-            // tslint:disable-next-line:triple-equals
-            (pr.isAutoCompleteSet === true && item === "2")
+            (pr.gitPullRequest.isDraft === true && item === Data.AlternateStatusPr.IsDraft) ||
+            (hasPullRequestFailure(pr) === true && item === Data.AlternateStatusPr.Conflicts) ||
+            (pr.isAutoCompleteSet === true && item === Data.AlternateStatusPr.AutoComplete) ||
+            (pr.gitPullRequest.isDraft === false && item === Data.AlternateStatusPr.NotIsDraft) ||
+            (hasPullRequestFailure(pr) === false && item === Data.AlternateStatusPr.NotConflicts) ||
+            (pr.isAutoCompleteSet === false && item === Data.AlternateStatusPr.NotAutoComplete)
           );
         });
         return found;
@@ -935,9 +935,6 @@ export class PullRequestsTab extends React.Component<
         <Card
           className="flex-grow bolt-table-card"
           contentProps={{ contentPadding: false }}
-          titleProps={{
-            text: `Pull Requests (${this.pullRequestItemProvider.value.length})`,
-          }}
           headerCommandBarItems={this.listHeaderColumns}
         >
           {showToastMessage && (

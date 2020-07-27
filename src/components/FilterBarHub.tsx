@@ -42,13 +42,10 @@ export const myApprovalStatuses: Data.IKeyValueData[] = Object.keys(
 export const alternateStatusPr: Data.IKeyValueData[] = Object.keys(
   Data.AlternateStatusPr
 )
-  .filter((value) => !isNaN(parseInt(value, 10)))
-  .map((item) => {
+  .map((item, index) => {
     return {
-      id: item,
-      text: Object.values(Data.AlternateStatusPr)[
-        parseInt(item, 10)
-      ].toString(),
+      id: Object.values(Data.AlternateStatusPr)[index].toString(),
+      text: Object.values(Data.AlternateStatusPr)[index].toString(),
     };
   });
 
