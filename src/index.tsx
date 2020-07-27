@@ -22,14 +22,19 @@ addPolyFills();
 
 export class App extends React.Component<{}, IHubContentState> {
   private selectedTabId: ObservableValue<string>;
+  private activeCount: ObservableValue<number>;
+  private completedCount: ObservableValue<number>;
+  private abandonedCount: ObservableValue<number>;
 
   constructor(props: {}) {
     super(props);
 
     this.selectedTabId = new ObservableValue("active");
+    this.activeCount = new ObservableValue(0);
+    this.completedCount = new ObservableValue(0);
+    this.abandonedCount = new ObservableValue(0);
 
     this.state = {
-
     };
   }
 
@@ -55,20 +60,20 @@ export class App extends React.Component<{}, IHubContentState> {
             selectedTabId={this.selectedTabId}
             tabSize={TabSize.Tall}
           >
-            <Tab name="Active" id="active" iconProps={{ iconName: "Inbox" }} />
-            <Tab name="Completed" id="completed" iconProps={{ iconName: "Completed" }} />
-            <Tab name="Abandoned" id="abandoned" iconProps={{ iconName: "ErrorBadge" }} />
+            <Tab name="Active" id="active" iconProps={{ iconName: "Inbox" }} badgeCount={this.activeCount} />
+            <Tab name="Completed" id="completed" iconProps={{ iconName: "Completed" }} badgeCount={this.completedCount} />
+            <Tab name="Abandoned" id="abandoned" iconProps={{ iconName: "ErrorBadge" }} badgeCount={this.abandonedCount} />
           </TabBar>
 
           <div className="page-content-left page-content-right page-content-top page-content-bottom">
             <Observer selectedTabId={this.selectedTabId}>
               {(props: { selectedTabId: string }) => {
                 if (props.selectedTabId === "active") {
-                  return <PullRequestsTab key="active" prType={PullRequestStatus.Active} />;
+                  return <PullRequestsTab key="active" prType={PullRequestStatus.Active} onCountChange={this.onCountChangeActive} />;
                 } else if (props.selectedTabId === "completed") {
-                  return <PullRequestsTab  key="completed" prType={PullRequestStatus.Completed} />;
+                  return <PullRequestsTab  key="completed" prType={PullRequestStatus.Completed} onCountChange={this.onCountChangeCompleted} />;
                 } else if (props.selectedTabId === "abandoned") {
-                  return <PullRequestsTab  key="abandoned" prType={PullRequestStatus.Abandoned} />;
+                  return <PullRequestsTab  key="abandoned" prType={PullRequestStatus.Abandoned} onCountChange={this.onCountChangeAbandoned} />;
                 }
               }}
             </Observer>
@@ -76,6 +81,18 @@ export class App extends React.Component<{}, IHubContentState> {
         </Page>
       </Surface>
     );
+  }
+
+  private onCountChangeActive = (count: number): void => {
+    this.activeCount.value = count;
+  }
+
+  private onCountChangeCompleted = (count: number): void => {
+    this.completedCount.value = count;
+  }
+
+  private onCountChangeAbandoned = (count: number): void => {
+    this.abandonedCount.value = count;
   }
 
   private onSelectedTabChanged = (newTabId: string) => {

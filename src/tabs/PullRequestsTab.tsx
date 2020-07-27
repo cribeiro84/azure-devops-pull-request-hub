@@ -52,7 +52,12 @@ import {
 } from "azure-devops-ui/Core/Observable";
 import { Card } from "azure-devops-ui/Card";
 import { Status, Statuses } from "azure-devops-ui/Status";
-import { Table, ColumnSorting, SortOrder, sortItems } from "azure-devops-ui/Table";
+import {
+  Table,
+  ColumnSorting,
+  SortOrder,
+  sortItems,
+} from "azure-devops-ui/Table";
 import { ZeroData } from "azure-devops-ui/ZeroData";
 import { IdentityRef } from "azure-devops-extension-api/WebApi/WebApi";
 import { ObservableValue } from "azure-devops-ui/Core/Observable";
@@ -70,6 +75,7 @@ import { IHeaderCommandBarItem } from "azure-devops-ui/HeaderCommandBar";
 
 export interface IPullRequestTabProps {
   prType: PullRequestStatus;
+  onCountChange: (count: number) => void;
 }
 
 export class PullRequestsTab extends React.Component<
@@ -171,18 +177,54 @@ export class PullRequestsTab extends React.Component<
     }, 5000);
   }
 
-  saveCurrentFilters() {
-    const currentFilter = this.filter.getState();
-    localStorage.setItem(FILTER_STORE_KEY_NAME, JSON.stringify(currentFilter));
-    this.showToastMessage("Current selected filters have been saved.");
+  private getCurrentFilterNameKey(projectId?: string): string {
+    const { currentProject } = this.state;
+    const currentProjectId =
+      projectId !== undefined ? projectId : currentProject!.id;
+    const filterKey = `${currentProjectId}_${FILTER_STORE_KEY_NAME}`;
+
+    return filterKey;
   }
 
-  clearSavedFilter() {
-    this.showToastMessage("Saved filters have been removed.");
+  private saveCurrentFilters() {
+    const { currentProject } = this.state;
+    const filterKey = this.getCurrentFilterNameKey();
+    const currentFilter = this.filter.getState();
+    localStorage.setItem(FILTER_STORE_KEY_NAME, currentProject!.id);
+    localStorage.setItem(filterKey, JSON.stringify(currentFilter));
+    this.showToastMessage(`Current selected filters have been saved - ${
+      currentProject!.name
+    }.`);
+  }
+
+  private clearSavedFilter() {
+    const { currentProject } = this.state;
+    const filterKey = this.getCurrentFilterNameKey();
+    this.showToastMessage(
+      `Saved filters have been removed of selected project - ${
+        currentProject!.name
+      }.`
+    );
     localStorage.removeItem(FILTER_STORE_KEY_NAME);
+    localStorage.removeItem(filterKey);
     this.filter.reset();
     this.refresh();
   }
+
+  private loadSavedFilter(storedSavedCurrentProjectId: string | null): void {
+    if (storedSavedCurrentProjectId != null) {
+      const saveFilterKeyName = this.getCurrentFilterNameKey(
+        storedSavedCurrentProjectId
+      );
+      const storedSavedFilter = localStorage.getItem(saveFilterKeyName);
+
+      if (storedSavedFilter && storedSavedFilter.length > 0) {
+        const savedFilterState = JSON.parse(storedSavedFilter);
+        this.filter.setState(savedFilterState);
+      }
+    }
+  }
+
 
   private async initializePage() {
     const self = this;
@@ -192,17 +234,11 @@ export class PullRequestsTab extends React.Component<
           getCommonServiceIdsValue("ProjectPageService")
         );
 
-        const storedSavedFilter = localStorage.getItem(FILTER_STORE_KEY_NAME);
-        let currentProjectId: string | undefined;
+        const currentProjectId = localStorage.getItem(
+          FILTER_STORE_KEY_NAME
+        );
 
-        if (storedSavedFilter && storedSavedFilter.length > 0) {
-          const savedFilterState = JSON.parse(storedSavedFilter);
-          self.filter.setState(savedFilterState);
-
-          currentProjectId = self.filter.getFilterItemValue<string>(
-            "selectedProject"
-          );
-        }
+        this.loadSavedFilter(currentProjectId);
 
         this.getTeamProjects()
           .then(async (projects) => {
@@ -211,8 +247,8 @@ export class PullRequestsTab extends React.Component<
             });
 
             const currentProject =
-              currentProjectId && currentProjectId.length > 0
-                ? currentProjectId[0]
+              currentProjectId && currentProjectId !== null && currentProjectId.length > 0
+                ? currentProjectId
                 : (await projectService.getProject())!.id;
 
             const projectIndex = self.changeProjectSelectionTo(currentProject);
@@ -250,6 +286,8 @@ export class PullRequestsTab extends React.Component<
     this.setState({
       currentProject: project,
     });
+
+    this.loadSavedFilter(project.id);
 
     const repos = (
       await this.gitClient.getRepositories(project.name, true)
@@ -305,14 +343,22 @@ export class PullRequestsTab extends React.Component<
   private reloadPullRequestItemProvider(
     newList: PullRequestModel.PullRequestModel[]
   ) {
-    this.pullRequestItemProvider.splice(0, this.pullRequestItemProvider.length, ...newList);
+    this.pullRequestItemProvider.splice(
+      0,
+      this.pullRequestItemProvider.length,
+      ...newList
+    );
     this.setState({
       pullRequestCount: newList.length,
     });
+
+    this.props.onCountChange(newList.length);
   }
 
   private async getTeamProjects(): Promise<TeamProjectReference[]> {
-    const projects = (await this.coreClient.getProjects()).sort(Data.sortMethod);
+    const projects = (await this.coreClient.getProjects()).sort(
+      Data.sortMethod
+    );
     return projects;
   }
 
@@ -369,7 +415,7 @@ export class PullRequestsTab extends React.Component<
                   });
 
                 this.setState({
-                  tagList
+                  tagList,
                 });
 
                 //this.pullRequestItemProvider.splice(0, this.pullRequestItemProvider.length, ...pullRequests);
@@ -843,7 +889,9 @@ export class PullRequestsTab extends React.Component<
     } = this.state;
 
     // Create the sorting behavior (delegate that is called when a column is sorted).
-    const sortingBehavior = new ColumnSorting<PullRequestModel.PullRequestModel>(
+    const sortingBehavior = new ColumnSorting<
+      PullRequestModel.PullRequestModel
+    >(
       (
         columnIndex: number,
         proposedSortOrder: SortOrder,
@@ -1015,7 +1063,7 @@ export class PullRequestsTab extends React.Component<
     },
 
     null, // Details column
-    null // Reviewers column
+    null, // Reviewers column
   ];
 
   private listHeaderColumns: IHeaderCommandBarItem[] = [

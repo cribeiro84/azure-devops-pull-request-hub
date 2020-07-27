@@ -79,7 +79,7 @@ export class PullRequestModel {
     this.initializeData();
 
     this.loadingData = true;
-    Promise.all([this.getAsyncCallList()]).finally(() => {
+    Promise.all(this.getAsyncCallList()).finally(() => {
       this.callTriggerState();
     });
   }
@@ -89,7 +89,7 @@ export class PullRequestModel {
       this.gitPullRequest.status === PullRequestStatus.Abandoned;
     let callList = [];
 
-    if (!abandoned) {
+    if (abandoned === false) {
       callList.push(
         ...[
           this.getPullRequestAdditionalDetailsAsync(),
