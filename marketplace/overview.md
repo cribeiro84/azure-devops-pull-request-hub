@@ -44,7 +44,7 @@ Manage your Pull Requests of all your projects and repositories at a single plac
 
 ## Updates (dd/MM/yyyy)
 
-### XX/07/2020
+### 28/07/2020
 
 - Support for Completed and Abandoned PRs
 - UI tweaks

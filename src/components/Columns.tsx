@@ -142,18 +142,6 @@ export function TitleColumn(
                   {tableItem.targetBranch!.branchName}
                 </Link>
               </div>
-              <div className="flex-column title-column-subdetails icon-column-subdetails">
-                <Icon iconName="BranchCommit" />
-              </div>
-              <div className="flex-column title-column-subdetails">
-                <Link
-                  className="bolt-link subtle second-line-row"
-                  href={tableItem.lastCommitUrl!}
-                  target="_blank"
-                >
-                  {tableItem.lastShortCommitId}
-                </Link>
-              </div>
             </div>
             <ConditionalChildren renderChildren={tableItem.labels.length > 0}>
               <div className="flex-row flex-grow flex-wrap">
@@ -378,22 +366,17 @@ export function DetailsColumn(
               subtle={true}
             />
           </div>
-          <div className="flex-row">
-            <div className="flex-column">
-              {WithIcon({
-                className:
-                  "button-iconfontSize font-size bolt-table-two-line-cell-item",
-                iconProps: { iconName: "Clock", size: IconSize.small },
-                children: (
-                  <Duration
-                    startDate={tableItem.gitPullRequest.creationDate!}
-                    endDate={new Date(Date.now())}
-                    tooltipProps={{ text: "Time elapsed since its creation" }}
-                  />
-                ),
-                disabled: true,
-              })}
-            </div>
+          <div className="flex-column title-column-subdetails icon-column-subdetails">
+            <Icon iconName="BranchCommit" />
+          </div>
+          <div className="flex-column title-column-subdetails">
+            <Link
+              className="bolt-link subtle second-line-row"
+              href={tableItem.lastCommitUrl!}
+              target="_blank"
+            >
+              {tableItem.lastShortCommitId}
+            </Link>
           </div>
         </div>
       }
@@ -432,34 +415,18 @@ export function DateColumn(
       line2={
         <div className="flex-row flex-wrap">
           <div className="flex-column title-column-subdetails">
-            <ConditionalChildren
-              renderChildren={
-                (tableItem.lastCommitDetails === undefined ||
-                tableItem.lastCommitDetails.committer === undefined
-                  ? tableItem.gitPullRequest.creationDate
-                  : tableItem.lastCommitDetails!.committer.date!) >
-                tableItem.gitPullRequest.creationDate!
-              }
+            <Button
+              className="button-icon"
+              iconProps={{ iconName: "Clock", size: IconSize.small }}
+              subtle={true}
+              disabled={true}
             >
-              <Button
-                className="button-icon"
-                iconProps={{ iconName: "Clock", size: IconSize.small }}
-                subtle={true}
-                disabled={true}
-              >
-                <Ago
-                  className="fontSize font-size"
-                  format={AgoFormat.Compact}
-                  tooltipProps={{ text: "Last update/commit on" }}
-                  date={
-                    tableItem.lastCommitDetails === undefined ||
-                    tableItem.lastCommitDetails.committer === undefined
-                      ? tableItem.gitPullRequest.creationDate
-                      : tableItem.lastCommitDetails!.committer.date!
-                  }
-                />
-              </Button>
-            </ConditionalChildren>
+              <Duration
+                startDate={tableItem.gitPullRequest.creationDate!}
+                endDate={new Date(Date.now())}
+                tooltipProps={{ text: "Time elapsed since its creation" }}
+              />
+            </Button>
           </div>
         </div>
       }
