@@ -61,8 +61,8 @@ export class App extends React.Component<{}, IHubContentState> {
             tabSize={TabSize.Tall}
           >
             <Tab name="Active" id="active" iconProps={{ iconName: "Inbox" }} badgeCount={this.activeCount} />
-            <Tab name="Completed" id="completed" iconProps={{ iconName: "Completed" }} badgeCount={this.completedCount} />
-            <Tab name="Abandoned" id="abandoned" iconProps={{ iconName: "ErrorBadge" }} badgeCount={this.abandonedCount} />
+            <Tab name="Recently Completed" id="completed" iconProps={{ iconName: "Completed" }} badgeCount={this.completedCount} />
+            <Tab name="Recently Abandoned" id="abandoned" iconProps={{ iconName: "ErrorBadge" }} badgeCount={this.abandonedCount} />
           </TabBar>
 
           <div className="page-content-left page-content-right page-content-top page-content-bottom">

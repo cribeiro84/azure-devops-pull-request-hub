@@ -383,10 +383,15 @@ export class PullRequestsTab extends React.Component<
       repositories.map(async (r) => {
         let criteria = Object.assign({}, Data.pullRequestCriteria);
         criteria.status = this.props.prType;
+        const top = (this.props.prType === PullRequestStatus.Completed || this.props.prType === PullRequestStatus.Abandoned) ? 25 : 0;
 
         const loadedPullRequests = await this.gitClient.getPullRequests(
           r.id,
-          criteria
+          criteria,
+          undefined,
+          10,
+          undefined,
+          top
         );
 
         return loadedPullRequests;

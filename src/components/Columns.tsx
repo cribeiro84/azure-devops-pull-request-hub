@@ -5,7 +5,7 @@ import * as Data from "../tabs/PulRequestsTabData";
 
 import { ITableColumn, TwoLineTableCell } from "azure-devops-ui/Table";
 import { Button } from "azure-devops-ui/Button";
-import { Status } from "azure-devops-ui/Status";
+import { Status, StatusSize } from "azure-devops-ui/Status";
 import { IIconProps, Icon, IconSize } from "azure-devops-ui/Icon";
 import { Ago } from "azure-devops-ui/Ago";
 import { Duration } from "azure-devops-ui/Duration";
@@ -15,7 +15,6 @@ import {
   GetVoteIconColor,
 } from "./ReviewerVoteIconStatus";
 import { VssPersona } from "azure-devops-ui/VssPersona";
-import { getStatusSizeValue } from "../models/constants";
 import { PullRequestPillInfo } from "./PullRequestPillInfo";
 import { Link, Spinner, SpinnerSize } from "office-ui-fabric-react";
 import * as PullRequestModel from "../models/PullRequestModel";
@@ -23,6 +22,7 @@ import { PillGroup } from "azure-devops-ui/PillGroup";
 import { Pill } from "azure-devops-ui/Pill";
 import { ConditionalChildren } from "azure-devops-ui/ConditionalChildren";
 import { Observer } from "azure-devops-ui/Observer";
+import { AgoFormat } from "azure-devops-ui/Utilities/Date";
 
 export function openNewWindowTab(targetUrl: string): void {
   window.open(targetUrl, "_blank");
@@ -56,7 +56,7 @@ export function StatusColumn(
                 <Status
                   {...tableItem.pullRequestProgressStatus!.statusProps}
                   className="icon-large-margin"
-                  size={getStatusSizeValue("l")}
+                  size={StatusSize.l}
                 />
               );
             }}
@@ -91,7 +91,7 @@ export function TitleColumn(
       columnIndex={columnIndex}
       tableColumn={tableColumn}
       line1={
-        <div className="flex-row scroll-hidden">
+        <div className="flex-row scroll-hidden flex-wrap">
           <Button
             className="branch-button"
             text={tableItem.title}
@@ -105,7 +105,7 @@ export function TitleColumn(
       line2={
         <Tooltip text={tooltip}>
           <div className="flex-column flex-grow">
-            <div className="flex-row">
+            <div className="flex-row flex-wrap">
               <div className="flex-column title-column-subdetails icon-column-subdetails">
                 <Icon iconName="GitLogo" />
               </div>
@@ -156,7 +156,7 @@ export function TitleColumn(
               </div>
             </div>
             <ConditionalChildren renderChildren={tableItem.labels.length > 0}>
-              <div className="flex-row flex-grow">
+              <div className="flex-row flex-grow flex-wrap">
                 <div
                   className="flex-column title-column-subdetails"
                   style={{ marginLeft: "6px", marginTop: "5px" }}
@@ -221,8 +221,9 @@ export function DetailsColumn(
       }
       line2={
         <div className="flex-row">
-          <div className="flex-column title-column-subdetails icon-column-subdetails">
+          <div className="flex-column title-column-subdetails">
             <Icon
+              style={{ marginTop: "4px", marginRight: "4px" }}
               className={
                 tableItem.isAllPoliciesOk !== undefined
                   ? tableItem.isAllPoliciesOk
@@ -357,7 +358,6 @@ export function DetailsColumn(
               }}
             />
           </div>
-          &nbsp;&nbsp;&nbsp;
           <div className="flex-column title-column-subdetails">
             <Button
               className="button-icon fontSize font-size second-line-row"
@@ -378,32 +378,88 @@ export function DetailsColumn(
               subtle={true}
             />
           </div>
+          <div className="flex-row">
+            <div className="flex-column">
+              {WithIcon({
+                className:
+                  "button-iconfontSize font-size bolt-table-two-line-cell-item",
+                iconProps: { iconName: "Clock", size: IconSize.small },
+                children: (
+                  <Duration
+                    startDate={tableItem.gitPullRequest.creationDate!}
+                    endDate={new Date(Date.now())}
+                    tooltipProps={{ text: "Time elapsed since its creation" }}
+                  />
+                ),
+                disabled: true,
+              })}
+            </div>
+          </div>
+        </div>
+      }
+    />
+  );
+}
+
+export function DateColumn(
+  rowIndex: number,
+  columnIndex: number,
+  tableColumn: ITableColumn<PullRequestModel.PullRequestModel>,
+  tableItem: PullRequestModel.PullRequestModel
+): JSX.Element {
+  return (
+    <TwoLineTableCell
+      key={"col-" + columnIndex}
+      columnIndex={columnIndex}
+      tableColumn={tableColumn}
+      line1={
+        <div className="flex-row">
+          <div className="flex-column">
+            {WithIcon({
+              className: "fontSize font-size",
+              iconProps: { iconName: "Calendar" },
+              children: (
+                <Ago
+                  date={tableItem.gitPullRequest.creationDate!}
+                  tooltipProps={{ text: "Created on" }}
+                />
+              ),
+              disabled: false,
+            })}
+          </div>
+        </div>
+      }
+      line2={
+        <div className="flex-row flex-wrap">
           <div className="flex-column title-column-subdetails">
-            <Button
-              className="button-icon fontSize font-size"
-              iconProps={{ iconName: "Clock", size: IconSize.small }}
-              subtle={true}
-              tooltipProps={{
-                text: `Last commit date and time`,
-                delayMs: 500,
-              }}
-              disabled={true}
+            <ConditionalChildren
+              renderChildren={
+                (tableItem.lastCommitDetails === undefined ||
+                tableItem.lastCommitDetails.committer === undefined
+                  ? tableItem.gitPullRequest.creationDate
+                  : tableItem.lastCommitDetails!.committer.date!) >
+                tableItem.gitPullRequest.creationDate!
+              }
             >
-              <Duration
-                className="fontSize font-size"
-                tooltipProps={{
-                  text: `When the last commit was done`,
-                  delayMs: 500,
-                }}
-                startDate={
-                  tableItem.lastCommitDetails === undefined ||
-                  tableItem.lastCommitDetails.committer === undefined
-                    ? tableItem.gitPullRequest.creationDate
-                    : tableItem.lastCommitDetails!.committer.date!
-                }
-                endDate={new Date(Date.now())}
-              />
-            </Button>
+              <Button
+                className="button-icon"
+                iconProps={{ iconName: "Clock", size: IconSize.small }}
+                subtle={true}
+                disabled={true}
+              >
+                <Ago
+                  className="fontSize font-size"
+                  format={AgoFormat.Compact}
+                  tooltipProps={{ text: "Last update/commit on" }}
+                  date={
+                    tableItem.lastCommitDetails === undefined ||
+                    tableItem.lastCommitDetails.committer === undefined
+                      ? tableItem.gitPullRequest.creationDate
+                      : tableItem.lastCommitDetails!.committer.date!
+                  }
+                />
+              </Button>
+            </ConditionalChildren>
           </div>
         </div>
       }
@@ -477,38 +533,6 @@ export function ReviewersColumn(
             })}
         </div>
       }
-    />
-  );
-}
-
-export function DateColumn(
-  rowIndex: number,
-  columnIndex: number,
-  tableColumn: ITableColumn<PullRequestModel.PullRequestModel>,
-  tableItem: PullRequestModel.PullRequestModel
-): JSX.Element {
-  return (
-    <TwoLineTableCell
-      key={"col-" + columnIndex}
-      columnIndex={columnIndex}
-      tableColumn={tableColumn}
-      line1={WithIcon({
-        className: "fontSize font-size",
-        iconProps: { iconName: "Calendar" },
-        children: <Ago date={tableItem.gitPullRequest.creationDate!} />,
-        disabled: false,
-      })}
-      line2={WithIcon({
-        className: "fontSize font-size bolt-table-two-line-cell-item",
-        iconProps: { iconName: "Clock" },
-        children: (
-          <Duration
-            startDate={tableItem.gitPullRequest.creationDate!}
-            endDate={new Date(Date.now())}
-          />
-        ),
-        disabled: true,
-      })}
     />
   );
 }

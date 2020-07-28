@@ -122,6 +122,13 @@ export const columns: ITableColumn<PullRequestModel>[] = [
     width: -46,
   },
   {
+    className: "pipelines-two-line-cell",
+    id: "details",
+    name: "Details",
+    renderCell: DetailsColumn,
+    width: -15,
+  },
+  {
     id: "time",
     name: "When",
     readonly: true,
@@ -132,13 +139,6 @@ export const columns: ITableColumn<PullRequestModel>[] = [
       ariaLabelDescending: "Sorted older to new",
       sortOrder: SortOrder.descending
     }
-  },
-  {
-    className: "pipelines-two-line-cell",
-    id: "details",
-    name: "Details",
-    renderCell: DetailsColumn,
-    width: -15,
   },
   {
     id: "reviewers",
