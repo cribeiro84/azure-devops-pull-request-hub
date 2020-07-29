@@ -104,7 +104,7 @@ export function TitleColumn(
       }
       line2={
         <Tooltip text={tooltip}>
-          <div className="flex-column flex-grow">
+          <div className="flex-column flex-grow second-line-row">
             <div className="flex-row flex-wrap">
               <div className="flex-column">
                 <Link
@@ -357,7 +357,7 @@ export function DetailsColumn(
               subtle={true}
             />
           </div>
-          <div className="flex-column">
+          <div className="flex-column second-line-row">
             <Link
               className="bolt-link subtle"
               href={tableItem.lastCommitUrl!}
