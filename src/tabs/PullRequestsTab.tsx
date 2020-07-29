@@ -245,7 +245,7 @@ export class PullRequestsTab extends React.Component<
             });
 
             const currentProject =
-              currentProjectId && currentProjectId !== null && currentProjectId.length > 0
+              currentProjectId && currentProjectId.length > 0
                 ? currentProjectId
                 : (await projectService.getProject())!.id;
 
