@@ -22,6 +22,7 @@ import { PillGroup } from "azure-devops-ui/PillGroup";
 import { Pill, PillSize, PillVariant } from "azure-devops-ui/Pill";
 import { ConditionalChildren } from "azure-devops-ui/ConditionalChildren";
 import { Observer } from "azure-devops-ui/Observer";
+import { PullRequestStatus } from "azure-devops-extension-api/Git/Git";
 
 export function openNewWindowTab(targetUrl: string): void {
   window.open(targetUrl, "_blank");
@@ -122,7 +123,10 @@ export function TitleColumn(
                   href={tableItem.sourceBranchHref}
                   target="_blank"
                 >
-                  <Icon iconName="BranchMerge" className="icon-column-subdetails" />
+                  <Icon
+                    iconName="BranchMerge"
+                    className="icon-column-subdetails"
+                  />
                   {tableItem.sourceBranch!.branchName}
                 </Link>
               </div>
@@ -132,7 +136,10 @@ export function TitleColumn(
                   href={tableItem.targetBranchHref}
                   target="_blank"
                 >
-                  <Icon iconName="BranchMerge" className="icon-column-subdetails" />
+                  <Icon
+                    iconName="BranchMerge"
+                    className="icon-column-subdetails"
+                  />
                   {tableItem.targetBranch!.branchName}
                 </Link>
               </div>
@@ -205,11 +212,13 @@ export function DetailsColumn(
         <div className="flex-row">
           <div className="flex-column">
             <Icon
-              className={`icon-column-subdetails ${tableItem.isAllPoliciesOk !== undefined
-                ? tableItem.isAllPoliciesOk
-                  ? "icon-policy-green"
-                  : "icon-policy-red"
-                : ""}`}
+              className={`icon-column-subdetails ${
+                tableItem.isAllPoliciesOk !== undefined
+                  ? tableItem.isAllPoliciesOk
+                    ? "icon-policy-green"
+                    : "icon-policy-red"
+                  : ""
+              }`}
               iconName="Ribbon"
               tooltipProps={{
                 renderContent: () => {
@@ -363,26 +372,27 @@ export function DetailsColumn(
               href={tableItem.lastCommitUrl!}
               target="_blank"
             >
-              <Icon iconName="BranchCommit"  />
+              <Icon iconName="BranchCommit" />
               {tableItem.lastShortCommitId}
             </Link>
           </div>
           <ConditionalChildren
             renderChildren={
-              tableItem.lastVisit && tableItem.lastVisit < tableItem.getLastCommitDate()
+              tableItem.gitPullRequest.status === PullRequestStatus.Active &&
+              tableItem.lastVisit &&
+              tableItem.lastVisit < tableItem.getLastCommitDate()
             }
           >
             <div className="flex-column">
-              <Tooltip
-              text="Pull Request has updates since your last access">
-              <Pill
-                size={PillSize.compact}
-                variant={PillVariant.colored}
-                color={Data.draftColor}
-                className="icon-column-subdetails"
-              >
-                New
-              </Pill>
+              <Tooltip text="Pull Request has updates since your last access">
+                <Pill
+                  size={PillSize.compact}
+                  variant={PillVariant.colored}
+                  color={Data.draftColor}
+                  className="icon-column-subdetails"
+                >
+                  New
+                </Pill>
               </Tooltip>
             </div>
           </ConditionalChildren>

@@ -64,12 +64,20 @@ export class PullRequestModel {
   }
 
   public saveLastVisit = () => {
+    if (this.gitPullRequest.status !== PullRequestStatus.Active) {
+      return;
+    }
+
     this.lastVisit = new Date();
     const storeKey = `${USER_SETTINGS_STORE_KEY}_${this.gitPullRequest.pullRequestId}`;
     localStorage.setItem(storeKey, JSON.stringify(this.lastVisit));
   }
 
   public loadLastVisit = () => {
+    if (this.gitPullRequest.status !== PullRequestStatus.Active) {
+      return;
+    }
+
     const storeKey = `${USER_SETTINGS_STORE_KEY}_${this.gitPullRequest.pullRequestId}`;
     const cachedInstance = localStorage.getItem(storeKey);
 
