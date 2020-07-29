@@ -110,8 +110,6 @@ export class PullRequestsTab extends React.Component<
   constructor(props: IPullRequestTabProps) {
     super(props);
 
-    console.log(props.prType.toString());
-
     this.selectedProjectChanged = this.selectedProjectChanged.bind(this);
 
     this.gitClient = getClient(GitRestClient);

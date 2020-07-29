@@ -19,10 +19,9 @@ import { PullRequestPillInfo } from "./PullRequestPillInfo";
 import { Link, Spinner, SpinnerSize } from "office-ui-fabric-react";
 import * as PullRequestModel from "../models/PullRequestModel";
 import { PillGroup } from "azure-devops-ui/PillGroup";
-import { Pill } from "azure-devops-ui/Pill";
+import { Pill, PillSize, PillVariant } from "azure-devops-ui/Pill";
 import { ConditionalChildren } from "azure-devops-ui/ConditionalChildren";
 import { Observer } from "azure-devops-ui/Observer";
-import { AgoFormat } from "azure-devops-ui/Utilities/Date";
 
 export function openNewWindowTab(targetUrl: string): void {
   window.open(targetUrl, "_blank");
@@ -81,6 +80,7 @@ export function TitleColumn(
   const onClickPullRequestTitleHandler = (
     event: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>
   ) => {
+    tableItem.saveLastVisit();
     openNewWindowTab(tableItem.pullRequestHref!);
   };
 
@@ -106,39 +106,33 @@ export function TitleColumn(
         <Tooltip text={tooltip}>
           <div className="flex-column flex-grow">
             <div className="flex-row flex-wrap">
-              <div className="flex-column title-column-subdetails icon-column-subdetails">
-                <Icon iconName="GitLogo" />
-              </div>
-              <div className="flex-column title-column-subdetails">
+              <div className="flex-column">
                 <Link
-                  className="bolt-link subtle second-line-row"
+                  className="bolt-link subtle"
                   href={tableItem.repositoryHref}
                   target="_blank"
                 >
+                  <Icon iconName="GitLogo" className="icon-column-subdetails" />
                   {tableItem.gitPullRequest.repository.name}
                 </Link>
               </div>
-              <div className="flex-column title-column-subdetails icon-column-subdetails">
-                <Icon iconName="BranchMerge" />
-              </div>
-              <div className="flex-column title-column-subdetails">
+              <div className="flex-column">
                 <Link
-                  className="bolt-link subtle second-line-row"
+                  className="bolt-link subtle"
                   href={tableItem.sourceBranchHref}
                   target="_blank"
                 >
+                  <Icon iconName="BranchMerge" className="icon-column-subdetails" />
                   {tableItem.sourceBranch!.branchName}
                 </Link>
               </div>
-              <div className="flex-column title-column-subdetails icon-column-subdetails">
-                <Icon iconName="BranchMerge" />
-              </div>
-              <div className="flex-column title-column-subdetails">
+              <div className="flex-column">
                 <Link
-                  className="bolt-link subtle second-line-row"
+                  className="bolt-link subtle"
                   href={tableItem.targetBranchHref}
                   target="_blank"
                 >
+                  <Icon iconName="BranchMerge" className="icon-column-subdetails" />
                   {tableItem.targetBranch!.branchName}
                 </Link>
               </div>
@@ -209,16 +203,13 @@ export function DetailsColumn(
       }
       line2={
         <div className="flex-row">
-          <div className="flex-column title-column-subdetails">
+          <div className="flex-column">
             <Icon
-              style={{ marginTop: "4px", marginRight: "4px" }}
-              className={
-                tableItem.isAllPoliciesOk !== undefined
-                  ? tableItem.isAllPoliciesOk
-                    ? "icon-policy-green"
-                    : "icon-policy-red"
-                  : ""
-              }
+              className={`icon-column-subdetails ${tableItem.isAllPoliciesOk !== undefined
+                ? tableItem.isAllPoliciesOk
+                  ? "icon-policy-green"
+                  : "icon-policy-red"
+                : ""}`}
               iconName="Ribbon"
               tooltipProps={{
                 renderContent: () => {
@@ -346,7 +337,7 @@ export function DetailsColumn(
               }}
             />
           </div>
-          <div className="flex-column title-column-subdetails">
+          <div className="flex-column">
             <Button
               className="button-icon fontSize font-size second-line-row"
               text={
@@ -366,18 +357,35 @@ export function DetailsColumn(
               subtle={true}
             />
           </div>
-          <div className="flex-column title-column-subdetails icon-column-subdetails">
-            <Icon iconName="BranchCommit" />
-          </div>
-          <div className="flex-column title-column-subdetails">
+          <div className="flex-column">
             <Link
-              className="bolt-link subtle second-line-row"
+              className="bolt-link subtle"
               href={tableItem.lastCommitUrl!}
               target="_blank"
             >
+              <Icon iconName="BranchCommit"  />
               {tableItem.lastShortCommitId}
             </Link>
           </div>
+          <ConditionalChildren
+            renderChildren={
+              tableItem.lastVisit && tableItem.lastVisit < tableItem.getLastCommitDate()
+            }
+          >
+            <div className="flex-column">
+              <Tooltip
+              text="Pull Request has updates since your last access">
+              <Pill
+                size={PillSize.compact}
+                variant={PillVariant.colored}
+                color={Data.draftColor}
+                className="icon-column-subdetails"
+              >
+                New
+              </Pill>
+              </Tooltip>
+            </div>
+          </ConditionalChildren>
         </div>
       }
     />

@@ -25,6 +25,7 @@ import {
   PullRequestRequiredReviewer,
 } from "../tabs/PulRequestsTabData";
 import { WebApiTagDefinition } from "azure-devops-extension-api/Core/Core";
+import { USER_SETTINGS_STORE_KEY } from "../common";
 
 export class PullRequestModel {
   private baseHostUrl: string = "";
@@ -49,6 +50,7 @@ export class PullRequestModel {
   public isAllPoliciesOk?: boolean;
   public hasFailures: boolean = false;
   public labels: WebApiTagDefinition[] = [];
+  public lastVisit?: Date;
   private loadingData: boolean = false;
 
   constructor(
@@ -59,6 +61,34 @@ export class PullRequestModel {
   ) {
     this.comment = new PullRequestComment();
     this.setupPullRequest();
+  }
+
+  public saveLastVisit = () => {
+    this.lastVisit = new Date();
+    const storeKey = `${USER_SETTINGS_STORE_KEY}_${this.gitPullRequest.pullRequestId}`;
+    localStorage.setItem(storeKey, JSON.stringify(this.lastVisit));
+  }
+
+  public loadLastVisit = () => {
+    const storeKey = `${USER_SETTINGS_STORE_KEY}_${this.gitPullRequest.pullRequestId}`;
+    const cachedInstance = localStorage.getItem(storeKey);
+
+    if (!cachedInstance || cachedInstance.length === 0)
+    {
+      return;
+    }
+
+    const cachedLastVisit: Date = JSON.parse(cachedInstance);
+    const savedDate = new Date(cachedLastVisit.toString());
+
+    this.lastVisit = savedDate;
+  }
+
+  public getLastCommitDate(): Date {
+    return this.lastCommitDetails === undefined ||
+    this.lastCommitDetails.committer === undefined
+      ? this.gitPullRequest.creationDate
+      : this.lastCommitDetails!.committer.date!
   }
 
   public triggerState() {
@@ -134,6 +164,7 @@ export class PullRequestModel {
     );
     this.lastCommitUrl = `${this.baseHostUrl}/_git/${this.gitPullRequest.repository.name}/commit/${this.gitPullRequest.lastMergeSourceCommit.commitId}?refName=GB${this.gitPullRequest.sourceRefName}`;
     this.hasFailures = hasPullRequestFailure(this);
+    this.loadLastVisit();
   }
 
   private getCurrentUserVoteStatus(
