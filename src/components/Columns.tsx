@@ -5,9 +5,8 @@ import * as Data from "../tabs/PulRequestsTabData";
 
 import { ITableColumn, TwoLineTableCell } from "azure-devops-ui/Table";
 import { Button } from "azure-devops-ui/Button";
-import { Status } from "azure-devops-ui/Status";
-import { IIconProps, Icon } from "azure-devops-ui/Icon";
-import { css } from "azure-devops-ui/Util";
+import { Status, StatusSize } from "azure-devops-ui/Status";
+import { IIconProps, Icon, IconSize } from "azure-devops-ui/Icon";
 import { Ago } from "azure-devops-ui/Ago";
 import { Duration } from "azure-devops-ui/Duration";
 import { Tooltip } from "azure-devops-ui/TooltipEx";
@@ -16,14 +15,14 @@ import {
   GetVoteIconColor,
 } from "./ReviewerVoteIconStatus";
 import { VssPersona } from "azure-devops-ui/VssPersona";
-import { getStatusSizeValue } from "../models/constants";
 import { PullRequestPillInfo } from "./PullRequestPillInfo";
 import { Link, Spinner, SpinnerSize } from "office-ui-fabric-react";
 import * as PullRequestModel from "../models/PullRequestModel";
 import { PillGroup } from "azure-devops-ui/PillGroup";
-import { Pill } from "azure-devops-ui/Pill";
+import { Pill, PillSize, PillVariant } from "azure-devops-ui/Pill";
 import { ConditionalChildren } from "azure-devops-ui/ConditionalChildren";
 import { Observer } from "azure-devops-ui/Observer";
+import { PullRequestStatus } from "azure-devops-extension-api/Git/Git";
 
 export function openNewWindowTab(targetUrl: string): void {
   window.open(targetUrl, "_blank");
@@ -57,7 +56,7 @@ export function StatusColumn(
                 <Status
                   {...tableItem.pullRequestProgressStatus!.statusProps}
                   className="icon-large-margin"
-                  size={getStatusSizeValue("l")}
+                  size={StatusSize.l}
                 />
               );
             }}
@@ -82,6 +81,7 @@ export function TitleColumn(
   const onClickPullRequestTitleHandler = (
     event: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>
   ) => {
+    tableItem.saveLastVisit();
     openNewWindowTab(tableItem.pullRequestHref!);
   };
 
@@ -92,11 +92,10 @@ export function TitleColumn(
       columnIndex={columnIndex}
       tableColumn={tableColumn}
       line1={
-        <div className="flex-row scroll-hidden">
+        <div className="flex-row scroll-hidden flex-wrap">
           <Button
             className="branch-button"
             text={tableItem.title}
-            iconProps={{ iconName: "BranchPullRequest" }}
             onClick={onClickPullRequestTitleHandler}
             tooltipProps={{ text: tooltip }}
             subtle={true}
@@ -107,52 +106,50 @@ export function TitleColumn(
       line2={
         <Tooltip text={tooltip}>
           <div className="flex-column flex-grow">
-            <div className="flex-row">
-              <div className="flex-column title-column-subdetails icon-column-subdetails">
-                <Icon iconName="GitLogo" />
-              </div>
-              <div className="flex-column title-column-subdetails">
+            <div className="flex-row flex-wrap second-line-row">
+              <div className="flex-column">
                 <Link
                   className="bolt-link subtle"
                   href={tableItem.repositoryHref}
                   target="_blank"
                 >
+                  <Icon iconName="GitLogo" className="icon-column-subdetails" />
                   {tableItem.gitPullRequest.repository.name}
                 </Link>
               </div>
-              <div className="flex-column title-column-subdetails icon-column-subdetails">
-                <Icon iconName="BranchMerge" />
-              </div>
-              <div className="flex-column title-column-subdetails">
+              <div className="flex-column">
                 <Link
                   className="bolt-link subtle"
                   href={tableItem.sourceBranchHref}
                   target="_blank"
                 >
+                  <Icon
+                    iconName="BranchMerge"
+                    className="icon-column-subdetails"
+                  />
                   {tableItem.sourceBranch!.branchName}
                 </Link>
               </div>
-              <div className="flex-column title-column-subdetails icon-column-subdetails">
-                <Icon iconName="BranchMerge" />
-              </div>
-              <div className="flex-column title-column-subdetails">
+              <div className="flex-column">
                 <Link
                   className="bolt-link subtle"
                   href={tableItem.targetBranchHref}
                   target="_blank"
                 >
+                  <Icon
+                    iconName="BranchMerge"
+                    className="icon-column-subdetails"
+                  />
                   {tableItem.targetBranch!.branchName}
                 </Link>
               </div>
             </div>
             <ConditionalChildren renderChildren={tableItem.labels.length > 0}>
-              <div className="flex-row flex-grow">
+              <div className="flex-row flex-grow flex-wrap">
                 <div
                   className="flex-column title-column-subdetails"
                   style={{ marginLeft: "6px", marginTop: "5px" }}
-                >
-                  <i>Tags:</i>
-                </div>
+                ></div>
                 <div
                   className="flex-column title-column-subdetails"
                   style={{ marginLeft: "6px", marginTop: "5px" }}
@@ -178,12 +175,6 @@ export function DetailsColumn(
   tableColumn: ITableColumn<PullRequestModel.PullRequestModel>,
   tableItem: PullRequestModel.PullRequestModel
 ): JSX.Element {
-  const onClickLastCommitHandler = (
-    event: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>
-  ) => {
-    openNewWindowTab(tableItem.lastCommitUrl!);
-  };
-
   return (
     <TwoLineTableCell
       className="bolt-table-cell-content-with-inline-link no-v-padding"
@@ -193,7 +184,7 @@ export function DetailsColumn(
       line1={
         <div>
           <Button
-            className="button-icon-bold"
+            className="button-icon"
             text={tableItem.gitPullRequest.createdBy.displayName}
             iconProps={{
               render: () => {
@@ -218,197 +209,243 @@ export function DetailsColumn(
         </div>
       }
       line2={
-        <div>
-          <Button
-            className="button-icon"
-            text={
-              tableItem.comment.terminatedComment.toString() +
-              "/" +
-              tableItem.comment.totalcomment.toString()
-            }
-            iconProps={{ iconName: "ActivityFeed" }}
-            tooltipProps={{
-              text:
-                tableItem.comment.terminatedComment.toString() +
-                " out of " +
-                tableItem.comment.totalcomment.toString() +
-                " comments are marked as resolved, won't fix, or closed",
-              delayMs: 500,
-            }}
-            subtle={true}
-          />
-
-          <Icon
-            className={
-              tableItem.isAllPoliciesOk !== undefined
-                ? tableItem.isAllPoliciesOk
-                  ? "icon-policy-green"
-                  : "icon-policy-red"
-                : ""
-            }
-            iconName="Ribbon"
-            tooltipProps={{
-              renderContent: () => {
-                return (
-                  <table className="table-border-spacing">
-                    <thead>
-                      <tr>
-                        <td colSpan={2}>
-                          <b>Policies</b>
-                        </td>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {tableItem.policies !== undefined &&
-                      tableItem.policies.length > 0 ? (
-                        tableItem.policies.map((policy) => {
-                          return policy.isReviewersApprovedOk !== undefined ? (
-                            <tr
-                              key={`pr-status1-tr-${policy.id}-${tableItem.gitPullRequest.pullRequestId}`}
-                            >
-                              <td className="td-vertical-align">
-                                <span
-                                  className={`fabric-icon ms-Icon--${
-                                    policy.isReviewersApprovedOk
-                                      ? "StatusCircleCheckmark icon-green"
-                                      : "StatusCircleErrorX icon-red"
-                                  }`}
-                                />
-                              </td>
-                              <td className="span-tooltip">
-                                {policy.reviewerCount} of at least{" "}
-                                {policy.minimumApproverCount} reviewers approved
-                              </td>
-                            </tr>
-                          ) : policy.isRequiredReviewerOk !== undefined ? (
-                            <tr
-                              key={`pr-status2-tr-${policy.id}-${tableItem.gitPullRequest.pullRequestId}`}
-                            >
-                              <td className="td-vertical-align">
-                                <span
-                                  className={`fabric-icon ms-Icon--${
-                                    policy.isRequiredReviewerOk
-                                      ? "StatusCircleCheckmark icon-green"
-                                      : "StatusCircleErrorX icon-red"
-                                  }`}
-                                />
-                              </td>
-                              <td className="span-tooltip">
-                                Required reviewers approved
-                                {policy.requiredReviewers !== undefined &&
-                                policy.requiredReviewers.length > 0 &&
-                                policy.requiredReviewers[0].displayName !== ""
-                                  ? " - " +
-                                    policy.requiredReviewers[0].displayName
-                                  : null}
-                              </td>
-                            </tr>
-                          ) : policy.isWorkItemOk !== undefined ? (
-                            <tr
-                              key={`pr-status3-tr-${policy.id}-${tableItem.gitPullRequest.pullRequestId}`}
-                            >
-                              <td className="td-vertical-align">
-                                <span
-                                  className={`fabric-icon ms-Icon--${
-                                    policy.isWorkItemOk
-                                      ? "StatusCircleCheckmark icon-green"
-                                      : "StatusCircleErrorX icon-red"
-                                  }`}
-                                />
-                              </td>
-                              <td className="span-tooltip">
-                                Work items linked
-                              </td>
-                            </tr>
-                          ) : policy.isCommentOk !== undefined ? (
-                            <tr
-                              key={`pr-status4-tr-${policy.id}-${tableItem.gitPullRequest.pullRequestId}`}
-                            >
-                              <td className="td-vertical-align">
-                                <span
-                                  className={`fabric-icon ms-Icon--${
-                                    policy.isCommentOk
-                                      ? "StatusCircleCheckmark icon-green"
-                                      : "StatusCircleErrorX icon-red"
-                                  }`}
-                                />
-                              </td>
-                              <td className="span-tooltip">
-                                All comments resolved
-                              </td>
-                            </tr>
-                          ) : policy.isBuildOk !== undefined ? (
-                            <tr
-                              key={`pr-status5-tr-${policy.id}-${tableItem.gitPullRequest.pullRequestId}`}
-                            >
-                              <td className="td-vertical-align">
-                                <span
-                                  className={`fabric-icon ms-Icon--${
-                                    policy.isBuildOk
-                                      ? "StatusCircleCheckmark icon-green"
-                                      : "StatusCircleErrorX icon-red"
-                                  }`}
-                                />
-                              </td>
-                              <td className="span-tooltip">
-                                Build {policy.isBuildOk ? "" : "not"} succeeded
-                              </td>
-                            </tr>
-                          ) : null;
-                        })
-                      ) : (
-                        <tr
-                          key={`pr-status6-tr-nopolicy-${tableItem.gitPullRequest.pullRequestId}`}
-                        >
-                          <td colSpan={2}>- No policies</td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                );
-              },
-            }}
-          />
-
-          <Button
-            className="button-spaceicon-bold"
-            iconProps={{ iconName: "BranchCommit" }}
-            onClick={onClickLastCommitHandler}
-            subtle={true}
-            tooltipProps={{
-              text: `Last commit`,
-              delayMs: 500,
-            }}
-          >
-            {tableItem.lastShortCommitId}
-          </Button>
-          {" - "}
-          <Button
-            className="button-icon"
-            iconProps={{ iconName: "Clock" }}
-            onClick={onClickLastCommitHandler}
-            subtle={true}
-            tooltipProps={{
-              text: `Last commit date and time`,
-              delayMs: 500,
-            }}
-            disabled={true}
-          >
-            <Duration
-              className="fontSize font-size"
+        <div className="flex-row">
+          <div className="flex-column">
+            <Icon
+              className={`icon-column-subdetails ${
+                tableItem.isAllPoliciesOk !== undefined
+                  ? tableItem.isAllPoliciesOk
+                    ? "icon-policy-green"
+                    : "icon-policy-red"
+                  : ""
+              }`}
+              iconName="Ribbon"
               tooltipProps={{
-                text: `When the last commit was done`,
+                renderContent: () => {
+                  return (
+                    <table className="table-border-spacing">
+                      <thead>
+                        <tr>
+                          <td colSpan={2}>
+                            <b>Policies</b>
+                          </td>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {tableItem.policies !== undefined &&
+                        tableItem.policies.length > 0 ? (
+                          tableItem.policies.map((policy) => {
+                            return policy.isReviewersApprovedOk !==
+                              undefined ? (
+                              <tr
+                                key={`pr-status1-tr-${policy.id}-${tableItem.gitPullRequest.pullRequestId}`}
+                              >
+                                <td className="td-vertical-align">
+                                  <span
+                                    className={`fabric-icon ms-Icon--${
+                                      policy.isReviewersApprovedOk
+                                        ? "StatusCircleCheckmark icon-green"
+                                        : "StatusCircleErrorX icon-red"
+                                    }`}
+                                  />
+                                </td>
+                                <td className="span-tooltip">
+                                  {policy.reviewerCount} of at least{" "}
+                                  {policy.minimumApproverCount} reviewers
+                                  approved
+                                </td>
+                              </tr>
+                            ) : policy.isRequiredReviewerOk !== undefined ? (
+                              <tr
+                                key={`pr-status2-tr-${policy.id}-${tableItem.gitPullRequest.pullRequestId}`}
+                              >
+                                <td className="td-vertical-align">
+                                  <span
+                                    className={`fabric-icon ms-Icon--${
+                                      policy.isRequiredReviewerOk
+                                        ? "StatusCircleCheckmark icon-green"
+                                        : "StatusCircleErrorX icon-red"
+                                    }`}
+                                  />
+                                </td>
+                                <td className="span-tooltip">
+                                  Required reviewers approved
+                                  {policy.requiredReviewers !== undefined &&
+                                  policy.requiredReviewers.length > 0 &&
+                                  policy.requiredReviewers[0].displayName !== ""
+                                    ? " - " +
+                                      policy.requiredReviewers[0].displayName
+                                    : null}
+                                </td>
+                              </tr>
+                            ) : policy.isWorkItemOk !== undefined ? (
+                              <tr
+                                key={`pr-status3-tr-${policy.id}-${tableItem.gitPullRequest.pullRequestId}`}
+                              >
+                                <td className="td-vertical-align">
+                                  <span
+                                    className={`fabric-icon ms-Icon--${
+                                      policy.isWorkItemOk
+                                        ? "StatusCircleCheckmark icon-green"
+                                        : "StatusCircleErrorX icon-red"
+                                    }`}
+                                  />
+                                </td>
+                                <td className="span-tooltip">
+                                  Work items linked
+                                </td>
+                              </tr>
+                            ) : policy.isCommentOk !== undefined ? (
+                              <tr
+                                key={`pr-status4-tr-${policy.id}-${tableItem.gitPullRequest.pullRequestId}`}
+                              >
+                                <td className="td-vertical-align">
+                                  <span
+                                    className={`fabric-icon ms-Icon--${
+                                      policy.isCommentOk
+                                        ? "StatusCircleCheckmark icon-green"
+                                        : "StatusCircleErrorX icon-red"
+                                    }`}
+                                  />
+                                </td>
+                                <td className="span-tooltip">
+                                  All comments resolved
+                                </td>
+                              </tr>
+                            ) : policy.isBuildOk !== undefined ? (
+                              <tr
+                                key={`pr-status5-tr-${policy.id}-${tableItem.gitPullRequest.pullRequestId}`}
+                              >
+                                <td className="td-vertical-align">
+                                  <span
+                                    className={`fabric-icon ms-Icon--${
+                                      policy.isBuildOk
+                                        ? "StatusCircleCheckmark icon-green"
+                                        : "StatusCircleErrorX icon-red"
+                                    }`}
+                                  />
+                                </td>
+                                <td className="span-tooltip">
+                                  Build {policy.isBuildOk ? "" : "not"}{" "}
+                                  succeeded
+                                </td>
+                              </tr>
+                            ) : null;
+                          })
+                        ) : (
+                          <tr
+                            key={`pr-status6-tr-nopolicy-${tableItem.gitPullRequest.pullRequestId}`}
+                          >
+                            <td colSpan={2}>- No policies</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  );
+                },
+              }}
+            />
+          </div>
+          <div className="flex-column">
+            <Button
+              className="button-icon fontSize font-size second-line-row"
+              text={
+                tableItem.comment.terminatedComment.toString() +
+                "/" +
+                tableItem.comment.totalcomment.toString()
+              }
+              iconProps={{ iconName: "ActivityFeed" }}
+              tooltipProps={{
+                text:
+                  tableItem.comment.terminatedComment.toString() +
+                  " out of " +
+                  tableItem.comment.totalcomment.toString() +
+                  " comments are marked as resolved, won't fix, or closed",
                 delayMs: 500,
               }}
-              startDate={
-                tableItem.lastCommitDetails === undefined ||
-                tableItem.lastCommitDetails.committer === undefined
-                  ? tableItem.gitPullRequest.creationDate
-                  : tableItem.lastCommitDetails!.committer.date!
-              }
-              endDate={new Date(Date.now())}
+              subtle={true}
             />
-          </Button>
+          </div>
+          <div className="flex-column second-line-row">
+            <Link
+              className="bolt-link subtle"
+              href={tableItem.lastCommitUrl!}
+              target="_blank"
+            >
+              <Icon iconName="BranchCommit" />
+              {tableItem.lastShortCommitId}
+            </Link>
+          </div>
+          <ConditionalChildren
+            renderChildren={
+              tableItem.gitPullRequest.status === PullRequestStatus.Active &&
+              tableItem.lastVisit &&
+              tableItem.lastVisit < tableItem.getLastCommitDate()
+            }
+          >
+            <div className="flex-column">
+              <Tooltip text="Pull Request has updates since your last access">
+                <Pill
+                  size={PillSize.compact}
+                  variant={PillVariant.colored}
+                  color={Data.draftColor}
+                  className="icon-column-subdetails"
+                >
+                  New
+                </Pill>
+              </Tooltip>
+            </div>
+          </ConditionalChildren>
+        </div>
+      }
+    />
+  );
+}
+
+export function DateColumn(
+  rowIndex: number,
+  columnIndex: number,
+  tableColumn: ITableColumn<PullRequestModel.PullRequestModel>,
+  tableItem: PullRequestModel.PullRequestModel
+): JSX.Element {
+  return (
+    <TwoLineTableCell
+      key={"col-" + columnIndex}
+      columnIndex={columnIndex}
+      tableColumn={tableColumn}
+      line1={
+        <div className="flex-row">
+          <div className="flex-column">
+            {WithIcon({
+              className: "fontSize font-size",
+              iconProps: { iconName: "Calendar" },
+              children: (
+                <Ago
+                  date={tableItem.gitPullRequest.creationDate!}
+                  tooltipProps={{ text: "Created on" }}
+                />
+              ),
+              disabled: false,
+            })}
+          </div>
+        </div>
+      }
+      line2={
+        <div className="flex-row flex-wrap">
+          <div className="flex-column title-column-subdetails">
+            <Button
+              className="button-icon"
+              iconProps={{ iconName: "Clock", size: IconSize.small }}
+              subtle={true}
+              disabled={true}
+            >
+              <Duration
+                startDate={tableItem.gitPullRequest.creationDate!}
+                endDate={new Date(Date.now())}
+                tooltipProps={{ text: "Time elapsed since its creation" }}
+              />
+            </Button>
+          </div>
         </div>
       }
     />
@@ -448,7 +485,9 @@ export function ReviewersColumn(
                             size={"medium"}
                             displayName={reviewer.displayName}
                           />
-                          <span className="margin-8">{reviewer.displayName}</span>
+                          <span className="margin-8">
+                            {reviewer.displayName}
+                          </span>
                         </div>
                         <div className="flex-row flex-center justify-start margin-top-8">
                           <ReviewerVoteIconStatus reviewer={reviewer} />
@@ -467,7 +506,7 @@ export function ReviewersColumn(
                         reviewer
                       )}`}
                       imageUrl={reviewer._links.avatar.href}
-                      size={"small"}
+                      size={"medium"}
                     />
                     <ReviewerVoteIconStatus
                       className="repos-pr-reviewer-vote absolute"
@@ -483,46 +522,21 @@ export function ReviewersColumn(
   );
 }
 
-export function DateColumn(
-  rowIndex: number,
-  columnIndex: number,
-  tableColumn: ITableColumn<PullRequestModel.PullRequestModel>,
-  tableItem: PullRequestModel.PullRequestModel
-): JSX.Element {
-  return (
-    <TwoLineTableCell
-      key={"col-" + columnIndex}
-      columnIndex={columnIndex}
-      tableColumn={tableColumn}
-      line1={WithIcon({
-        className: "fontSize font-size",
-        iconProps: { iconName: "Calendar" },
-        children: <Ago date={tableItem.gitPullRequest.creationDate!} />,
-      })}
-      line2={WithIcon({
-        className: "fontSize font-size bolt-table-two-line-cell-item",
-        iconProps: { iconName: "Clock" },
-        children: (
-          <Duration
-            startDate={tableItem.gitPullRequest.creationDate!}
-            endDate={new Date(Date.now())}
-          />
-        ),
-      })}
-    />
-  );
-}
-
 function WithIcon(props: {
   className?: string;
   iconProps: IIconProps;
   children?: React.ReactNode;
+  disabled?: boolean;
 }) {
   return (
-    <div className={css(props.className, "flex-row flex-center")}>
-      {Icon({ ...props.iconProps, className: "icon-margin" })}
+    <Button
+      className="button-icon fontSize font-size"
+      iconProps={props.iconProps}
+      subtle={true}
+      disabled={props.disabled}
+    >
       {props.children}
-    </div>
+    </Button>
   );
 }
 

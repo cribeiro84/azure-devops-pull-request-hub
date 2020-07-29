@@ -3,6 +3,7 @@ import {
   IdentityRefWithVote,
   GitCommitRef,
   CommentThreadStatus,
+  PullRequestStatus,
 } from "azure-devops-extension-api/Git/Git";
 import * as DevOps from "azure-devops-extension-sdk";
 import { Statuses } from "azure-devops-ui/Status";
@@ -24,6 +25,7 @@ import {
   PullRequestRequiredReviewer,
 } from "../tabs/PulRequestsTabData";
 import { WebApiTagDefinition } from "azure-devops-extension-api/Core/Core";
+import { USER_SETTINGS_STORE_KEY } from "../common";
 
 export class PullRequestModel {
   private baseHostUrl: string = "";
@@ -48,6 +50,7 @@ export class PullRequestModel {
   public isAllPoliciesOk?: boolean;
   public hasFailures: boolean = false;
   public labels: WebApiTagDefinition[] = [];
+  public lastVisit?: Date;
   private loadingData: boolean = false;
 
   constructor(
@@ -58,6 +61,42 @@ export class PullRequestModel {
   ) {
     this.comment = new PullRequestComment();
     this.setupPullRequest();
+  }
+
+  public saveLastVisit = () => {
+    if (this.gitPullRequest.status !== PullRequestStatus.Active) {
+      return;
+    }
+
+    this.lastVisit = new Date();
+    const storeKey = `${USER_SETTINGS_STORE_KEY}_${this.gitPullRequest.pullRequestId}`;
+    localStorage.setItem(storeKey, JSON.stringify(this.lastVisit));
+  }
+
+  public loadLastVisit = () => {
+    if (this.gitPullRequest.status !== PullRequestStatus.Active) {
+      return;
+    }
+
+    const storeKey = `${USER_SETTINGS_STORE_KEY}_${this.gitPullRequest.pullRequestId}`;
+    const cachedInstance = localStorage.getItem(storeKey);
+
+    if (!cachedInstance || cachedInstance.length === 0)
+    {
+      return;
+    }
+
+    const cachedLastVisit: Date = JSON.parse(cachedInstance);
+    const savedDate = new Date(cachedLastVisit.toString());
+
+    this.lastVisit = savedDate;
+  }
+
+  public getLastCommitDate(): Date {
+    return this.lastCommitDetails === undefined ||
+    this.lastCommitDetails.committer === undefined
+      ? this.gitPullRequest.creationDate
+      : this.lastCommitDetails!.committer.date!
   }
 
   public triggerState() {
@@ -78,16 +117,31 @@ export class PullRequestModel {
     this.initializeData();
 
     this.loadingData = true;
-    Promise.all([
-      this.getPullRequestAdditionalDetailsAsync(),
-      this.getPullRequestThreadAsync(),
-      this.getPullRequestWorkItemAsync(),
-      this.getPullRequestPolicyAsync(),
-      this.processPolicyBuildAsync(),
-      this.getLabels()
-    ]).finally(() => {
+    Promise.all(this.getAsyncCallList()).finally(() => {
       this.callTriggerState();
     });
+  }
+
+  private getAsyncCallList(): Promise<any>[] {
+    const abandoned =
+      this.gitPullRequest.status === PullRequestStatus.Abandoned;
+    let callList = [];
+
+    if (abandoned === false) {
+      callList.push(
+        ...[
+          this.getPullRequestAdditionalDetailsAsync(),
+          this.getPullRequestThreadAsync(),
+          this.getPullRequestWorkItemAsync(),
+          this.getPullRequestPolicyAsync(),
+          this.processPolicyBuildAsync(),
+        ]
+      );
+    }
+
+    callList.push(this.getLabels());
+
+    return callList;
   }
 
   private initializeData() {
@@ -118,6 +172,7 @@ export class PullRequestModel {
     );
     this.lastCommitUrl = `${this.baseHostUrl}/_git/${this.gitPullRequest.repository.name}/commit/${this.gitPullRequest.lastMergeSourceCommit.commitId}?refName=GB${this.gitPullRequest.sourceRefName}`;
     this.hasFailures = hasPullRequestFailure(this);
+    this.loadLastVisit();
   }
 
   private getCurrentUserVoteStatus(

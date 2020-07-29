@@ -42,6 +42,11 @@ function getPullRequestFailureDescription(
   pullRequest: PullRequestModel.PullRequestModel
 ): string {
   const prMergeStatus = pullRequest.gitPullRequest.mergeStatus;
+
+  if (!prMergeStatus) {
+    return "";
+  }
+
   switch (prMergeStatus) {
     case PullRequestAsyncStatus.RejectedByPolicy:
       return "Rejected by Policy";

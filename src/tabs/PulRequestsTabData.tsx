@@ -85,9 +85,12 @@ export enum YesOrNo {
 }
 
 export enum AlternateStatusPr {
-  IsDraft = 0,
-  Conflicts = 1,
-  AutoComplete = 2,
+  IsDraft = "Is Draft",
+  Conflicts = "Conflicts",
+  AutoComplete = "Auto Complete",
+  NotIsDraft = "Not Draft",
+  NotConflicts = "Not Conflicts",
+  NotAutoComplete = "Not Auto Complete"
 }
 
 export class BranchDropDownItem {
@@ -119,6 +122,13 @@ export const columns: ITableColumn<PullRequestModel>[] = [
     width: -46,
   },
   {
+    className: "pipelines-two-line-cell",
+    id: "details",
+    name: "Details",
+    renderCell: DetailsColumn,
+    width: -15,
+  },
+  {
     id: "time",
     name: "When",
     readonly: true,
@@ -131,17 +141,10 @@ export const columns: ITableColumn<PullRequestModel>[] = [
     }
   },
   {
-    className: "pipelines-two-line-cell",
-    id: "details",
-    name: "Details",
-    renderCell: DetailsColumn,
-    width: -20,
-  },
-  {
     id: "reviewers",
     name: "Reviewers",
     renderCell: ReviewersColumn,
-    width: -20,
+    width: -25,
   },
 ];
 

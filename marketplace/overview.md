@@ -28,7 +28,10 @@ Manage your Pull Requests of all your projects and repositories at a single plac
 - Comments count + resolved ones (For instance: 1/2 resolved)
 - Pull Request policies check (Reviewers, build, so on)
 - Save current state
-  - Selected search filters
+  - Selected search filters per project
+    - Now you can save your filters per selected project
+- Support to view Completed and Abandoned PRs
+  - The current selected project will be remembered when you come back
 
 ## Future releaes
 
@@ -40,6 +43,14 @@ Manage your Pull Requests of all your projects and repositories at a single plac
   - New badge (Pill) for your voted PRs with new changes
 
 ## Updates (dd/MM/yyyy)
+
+### 28/07/2020
+
+- Support for Completed and Abandoned PRs
+- UI tweaks
+- Performance improvements
+- Filters now can be saved by selected Project
+  - The current selected project will be remembered when you come back
 
 ### 22/07/2020
 
