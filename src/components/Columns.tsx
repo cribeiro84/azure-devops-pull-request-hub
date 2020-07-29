@@ -104,8 +104,8 @@ export function TitleColumn(
       }
       line2={
         <Tooltip text={tooltip}>
-          <div className="flex-column flex-grow second-line-row">
-            <div className="flex-row flex-wrap">
+          <div className="flex-column flex-grow">
+            <div className="flex-row flex-wrap second-line-row">
               <div className="flex-column">
                 <Link
                   className="bolt-link subtle"
