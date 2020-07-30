@@ -6,14 +6,21 @@ import { Header, TitleSize } from "azure-devops-ui/Header";
 import { IHeaderCommandBarItem } from "azure-devops-ui/HeaderCommandBar";
 import { Page } from "azure-devops-ui/Page";
 import { Tab, TabBar, TabSize } from "azure-devops-ui/Tabs";
-import { showRootComponent, UsertSettingsInstance } from "./common";
+import {
+  showRootComponent,
+  UsertSettingsInstance,
+  ShowErrorMessage,
+  isLocalStorageAvailable,
+} from "./common";
 import { PullRequestsTab } from "./tabs/PullRequestsTab";
 import { addPolyFills } from "./polyfills";
 import { PullRequestStatus } from "azure-devops-extension-api/Git/Git";
 import { ObservableValue } from "azure-devops-ui/Core/Observable";
 import { Observer } from "azure-devops-ui/Observer";
 
-interface IHubContentState {}
+interface IHubContentState {
+  errorMessage: string;
+}
 
 addPolyFills();
 
@@ -23,9 +30,7 @@ export class App extends React.Component<{}, IHubContentState> {
   private completedCount: ObservableValue<number>;
   private abandonedCount: ObservableValue<number>;
 
-  private onUnload = (e: BeforeUnloadEvent) => {
-
-  };
+  private onUnload = (e: BeforeUnloadEvent) => {};
 
   constructor(props: {}) {
     super(props);
@@ -35,23 +40,45 @@ export class App extends React.Component<{}, IHubContentState> {
     this.completedCount = new ObservableValue(0);
     this.abandonedCount = new ObservableValue(0);
 
-    this.state = {};
+    this.state = {
+      errorMessage: "",
+    };
   }
 
   public async componentWillMount() {
-    UsertSettingsInstance.load();
-    DevOps.init();
+    try {
+      DevOps.init();
+      UsertSettingsInstance.load();
+    } catch (error) {
+      this.handleError(error);
+    }
   }
 
   public componentDidMount() {
     window.addEventListener("beforeunload", this.onUnload);
+
+    if (!isLocalStorageAvailable())
+    {
+      this.setState({
+        errorMessage: "Your browser is blocking 'localStorage' API. Save current filters and last visit on PR will not work as expected."
+      });
+    }
   }
 
   componentWillUnmount() {
     window.removeEventListener("beforeunload", this.onUnload);
   }
 
+  private handleError(error: any): void {
+    console.log(error);
+    this.setState({
+      errorMessage: "There was an error during the extension load: " + error,
+    });
+  }
+
   public render(): JSX.Element {
+    const { errorMessage } = this.state;
+
     return (
       <Surface background={1}>
         <Page className="azure-pull-request-hub flex-grow">
@@ -87,6 +114,16 @@ export class App extends React.Component<{}, IHubContentState> {
           </TabBar>
 
           <div className="page-content-left page-content-right page-content-top page-content-bottom">
+            {errorMessage.length > 0 ? (
+              <ShowErrorMessage
+                errorMessage={errorMessage}
+                onDismiss={() => {
+                  this.setState({
+                    errorMessage: "",
+                  });
+                }}
+              />
+            ) : null}
             <Observer selectedTabId={this.selectedTabId}>
               {(props: { selectedTabId: string }) => {
                 if (props.selectedTabId === "active") {

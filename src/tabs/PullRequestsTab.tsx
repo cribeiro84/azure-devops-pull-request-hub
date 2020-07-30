@@ -33,7 +33,6 @@ import {
 
 // Azure DevOps UI
 import { Toast } from "azure-devops-ui/Toast";
-import { MessageCard, MessageCardSeverity } from "azure-devops-ui/MessageCard";
 import { ListSelection } from "azure-devops-ui/List";
 import { Observer } from "azure-devops-ui/Observer";
 import { Dialog } from "azure-devops-ui/Dialog";
@@ -72,6 +71,7 @@ import { FilterBarHub } from "../components/FilterBarHub";
 import { hasPullRequestFailure } from "../models/constants";
 import { ContentSize } from "azure-devops-ui/Callout";
 import { IHeaderCommandBarItem } from "azure-devops-ui/HeaderCommandBar";
+import { ShowErrorMessage } from "../common";
 
 export interface IPullRequestTabProps {
   prType: PullRequestStatus;
@@ -185,28 +185,36 @@ export class PullRequestsTab extends React.Component<
   }
 
   private saveCurrentFilters() {
-    const { currentProject } = this.state;
-    const filterKey = this.getCurrentFilterNameKey();
-    const currentFilter = this.filter.getState();
-    localStorage.setItem(FILTER_STORE_KEY_NAME, currentProject!.id);
-    localStorage.setItem(filterKey, JSON.stringify(currentFilter));
-    this.showToastMessage(`Current selected filters have been saved - ${
-      currentProject!.name
-    }.`);
+    try {
+      const { currentProject } = this.state;
+      const filterKey = this.getCurrentFilterNameKey();
+      const currentFilter = this.filter.getState();
+      localStorage.setItem(FILTER_STORE_KEY_NAME, currentProject!.id);
+      localStorage.setItem(filterKey, JSON.stringify(currentFilter));
+      this.showToastMessage(
+        `Current selected filters have been saved - ${currentProject!.name}.`
+      );
+    } catch (error) {
+      this.handleError(error);
+    }
   }
 
   private clearSavedFilter() {
-    const { currentProject } = this.state;
-    const filterKey = this.getCurrentFilterNameKey();
-    this.showToastMessage(
-      `Saved filters have been removed of selected project - ${
-        currentProject!.name
-      }.`
-    );
-    localStorage.removeItem(FILTER_STORE_KEY_NAME);
-    localStorage.removeItem(filterKey);
-    this.filter.reset();
-    this.refresh();
+    try {
+      const { currentProject } = this.state;
+      const filterKey = this.getCurrentFilterNameKey();
+      this.showToastMessage(
+        `Saved filters have been removed of selected project - ${
+          currentProject!.name
+        }.`
+      );
+      localStorage.removeItem(FILTER_STORE_KEY_NAME);
+      localStorage.removeItem(filterKey);
+      this.filter.reset();
+      this.refresh();
+    } catch (error) {
+      this.handleError(error);
+    }
   }
 
   private loadSavedFilter(storedSavedCurrentProjectId: string | null): void {
@@ -223,7 +231,6 @@ export class PullRequestsTab extends React.Component<
     }
   }
 
-
   private async initializePage() {
     const self = this;
     this.getOrganizationBaseUrl()
@@ -232,9 +239,7 @@ export class PullRequestsTab extends React.Component<
           getCommonServiceIdsValue("ProjectPageService")
         );
 
-        const currentProjectId = localStorage.getItem(
-          FILTER_STORE_KEY_NAME
-        );
+        const currentProjectId = localStorage.getItem(FILTER_STORE_KEY_NAME);
 
         this.loadSavedFilter(currentProjectId);
 
@@ -381,7 +386,11 @@ export class PullRequestsTab extends React.Component<
       repositories.map(async (r) => {
         let criteria = Object.assign({}, Data.pullRequestCriteria);
         criteria.status = this.props.prType;
-        const top = (this.props.prType === PullRequestStatus.Completed || this.props.prType === PullRequestStatus.Abandoned) ? 25 : 0;
+        const top =
+          this.props.prType === PullRequestStatus.Completed ||
+          this.props.prType === PullRequestStatus.Abandoned
+            ? 25
+            : 0;
 
         const loadedPullRequests = await this.gitClient.getPullRequests(
           r.id,
@@ -585,12 +594,18 @@ export class PullRequestsTab extends React.Component<
       filteredPullRequest = filteredPullRequest.filter((pr) => {
         const found = selectedAlternateStatusPrFilter.some((item) => {
           return (
-            (pr.gitPullRequest.isDraft === true && item === Data.AlternateStatusPr.IsDraft) ||
-            (hasPullRequestFailure(pr) === true && item === Data.AlternateStatusPr.Conflicts) ||
-            (pr.isAutoCompleteSet === true && item === Data.AlternateStatusPr.AutoComplete) ||
-            (pr.gitPullRequest.isDraft === false && item === Data.AlternateStatusPr.NotIsDraft) ||
-            (hasPullRequestFailure(pr) === false && item === Data.AlternateStatusPr.NotConflicts) ||
-            (pr.isAutoCompleteSet === false && item === Data.AlternateStatusPr.NotAutoComplete)
+            (pr.gitPullRequest.isDraft === true &&
+              item === Data.AlternateStatusPr.IsDraft) ||
+            (hasPullRequestFailure(pr) === true &&
+              item === Data.AlternateStatusPr.Conflicts) ||
+            (pr.isAutoCompleteSet === true &&
+              item === Data.AlternateStatusPr.AutoComplete) ||
+            (pr.gitPullRequest.isDraft === false &&
+              item === Data.AlternateStatusPr.NotIsDraft) ||
+            (hasPullRequestFailure(pr) === false &&
+              item === Data.AlternateStatusPr.NotConflicts) ||
+            (pr.isAutoCompleteSet === false &&
+              item === Data.AlternateStatusPr.NotAutoComplete)
           );
         });
         return found;
@@ -1051,6 +1066,7 @@ export class PullRequestsTab extends React.Component<
   sortFunctions = [
     null, //Status column
     null, // Title column
+    null, // Details column
     // Sort on When column
     (
       item1: PullRequestModel.PullRequestModel,
@@ -1061,8 +1077,6 @@ export class PullRequestsTab extends React.Component<
         item1.gitPullRequest.creationDate.getTime()
       );
     },
-
-    null, // Details column
     null, // Reviewers column
   ];
 
@@ -1118,19 +1132,4 @@ export class PullRequestsTab extends React.Component<
       },
     },
   ];
-}
-
-function ShowErrorMessage(props: any) {
-  return (
-    <div className="flex-grow margin-top-8">
-      <br />
-      <MessageCard
-        className="flex-self-stretch"
-        severity={"Error" as MessageCardSeverity}
-        onDismiss={props.onDismiss}
-      >
-        {props.errorMessage}
-      </MessageCard>
-    </div>
-  );
 }
