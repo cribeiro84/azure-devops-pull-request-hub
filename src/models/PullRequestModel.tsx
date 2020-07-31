@@ -63,14 +63,20 @@ export class PullRequestModel {
     this.setupPullRequest();
   }
 
-  public saveLastVisit = () => {
-    if (this.gitPullRequest.status !== PullRequestStatus.Active) {
-      return;
-    }
+  public saveLastVisit = (): boolean => {
+    try {
+      if (this.gitPullRequest.status !== PullRequestStatus.Active) {
+        return true;
+      }
 
-    this.lastVisit = new Date();
-    const storeKey = `${USER_SETTINGS_STORE_KEY}_${this.gitPullRequest.pullRequestId}`;
-    localStorage.setItem(storeKey, JSON.stringify(this.lastVisit));
+      this.lastVisit = new Date();
+      const storeKey = `${USER_SETTINGS_STORE_KEY}_${this.gitPullRequest.pullRequestId}`;
+      localStorage.setItem(storeKey, JSON.stringify(this.lastVisit));
+
+      return true;
+    } catch (error) {
+      return false;
+    }
   }
 
   public loadLastVisit = () => {
