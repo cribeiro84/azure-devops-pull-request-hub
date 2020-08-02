@@ -235,102 +235,24 @@ export function DetailsColumn(
                         {tableItem.policies !== undefined &&
                         tableItem.policies.length > 0 ? (
                           tableItem.policies.map((policy) => {
-                            return policy.isReviewersApprovedOk !==
-                              undefined ? (
+                            return (
                               <tr
                                 key={`pr-status1-tr-${policy.id}-${tableItem.gitPullRequest.pullRequestId}`}
                               >
                                 <td className="td-vertical-align">
                                   <span
                                     className={`fabric-icon ms-Icon--${
-                                      policy.isReviewersApprovedOk
+                                      policy.isApproved
                                         ? "StatusCircleCheckmark icon-green"
                                         : "StatusCircleErrorX icon-red"
                                     }`}
                                   />
                                 </td>
                                 <td className="span-tooltip">
-                                  {policy.reviewerCount} of at least{" "}
-                                  {policy.minimumApproverCount} reviewers
-                                  approved
+                                  {policy.displayName}
                                 </td>
                               </tr>
-                            ) : policy.isRequiredReviewerOk !== undefined ? (
-                              <tr
-                                key={`pr-status2-tr-${policy.id}-${tableItem.gitPullRequest.pullRequestId}`}
-                              >
-                                <td className="td-vertical-align">
-                                  <span
-                                    className={`fabric-icon ms-Icon--${
-                                      policy.isRequiredReviewerOk
-                                        ? "StatusCircleCheckmark icon-green"
-                                        : "StatusCircleErrorX icon-red"
-                                    }`}
-                                  />
-                                </td>
-                                <td className="span-tooltip">
-                                  Required reviewers approved
-                                  {policy.requiredReviewers !== undefined &&
-                                  policy.requiredReviewers.length > 0 &&
-                                  policy.requiredReviewers[0].displayName !== ""
-                                    ? " - " +
-                                      policy.requiredReviewers[0].displayName
-                                    : null}
-                                </td>
-                              </tr>
-                            ) : policy.isWorkItemOk !== undefined ? (
-                              <tr
-                                key={`pr-status3-tr-${policy.id}-${tableItem.gitPullRequest.pullRequestId}`}
-                              >
-                                <td className="td-vertical-align">
-                                  <span
-                                    className={`fabric-icon ms-Icon--${
-                                      policy.isWorkItemOk
-                                        ? "StatusCircleCheckmark icon-green"
-                                        : "StatusCircleErrorX icon-red"
-                                    }`}
-                                  />
-                                </td>
-                                <td className="span-tooltip">
-                                  Work items linked
-                                </td>
-                              </tr>
-                            ) : policy.isCommentOk !== undefined ? (
-                              <tr
-                                key={`pr-status4-tr-${policy.id}-${tableItem.gitPullRequest.pullRequestId}`}
-                              >
-                                <td className="td-vertical-align">
-                                  <span
-                                    className={`fabric-icon ms-Icon--${
-                                      policy.isCommentOk
-                                        ? "StatusCircleCheckmark icon-green"
-                                        : "StatusCircleErrorX icon-red"
-                                    }`}
-                                  />
-                                </td>
-                                <td className="span-tooltip">
-                                  All comments resolved
-                                </td>
-                              </tr>
-                            ) : policy.isBuildOk !== undefined ? (
-                              <tr
-                                key={`pr-status5-tr-${policy.id}-${tableItem.gitPullRequest.pullRequestId}`}
-                              >
-                                <td className="td-vertical-align">
-                                  <span
-                                    className={`fabric-icon ms-Icon--${
-                                      policy.isBuildOk
-                                        ? "StatusCircleCheckmark icon-green"
-                                        : "StatusCircleErrorX icon-red"
-                                    }`}
-                                  />
-                                </td>
-                                <td className="span-tooltip">
-                                  Build {policy.isBuildOk ? "" : "not"}{" "}
-                                  succeeded
-                                </td>
-                              </tr>
-                            ) : null;
+                            );
                           })
                         ) : (
                           <tr

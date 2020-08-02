@@ -366,6 +366,7 @@ export class PullRequestsTab extends React.Component<
   }
 
   private async getAllPullRequests() {
+
     const self = this;
     this.setState({ loading: true });
     const { currentProject, repositories, pullRequests } = this.state;
@@ -951,6 +952,7 @@ export class PullRequestsTab extends React.Component<
     } else {
       return (
         <Card
+          key={this.props.prType}
           className="flex-grow bolt-table-card"
           contentProps={{ contentPadding: false }}
           headerCommandBarItems={this.listHeaderColumns}
@@ -960,6 +962,7 @@ export class PullRequestsTab extends React.Component<
           )}
           <React.Fragment>
             <Table<PullRequestModel.PullRequestModel>
+              key={this.props.prType}
               behaviors={[sortingBehavior]}
               columns={Data.columns}
               itemProvider={this.pullRequestItemProvider}
