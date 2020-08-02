@@ -5,7 +5,7 @@ import { IProjectInfo } from 'azure-devops-extension-api';
 
 const evaluationApiUrl = 'https://dev.azure.com/[instance]/[projectName]/_apis/policy/evaluations?artifactId=[artifactId]&api-version=5.1-preview.1';
 
-export async function getEvaluationsPerPullRequest(instance: string, project: IProjectInfo | TeamProjectReference | undefined, pullRequestId: number): Promise<AzureGitModels.RootObject> {
+export async function getEvaluationsPerPullRequest(instance: string, project: IProjectInfo | TeamProjectReference | undefined, pullRequestId: number): Promise<AzureGitModels.Value[]> {
   const artifactId = `vstfs:///CodeReview/CodeReviewId/${project!.id}/${pullRequestId}`;
   const accessToken = await DevOps.getAccessToken();
 
@@ -27,6 +27,6 @@ export async function getEvaluationsPerPullRequest(instance: string, project: IP
       return response.json();
     })
     .then(data => {
-      return data as AzureGitModels.RootObject;
+      return (data as AzureGitModels.RootObject).value;
     });
 }

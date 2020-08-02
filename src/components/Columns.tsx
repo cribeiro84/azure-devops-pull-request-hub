@@ -37,7 +37,7 @@ export function StatusColumn(
   return (
     <TwoLineTableCell
       className="bolt-table-cell-content-with-inline-link no-v-padding"
-      key={"col-" + columnIndex}
+      key={"col-stauts-" + columnIndex}
       columnIndex={columnIndex}
       tableColumn={tableColumn}
       line1={
@@ -88,7 +88,7 @@ export function TitleColumn(
   return (
     <TwoLineTableCell
       className="bolt-table-cell-content-with-inline-link no-v-padding"
-      key={"col-" + columnIndex}
+      key={`col-title-${columnIndex}`}
       columnIndex={columnIndex}
       tableColumn={tableColumn}
       line1={
@@ -178,7 +178,7 @@ export function DetailsColumn(
   return (
     <TwoLineTableCell
       className="bolt-table-cell-content-with-inline-link no-v-padding"
-      key={"col-" + columnIndex}
+      key={`col-details-${columnIndex}`}
       columnIndex={columnIndex}
       tableColumn={tableColumn}
       line1={
@@ -332,7 +332,7 @@ export function DateColumn(
 ): JSX.Element {
   return (
     <TwoLineTableCell
-      key={"col-" + columnIndex}
+      key={`col-when-${columnIndex}`}
       columnIndex={columnIndex}
       tableColumn={tableColumn}
       line1={
@@ -383,7 +383,7 @@ export function ReviewersColumn(
   return (
     <TwoLineTableCell
       className="bolt-table-cell-content-with-inline-link no-v-padding"
-      key={"col-" + columnIndex}
+      key={`col-reviewers-${columnIndex}`}
       columnIndex={columnIndex}
       tableColumn={tableColumn}
       line1={
@@ -417,6 +417,18 @@ export function ReviewersColumn(
                           <span className="font-weight-semibold">
                             {getVoteDescription(reviewer.vote)}
                           </span>
+                        </div>
+                        <div className="flex-row flex-center justify-start margin-top-8">
+                          {reviewer.votedFor && reviewer.votedFor.length > 0 ? (
+                            <span key={`span1-${i}-${reviewer.id}`}>
+                              <strong><br />Voted for:</strong> <br /><br />
+                              {reviewer.votedFor.map((r) => {
+                                return (
+                                  <span key={`span2-${i}-${r.id}-${reviewer.id}`}> - {r.displayName} <br /></span>
+                                );
+                              })}
+                            </span>
+                          ) : null}
                         </div>
                       </div>
                     </div>

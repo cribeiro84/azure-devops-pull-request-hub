@@ -47,6 +47,7 @@ export class PullRequestModel {
   public labels: WebApiTagDefinition[] = [];
   public lastVisit?: Date;
   private loadingData: boolean = false;
+  private requiredReviewers: IdentityRefWithVote[] = [];
 
   constructor(
     public gitPullRequest: GitPullRequest,
@@ -100,8 +101,11 @@ export class PullRequestModel {
   }
 
   public triggerState() {
+    this.pullRequestProgressStatus = this.getStatusIndicatorData(
+      this.gitPullRequest.reviewers,
+      this.isAllPoliciesOk
+    );
     this.callbackState(this);
-    this.initializeData();
   }
 
   public isStillLoading() {
@@ -158,16 +162,21 @@ export class PullRequestModel {
     this.pullRequestHref = `${this.baseHostUrl}/_git/${this.gitPullRequest.repository.name}/pullrequest/${this.gitPullRequest.pullRequestId}`;
     this.sourceBranchHref = `${this.baseHostUrl}/_git/${this.gitPullRequest.repository.name}?version=GB${this.sourceBranch.branchName}`;
     this.targetBranchHref = `${this.baseHostUrl}/_git/${this.gitPullRequest.repository.name}?version=GB${this.targetBranch.branchName}`;
+    this.requiredReviewers = this.gitPullRequest.reviewers
+      ? this.gitPullRequest.reviewers.filter(
+          (r) => r.isRequired !== undefined && r.isRequired === true
+        )
+      : [];
     this.myApprovalStatus = this.getCurrentUserVoteStatus(
       this.gitPullRequest.reviewers
-    );
-    this.lastShortCommitId = this.gitPullRequest.lastMergeSourceCommit.commitId.substr(
-      0,
-      8
     );
     this.pullRequestProgressStatus = this.getStatusIndicatorData(
       this.gitPullRequest.reviewers,
       this.isAllPoliciesOk
+    );
+    this.lastShortCommitId = this.gitPullRequest.lastMergeSourceCommit.commitId.substr(
+      0,
+      8
     );
     this.lastCommitUrl = `${this.baseHostUrl}/_git/${this.gitPullRequest.repository.name}/commit/${this.gitPullRequest.lastMergeSourceCommit.commitId}?refName=GB${this.gitPullRequest.sourceRefName}`;
     this.hasFailures = hasPullRequestFailure(this);
@@ -209,28 +218,24 @@ export class PullRequestModel {
     } else if (reviewers.some((r) => r.vote === ReviewerVoteOption.Rejected)) {
       indicatorData.statusProps = {
         ...Statuses.Failed,
-        ariaLabel: "One or more of the reviewers has rejected.",
+        ariaLabel: "One or more reviewer(s) has rejected.",
       };
-      indicatorData.label = "One or more of the reviewers has rejected.";
+      indicatorData.label = "One or more reviewer(s) has rejected.";
     } else if (
       reviewers.some((r) => r.vote === ReviewerVoteOption.WaitingForAuthor)
     ) {
       indicatorData.statusProps = {
         ...Statuses.Warning,
-        ariaLabel: "One or more of the reviewers is waiting for the author.",
+        ariaLabel: "One or more reviewer(s) is waiting for the author.",
       };
       indicatorData.label =
-        "One or more of the reviewers is waiting for the author.";
+        "One or more reviewer(s) is waiting for the author.";
     } else if (
-      (!reviewers ||
-        reviewers.length === 0 ||
-        reviewers
-          .filter((r) => r.isRequired !== undefined && r.isRequired === true)
-          .every(
-            (r) =>
-              r.vote === ReviewerVoteOption.Approved ||
-              r.vote === ReviewerVoteOption.ApprovedWithSuggestions
-          )) &&
+      this.requiredReviewers.every(
+        (r) =>
+          r.vote === ReviewerVoteOption.Approved ||
+          r.vote === ReviewerVoteOption.ApprovedWithSuggestions
+      ) &&
       isAllPoliciesOk
     ) {
       indicatorData.statusProps = {
@@ -239,9 +244,15 @@ export class PullRequestModel {
       };
       indicatorData.label = "Success";
     } else if (
-      reviewers
-        .filter((r) => r.isRequired !== undefined && r.isRequired === true)
-        .every((r) => r.vote === ReviewerVoteOption.NoVote)
+      isAllPoliciesOk === false
+    ) {
+      indicatorData.statusProps = {
+        ...Statuses.Running,
+        ariaLabel: "Waiting all policies to be completed",
+      };
+      indicatorData.label = "Waiting all policies to be completed";
+    } else if (
+      this.requiredReviewers.every((r) => r.vote === ReviewerVoteOption.NoVote)
     ) {
       indicatorData.statusProps = {
         ...Statuses.Waiting,
@@ -249,16 +260,11 @@ export class PullRequestModel {
       };
       indicatorData.label = "Waiting Review of required Reviewers";
     } else if (
-      reviewers.some(
-        (r) =>
-          r.isRequired !== undefined &&
-          r.isRequired === true &&
-          r.vote === ReviewerVoteOption.NoVote
-      )
+      this.requiredReviewers.some((r) => r.vote === ReviewerVoteOption.NoVote)
     ) {
       indicatorData.statusProps = {
         ...Statuses.Running,
-        ariaLabel: "Waiting remaining required reviewers",
+        ariaLabel: "Waiting remaining required Reviewers",
       };
       indicatorData.label = "Review in progress";
     }
@@ -360,7 +366,7 @@ export class PullRequestModel {
       this.gitPullRequest.pullRequestId
     );
 
-    self.isAllPoliciesOk = policies.value
+    self.isAllPoliciesOk = policies
       .filter(
         (i) =>
           i.configuration.isEnabled === true &&
@@ -370,7 +376,7 @@ export class PullRequestModel {
         return i.status === "approved";
       });
 
-    policies.value
+    policies
       .filter(
         (p) =>
           p.configuration.isEnabled === true &&
@@ -384,7 +390,9 @@ export class PullRequestModel {
 
         switch (p.configuration.type.id) {
           case EvaluationPolicyType.MinimumReviewers: {
-            pullRequestPolicy.displayName = `${p.configuration.settings.minimumApproverCount} - ${p.configuration.type.displayName}`;
+            pullRequestPolicy.displayName = `${p.configuration.settings.minimumApproverCount} ${
+              p.configuration.type.displayName
+            }`;
             break;
           }
           case EvaluationPolicyType.Build: {
