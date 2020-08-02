@@ -85,12 +85,14 @@ export enum YesOrNo {
 }
 
 export enum AlternateStatusPr {
-  IsDraft = "Is Draft",
-  Conflicts = "Conflicts",
   AutoComplete = "Auto Complete",
+  Conflicts = "Conflicts",
+  IsDraft = "Is Draft",
   NotIsDraft = "Not Draft",
   NotConflicts = "Not Conflicts",
-  NotAutoComplete = "Not Auto Complete"
+  NotAutoComplete = "Not Auto Complete",
+  NotReadyForCompletion = "Not Ready for Completion",
+  ReadForCompletion = "Ready for Completion"
 }
 
 export class BranchDropDownItem {

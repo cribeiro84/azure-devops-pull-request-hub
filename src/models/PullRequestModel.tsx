@@ -19,7 +19,9 @@ import {
 } from "../tabs/PulRequestsTabData";
 import { WebApiTagDefinition } from "azure-devops-extension-api/Core/Core";
 import { USER_SETTINGS_STORE_KEY } from "../common";
-import { getEvaluationsPerPullRequest } from "../services/AzureGitServices";
+import {
+  getEvaluationsPerPullRequest
+} from "../services/AzureGitServices";
 import { EvaluationPolicyType } from "./GitModels";
 
 export class PullRequestModel {
@@ -243,9 +245,7 @@ export class PullRequestModel {
         ariaLabel: "Ready for completion",
       };
       indicatorData.label = "Success";
-    } else if (
-      isAllPoliciesOk === false
-    ) {
+    } else if (isAllPoliciesOk === false) {
       indicatorData.statusProps = {
         ...Statuses.Running,
         ariaLabel: "Waiting all policies to be completed",
@@ -360,13 +360,23 @@ export class PullRequestModel {
   private async getPullRequestPolicyAsync() {
     let self = this;
 
+    ///** Work in Progress :-) */
+    // const details = await getPullRequestOverallStatus(
+    //   this.baseHostUrl,
+    //   DevOps.getHost().name,
+    //   this.gitPullRequest.repository.project,
+    //   this.gitPullRequest.repository,
+    //   this
+    // );
+
     const policies = await getEvaluationsPerPullRequest(
+      this.baseHostUrl,
       DevOps.getHost().name,
       this.gitPullRequest.repository.project,
       this.gitPullRequest.pullRequestId
     );
 
-    self.isAllPoliciesOk = policies
+    self.isAllPoliciesOk = policies.length === 0 || (policies
       .filter(
         (i) =>
           i.configuration.isEnabled === true &&
@@ -374,7 +384,7 @@ export class PullRequestModel {
       )
       .every((i) => {
         return i.status === "approved";
-      });
+      }));
 
     policies
       .filter(
@@ -390,9 +400,7 @@ export class PullRequestModel {
 
         switch (p.configuration.type.id) {
           case EvaluationPolicyType.MinimumReviewers: {
-            pullRequestPolicy.displayName = `${p.configuration.settings.minimumApproverCount} ${
-              p.configuration.type.displayName
-            }`;
+            pullRequestPolicy.displayName = `${p.configuration.settings.minimumApproverCount} ${p.configuration.type.displayName}`;
             break;
           }
           case EvaluationPolicyType.Build: {

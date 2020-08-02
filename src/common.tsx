@@ -1,4 +1,3 @@
-import "es6-promise/auto";
 import "./common.scss";
 
 import * as React from "react";

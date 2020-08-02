@@ -366,7 +366,6 @@ export class PullRequestsTab extends React.Component<
   }
 
   private async getAllPullRequests() {
-
     const self = this;
     this.setState({ loading: true });
     const { currentProject, repositories, pullRequests } = this.state;
@@ -606,7 +605,12 @@ export class PullRequestsTab extends React.Component<
             (hasPullRequestFailure(pr) === false &&
               item === Data.AlternateStatusPr.NotConflicts) ||
             (pr.isAutoCompleteSet === false &&
-              item === Data.AlternateStatusPr.NotAutoComplete)
+              item === Data.AlternateStatusPr.NotAutoComplete) ||
+            (pr.isAllPoliciesOk === true &&
+              item === Data.AlternateStatusPr.ReadForCompletion &&
+              pr.hasFailures === false) ||
+            (item === Data.AlternateStatusPr.NotReadyForCompletion && (
+              pr.hasFailures === true || pr.isAllPoliciesOk === false))
           );
         });
         return found;
