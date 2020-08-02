@@ -37,7 +37,7 @@ export function StatusColumn(
   return (
     <TwoLineTableCell
       className="bolt-table-cell-content-with-inline-link no-v-padding"
-      key={"col-" + columnIndex}
+      key={"col-stauts-" + columnIndex}
       columnIndex={columnIndex}
       tableColumn={tableColumn}
       line1={
@@ -88,7 +88,7 @@ export function TitleColumn(
   return (
     <TwoLineTableCell
       className="bolt-table-cell-content-with-inline-link no-v-padding"
-      key={"col-" + columnIndex}
+      key={`col-title-${columnIndex}`}
       columnIndex={columnIndex}
       tableColumn={tableColumn}
       line1={
@@ -178,7 +178,7 @@ export function DetailsColumn(
   return (
     <TwoLineTableCell
       className="bolt-table-cell-content-with-inline-link no-v-padding"
-      key={"col-" + columnIndex}
+      key={`col-details-${columnIndex}`}
       columnIndex={columnIndex}
       tableColumn={tableColumn}
       line1={
@@ -235,102 +235,24 @@ export function DetailsColumn(
                         {tableItem.policies !== undefined &&
                         tableItem.policies.length > 0 ? (
                           tableItem.policies.map((policy) => {
-                            return policy.isReviewersApprovedOk !==
-                              undefined ? (
+                            return (
                               <tr
                                 key={`pr-status1-tr-${policy.id}-${tableItem.gitPullRequest.pullRequestId}`}
                               >
                                 <td className="td-vertical-align">
                                   <span
                                     className={`fabric-icon ms-Icon--${
-                                      policy.isReviewersApprovedOk
+                                      policy.isApproved
                                         ? "StatusCircleCheckmark icon-green"
                                         : "StatusCircleErrorX icon-red"
                                     }`}
                                   />
                                 </td>
                                 <td className="span-tooltip">
-                                  {policy.reviewerCount} of at least{" "}
-                                  {policy.minimumApproverCount} reviewers
-                                  approved
+                                  {policy.displayName}
                                 </td>
                               </tr>
-                            ) : policy.isRequiredReviewerOk !== undefined ? (
-                              <tr
-                                key={`pr-status2-tr-${policy.id}-${tableItem.gitPullRequest.pullRequestId}`}
-                              >
-                                <td className="td-vertical-align">
-                                  <span
-                                    className={`fabric-icon ms-Icon--${
-                                      policy.isRequiredReviewerOk
-                                        ? "StatusCircleCheckmark icon-green"
-                                        : "StatusCircleErrorX icon-red"
-                                    }`}
-                                  />
-                                </td>
-                                <td className="span-tooltip">
-                                  Required reviewers approved
-                                  {policy.requiredReviewers !== undefined &&
-                                  policy.requiredReviewers.length > 0 &&
-                                  policy.requiredReviewers[0].displayName !== ""
-                                    ? " - " +
-                                      policy.requiredReviewers[0].displayName
-                                    : null}
-                                </td>
-                              </tr>
-                            ) : policy.isWorkItemOk !== undefined ? (
-                              <tr
-                                key={`pr-status3-tr-${policy.id}-${tableItem.gitPullRequest.pullRequestId}`}
-                              >
-                                <td className="td-vertical-align">
-                                  <span
-                                    className={`fabric-icon ms-Icon--${
-                                      policy.isWorkItemOk
-                                        ? "StatusCircleCheckmark icon-green"
-                                        : "StatusCircleErrorX icon-red"
-                                    }`}
-                                  />
-                                </td>
-                                <td className="span-tooltip">
-                                  Work items linked
-                                </td>
-                              </tr>
-                            ) : policy.isCommentOk !== undefined ? (
-                              <tr
-                                key={`pr-status4-tr-${policy.id}-${tableItem.gitPullRequest.pullRequestId}`}
-                              >
-                                <td className="td-vertical-align">
-                                  <span
-                                    className={`fabric-icon ms-Icon--${
-                                      policy.isCommentOk
-                                        ? "StatusCircleCheckmark icon-green"
-                                        : "StatusCircleErrorX icon-red"
-                                    }`}
-                                  />
-                                </td>
-                                <td className="span-tooltip">
-                                  All comments resolved
-                                </td>
-                              </tr>
-                            ) : policy.isBuildOk !== undefined ? (
-                              <tr
-                                key={`pr-status5-tr-${policy.id}-${tableItem.gitPullRequest.pullRequestId}`}
-                              >
-                                <td className="td-vertical-align">
-                                  <span
-                                    className={`fabric-icon ms-Icon--${
-                                      policy.isBuildOk
-                                        ? "StatusCircleCheckmark icon-green"
-                                        : "StatusCircleErrorX icon-red"
-                                    }`}
-                                  />
-                                </td>
-                                <td className="span-tooltip">
-                                  Build {policy.isBuildOk ? "" : "not"}{" "}
-                                  succeeded
-                                </td>
-                              </tr>
-                            ) : null;
+                            );
                           })
                         ) : (
                           <tr
@@ -410,7 +332,7 @@ export function DateColumn(
 ): JSX.Element {
   return (
     <TwoLineTableCell
-      key={"col-" + columnIndex}
+      key={`col-when-${columnIndex}`}
       columnIndex={columnIndex}
       tableColumn={tableColumn}
       line1={
@@ -461,7 +383,7 @@ export function ReviewersColumn(
   return (
     <TwoLineTableCell
       className="bolt-table-cell-content-with-inline-link no-v-padding"
-      key={"col-" + columnIndex}
+      key={`col-reviewers-${columnIndex}`}
       columnIndex={columnIndex}
       tableColumn={tableColumn}
       line1={
@@ -495,6 +417,18 @@ export function ReviewersColumn(
                           <span className="font-weight-semibold">
                             {getVoteDescription(reviewer.vote)}
                           </span>
+                        </div>
+                        <div className="flex-row flex-center justify-start margin-top-8">
+                          {reviewer.votedFor && reviewer.votedFor.length > 0 ? (
+                            <span key={`span1-${i}-${reviewer.id}`}>
+                              <strong><br />Voted for:</strong> <br /><br />
+                              {reviewer.votedFor.map((r) => {
+                                return (
+                                  <span key={`span2-${i}-${r.id}-${reviewer.id}`}> - {r.displayName} <br /></span>
+                                );
+                              })}
+                            </span>
+                          ) : null}
                         </div>
                       </div>
                     </div>

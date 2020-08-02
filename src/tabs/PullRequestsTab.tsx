@@ -605,7 +605,12 @@ export class PullRequestsTab extends React.Component<
             (hasPullRequestFailure(pr) === false &&
               item === Data.AlternateStatusPr.NotConflicts) ||
             (pr.isAutoCompleteSet === false &&
-              item === Data.AlternateStatusPr.NotAutoComplete)
+              item === Data.AlternateStatusPr.NotAutoComplete) ||
+            (pr.isAllPoliciesOk === true &&
+              item === Data.AlternateStatusPr.ReadForCompletion &&
+              pr.hasFailures === false) ||
+            (item === Data.AlternateStatusPr.NotReadyForCompletion && (
+              pr.hasFailures === true || pr.isAllPoliciesOk === false))
           );
         });
         return found;
@@ -951,6 +956,7 @@ export class PullRequestsTab extends React.Component<
     } else {
       return (
         <Card
+          key={this.props.prType}
           className="flex-grow bolt-table-card"
           contentProps={{ contentPadding: false }}
           headerCommandBarItems={this.listHeaderColumns}
@@ -960,6 +966,7 @@ export class PullRequestsTab extends React.Component<
           )}
           <React.Fragment>
             <Table<PullRequestModel.PullRequestModel>
+              key={this.props.prType}
               behaviors={[sortingBehavior]}
               columns={Data.columns}
               itemProvider={this.pullRequestItemProvider}

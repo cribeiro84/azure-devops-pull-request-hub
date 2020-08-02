@@ -85,12 +85,14 @@ export enum YesOrNo {
 }
 
 export enum AlternateStatusPr {
-  IsDraft = "Is Draft",
-  Conflicts = "Conflicts",
   AutoComplete = "Auto Complete",
+  Conflicts = "Conflicts",
+  IsDraft = "Is Draft",
   NotIsDraft = "Not Draft",
   NotConflicts = "Not Conflicts",
-  NotAutoComplete = "Not Auto Complete"
+  NotAutoComplete = "Not Auto Complete",
+  NotReadyForCompletion = "Not Ready for Completion",
+  ReadForCompletion = "Ready for Completion"
 }
 
 export class BranchDropDownItem {
@@ -149,26 +151,9 @@ export const columns: ITableColumn<PullRequestModel>[] = [
 ];
 
 export class PullRequestPolicy {
-  public id: number = 0;
+  public id: string = "";
   public displayName: string = "";
-  public requiredReviewers?: PullRequestRequiredReviewer[];
-  public minimumApproverCount?: number;
-  public reviewerCount?: number;
-  public creatorVoteCounts?: boolean;
-  public allowDownvotes?: boolean;
-  public resetOnSourcePush?: boolean;
-  public repositoryId?: string;
-  public refName?: string;
-  public allowNoFastForward?: boolean;
-  public allowSquash?: boolean;
-  public allowRebase?: boolean;
-  public allowRebaseMerge?: boolean;
-  public buildDefinitionId?: number;
-  public isCommentOk?: boolean;
-  public isBuildOk?: boolean;
-  public isWorkItemOk?: boolean;
-  public isReviewersApprovedOk?: boolean;
-  public isRequiredReviewerOk?: boolean;
+  public isApproved: boolean = false;
 }
 
 export class PullRequestRequiredReviewer {

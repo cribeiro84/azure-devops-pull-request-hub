@@ -44,6 +44,16 @@ Manage your Pull Requests of all your projects and repositories at a single plac
 
 ## Updates (dd/MM/yyyy)
 
+### 02/08/2020
+
+- New Alternate Status: Ready for Completion and Not Ready for Completion
+- UI tweaks
+- Bug fixes: 
+  - Wrong required reviewers marked 
+  - Wrong count of reviewers approved
+- Performance improvements
+- Better PR Policy listing and check
+
 ### 28/07/2020
 
 - Support for Completed and Abandoned PRs
