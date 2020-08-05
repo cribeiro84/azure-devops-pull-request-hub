@@ -9,10 +9,11 @@ const evaluationApiUrl =
   "[baseUrl]/_apis/policy/evaluations?artifactId=[artifactId]&api-version=5.1-preview.1";
 const hierarchyQueryApiUrl =
   "[baseUrl]/_apis/Contribution/HierarchyQuery/project/[projectId]?api-version=5.1-preview.1";
+const suggestionsQueryApiUrl =
+  "[baseUrl]/_apis/git/repositories/[repositoryId]/suggestions";
 
 export async function getEvaluationsPerPullRequest(
   baseUrl: string,
-  instance: string,
   project: IProjectInfo | TeamProjectReference | undefined,
   pullRequestId: number
 ): Promise<AzureGitModels.Value[]> {
@@ -39,7 +40,7 @@ export async function getEvaluationsPerPullRequest(
       return response.json();
     })
     .then((data) => {
-      return (data as AzureGitModels.RootObject).value;
+      return (data as AzureGitModels.GitPolicyRoot).value;
     });
 }
 
@@ -60,8 +61,7 @@ export async function getPullRequestOverallStatus(
         repositoryId: repository.id,
         types: 1019,
         sourcePage: {
-          url:
-            pullRequest.pullRequestHref!,
+          url: pullRequest.pullRequestHref!,
           routeId: "ms.vss-code-web.pull-request-details-route",
           routeValues: {
             project: project!.name,
@@ -83,9 +83,9 @@ export async function getPullRequestOverallStatus(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${accessToken}`
+      Authorization: `Bearer ${accessToken}`,
     },
-    body: JSON.stringify(payload)
+    body: JSON.stringify(payload),
   };
 
   const apiUrl = hierarchyQueryApiUrl
@@ -99,6 +99,33 @@ export async function getPullRequestOverallStatus(
     })
     .then((data) => {
       console.log(data);
-      return (data);
+      return data;
+    });
+}
+
+export async function getGitSuggestions(
+  baseUrl: string,
+  repositoryId: string
+): Promise<AzureGitModels.GitSuggestionsRoot> {
+  const accessToken = await DevOps.getAccessToken();
+
+  const apiSettings = {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+  };
+
+  const apiUrl = suggestionsQueryApiUrl
+    .replace("[baseUrl]", baseUrl)
+    .replace("[repositoryId]", repositoryId);
+
+  return fetch(apiUrl, apiSettings)
+    .then((response) => {
+      return response.json();
+    })
+    .then((data) => {
+      return data as AzureGitModels.GitSuggestionsRoot;
     });
 }

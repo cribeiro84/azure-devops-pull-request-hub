@@ -218,16 +218,20 @@ export class PullRequestsTab extends React.Component<
   }
 
   private loadSavedFilter(storedSavedCurrentProjectId: string | null): void {
-    if (storedSavedCurrentProjectId != null) {
-      const saveFilterKeyName = this.getCurrentFilterNameKey(
-        storedSavedCurrentProjectId
-      );
-      const storedSavedFilter = localStorage.getItem(saveFilterKeyName);
+    try {
+      if (storedSavedCurrentProjectId != null) {
+        const saveFilterKeyName = this.getCurrentFilterNameKey(
+          storedSavedCurrentProjectId
+        );
+        const storedSavedFilter = localStorage.getItem(saveFilterKeyName);
 
-      if (storedSavedFilter && storedSavedFilter.length > 0) {
-        const savedFilterState = JSON.parse(storedSavedFilter);
-        this.filter.setState(savedFilterState);
+        if (storedSavedFilter && storedSavedFilter.length > 0) {
+          const savedFilterState = JSON.parse(storedSavedFilter);
+          this.filter.setState(savedFilterState);
+        }
       }
+    } catch (error) {
+      this.handleError(error);
     }
   }
 

@@ -12,7 +12,7 @@ import {
   TeamProjectReference,
   WebApiTagDefinition,
 } from "azure-devops-extension-api/Core/Core";
-import { ITableColumn, SortOrder } from "azure-devops-ui/Table";
+import { ITableColumn, SortOrder, TableColumnStyle } from "azure-devops-ui/Table";
 import {
   StatusColumn,
   TitleColumn,
@@ -115,6 +115,8 @@ export const columns: ITableColumn<PullRequestModel>[] = [
     renderCell: StatusColumn,
     readonly: true,
     width: -4,
+    minWidth: -4,
+    columnStyle: TableColumnStyle.Primary
   },
   {
     id: "title",
@@ -217,11 +219,6 @@ export const pullRequestCriteria: GitPullRequestSearchCriteria = {
   status: PullRequestStatus.Active,
   targetRefName: "",
 };
-
-export interface IKeyValueData {
-  id: string;
-  text: string;
-}
 
 export interface IPullRequestsTabState {
   projects: TeamProjectReference[];

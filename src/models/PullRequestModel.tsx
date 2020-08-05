@@ -41,7 +41,7 @@ export class PullRequestModel {
   public pullRequestProgressStatus?: IStatusIndicatorData;
   public lastCommitDetails: GitCommitRef | undefined;
   public isAutoCompleteSet: boolean = false;
-  public existWorkItem: boolean = false;
+  public workItemsCount: number = 0;
   public comment: PullRequestComment;
   public policies: PullRequestPolicy[] = [];
   public isAllPoliciesOk: boolean = false;
@@ -347,7 +347,7 @@ export class PullRequestModel {
         self.projectName
       )
       .then((value) => {
-        self.existWorkItem = value !== undefined && value.length > 0;
+        self.workItemsCount = value !== undefined ? value.length : 0;
       })
       .catch((error) => {
         console.log(
@@ -371,7 +371,6 @@ export class PullRequestModel {
 
     const policies = await getEvaluationsPerPullRequest(
       this.baseHostUrl,
-      DevOps.getHost().name,
       this.gitPullRequest.repository.project,
       this.gitPullRequest.pullRequestId
     );
