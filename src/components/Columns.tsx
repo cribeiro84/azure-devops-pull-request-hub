@@ -285,9 +285,7 @@ export function DetailsColumn(
           />
           <ConditionalChildren renderChildren={tableItem.workItemsCount > 0}>
             <Button
-              className={`button-icon fontSize font-size second-line-row ${
-                tableItem.workItemsCount > 0 ? "icon-policy-green" : ""
-              }`}
+              className={`button-icon fontSize font-size second-line-row`}
               iconProps={{ iconName: "WorkItem" }}
               tooltipProps={{
                 text: `${tableItem.workItemsCount} linked Work Item(s)`,
