@@ -363,7 +363,7 @@ export class PullRequestsTab extends React.Component<
   }
 
   private async getTeamProjects(): Promise<TeamProjectReference[]> {
-    const projects = (await this.coreClient.getProjects()).sort(
+    const projects = (await this.coreClient.getProjects(undefined, 1000)).sort(
       Data.sortMethod
     );
     return projects;
