@@ -87,10 +87,11 @@ export enum YesOrNo {
 export enum AlternateStatusPr {
   AutoComplete = "Auto Complete",
   Conflicts = "Conflicts",
+  HasNewChanges = "Has New Changes",
   IsDraft = "Is Draft",
-  NotIsDraft = "Not Draft",
-  NotConflicts = "Not Conflicts",
   NotAutoComplete = "Not Auto Complete",
+  NotConflicts = "Not Conflicts",
+  NotIsDraft = "Not Draft",
   NotReadyForCompletion = "Not Ready for Completion",
   ReadForCompletion = "Ready for Completion"
 }
@@ -130,7 +131,7 @@ export const columns: ITableColumn<PullRequestModel>[] = [
     id: "details",
     name: "Details",
     renderCell: DetailsColumn,
-    width: -15,
+    width: -20,
   },
   {
     id: "time",
@@ -148,7 +149,7 @@ export const columns: ITableColumn<PullRequestModel>[] = [
     id: "reviewers",
     name: "Reviewers",
     renderCell: ReviewersColumn,
-    width: -25,
+    width: -20,
   },
 ];
 
@@ -166,6 +167,7 @@ export class PullRequestRequiredReviewer {
 export class PullRequestComment {
   public terminatedComment: number = 0;
   public totalcomment: number = 0;
+  public lastUpdatedDate?: Date;
 }
 
 export interface IStatusIndicatorData {

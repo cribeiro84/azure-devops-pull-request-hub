@@ -614,7 +614,8 @@ export class PullRequestsTab extends React.Component<
               item === Data.AlternateStatusPr.ReadForCompletion &&
               pr.hasFailures === false) ||
             (item === Data.AlternateStatusPr.NotReadyForCompletion && (
-              pr.hasFailures === true || pr.isAllPoliciesOk === false))
+              pr.hasFailures === true || pr.isAllPoliciesOk === false)) ||
+              (item === Data.AlternateStatusPr.HasNewChanges && pr.hasNewChanges())
           );
         });
         return found;
@@ -828,8 +829,7 @@ export class PullRequestsTab extends React.Component<
     if (loading === true) {
       return (
         <div className="absolute-fill flex-column flex-grow flex-center justify-center">
-          <Spinner size={SpinnerSize.large} />
-          <div>Loading...</div>
+          <Spinner size={SpinnerSize.large} label="loading..." />
         </div>
       );
     }

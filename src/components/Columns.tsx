@@ -22,7 +22,6 @@ import { PillGroup } from "azure-devops-ui/PillGroup";
 import { Pill, PillSize, PillVariant } from "azure-devops-ui/Pill";
 import { ConditionalChildren } from "azure-devops-ui/ConditionalChildren";
 import { Observer } from "azure-devops-ui/Observer";
-import { PullRequestStatus } from "azure-devops-extension-api/Git/Git";
 
 export function openNewWindowTab(targetUrl: string): void {
   window.open(targetUrl, "_blank");
@@ -209,7 +208,7 @@ export function DetailsColumn(
         </div>
       }
       line2={
-        <div className="flex-row">
+        <div className="flex-row flex-wrap">
           <Button
             className={`button-icon fontSize font-size second-line-row ${
               tableItem.isAllPoliciesOk === true
@@ -294,23 +293,29 @@ export function DetailsColumn(
               subtle={true}
             />
           </ConditionalChildren>
-          <ConditionalChildren
-            renderChildren={
-              tableItem.gitPullRequest.status === PullRequestStatus.Active &&
-              tableItem.lastVisit &&
-              tableItem.lastVisit < tableItem.getLastCommitDate()
-            }
-          >
-            <Tooltip text="Pull Request has updates since your last access">
-              <Pill
-                size={PillSize.compact}
-                variant={PillVariant.colored}
-                color={Data.draftColor}
-                className="icon-column-subdetails"
-              >
-                New
-              </Pill>
-            </Tooltip>
+          <ConditionalChildren renderChildren={tableItem.hasNewChanges()}>
+            <ConditionalChildren renderChildren={tableItem.hasCommentChanges()}>
+              <Tooltip text="Pull Request has new comments or updates on existing comments since your last vist">
+                <Pill
+                  size={PillSize.compact}
+                  variant={PillVariant.colored}
+                  color={Data.draftColor}
+                  className="icon-column-subdetails hideText"
+                  iconProps={{ iconName: "Comment" }}
+                ></Pill>
+              </Tooltip>
+            </ConditionalChildren>
+            <ConditionalChildren renderChildren={tableItem.hasCommitChanges()}>
+              <Tooltip text="Pull Request has new commit(s) since your last vist">
+                <Pill
+                  size={PillSize.compact}
+                  variant={PillVariant.colored}
+                  color={Data.draftColor}
+                  className="icon-column-subdetails hideText"
+                  iconProps={{ iconName: "BranchCommit" }}
+                />
+              </Tooltip>
+            </ConditionalChildren>
           </ConditionalChildren>
         </div>
       }
@@ -440,6 +445,7 @@ export function ReviewersColumn(
                 >
                   <div className="relative reviewer-vote-item">
                     <VssPersona
+                      key={`vss-persona-${rowIndex}-${reviewer.id}`}
                       className={`icon-margin repos-pr-reviewer-vote-avatar ${GetVoteIconColor(
                         reviewer
                       )}`}
@@ -447,6 +453,7 @@ export function ReviewersColumn(
                       size={"medium"}
                     />
                     <ReviewerVoteIconStatus
+                      key={`vss-persona-subicon-${rowIndex}-${reviewer.id}`}
                       className="repos-pr-reviewer-vote absolute"
                       reviewer={reviewer}
                     />

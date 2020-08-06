@@ -19,9 +19,7 @@ import {
 } from "../tabs/PulRequestsTabData";
 import { WebApiTagDefinition } from "azure-devops-extension-api/Core/Core";
 import { USER_SETTINGS_STORE_KEY } from "../common";
-import {
-  getEvaluationsPerPullRequest
-} from "../services/AzureGitServices";
+import { getEvaluationsPerPullRequest } from "../services/AzureGitServices";
 import { EvaluationPolicyType } from "./GitModels";
 
 export class PullRequestModel {
@@ -76,6 +74,26 @@ export class PullRequestModel {
       return false;
     }
   };
+
+  public hasNewChanges(): boolean {
+    return this.hasCommitChanges() || this.hasCommentChanges() ? true : false;
+  }
+
+  public hasCommentChanges(): boolean {
+    return this.lastVisit &&
+      this.comment.lastUpdatedDate &&
+      this.comment.lastUpdatedDate > this.lastVisit
+      ? true
+      : false;
+  }
+
+  public hasCommitChanges(): boolean {
+    return this.lastVisit &&
+      this.gitPullRequest.status === PullRequestStatus.Active &&
+      this.lastVisit < this.getLastCommitDate()
+      ? true
+      : false;
+  }
 
   public loadLastVisit = () => {
     if (this.gitPullRequest.status !== PullRequestStatus.Active) {
@@ -317,6 +335,14 @@ export class PullRequestModel {
                 x.status === CommentThreadStatus.WontFix ||
                 x.status === CommentThreadStatus.Fixed)
           );
+          const lastUpdatedDateIndex = value.findIndex(
+            (x) =>
+              this.lastVisit !== undefined && x.lastUpdatedDate > this.lastVisit
+          );
+          const lastUpdatedDate =
+            lastUpdatedDateIndex >= 0
+              ? value[lastUpdatedDateIndex].lastUpdatedDate
+              : undefined;
 
           self.comment = new PullRequestComment();
 
@@ -326,6 +352,7 @@ export class PullRequestModel {
               : 0;
           self.comment.terminatedComment =
             terminatedThread !== undefined ? terminatedThread.length : 0;
+          self.comment.lastUpdatedDate = lastUpdatedDate;
         }
       })
       .catch((error) => {
@@ -375,15 +402,17 @@ export class PullRequestModel {
       this.gitPullRequest.pullRequestId
     );
 
-    self.isAllPoliciesOk = policies.length === 0 || (policies
-      .filter(
-        (i) =>
-          i.configuration.isEnabled === true &&
-          i.configuration.isBlocking === true
-      )
-      .every((i) => {
-        return i.status === "approved";
-      }));
+    self.isAllPoliciesOk =
+      policies.length === 0 ||
+      policies
+        .filter(
+          (i) =>
+            i.configuration.isEnabled === true &&
+            i.configuration.isBlocking === true
+        )
+        .every((i) => {
+          return i.status === "approved";
+        });
 
     policies
       .filter(

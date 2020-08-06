@@ -110,3 +110,7 @@
 .repos-pr-reviewer-vote-rejectedLightColor img {
   border-color: rgb(203,75,73);
 }
+
+.bolt-pill.hideText > div {
+  display: none;
+}
