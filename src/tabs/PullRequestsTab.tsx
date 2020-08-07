@@ -218,16 +218,20 @@ export class PullRequestsTab extends React.Component<
   }
 
   private loadSavedFilter(storedSavedCurrentProjectId: string | null): void {
-    if (storedSavedCurrentProjectId != null) {
-      const saveFilterKeyName = this.getCurrentFilterNameKey(
-        storedSavedCurrentProjectId
-      );
-      const storedSavedFilter = localStorage.getItem(saveFilterKeyName);
+    try {
+      if (storedSavedCurrentProjectId != null) {
+        const saveFilterKeyName = this.getCurrentFilterNameKey(
+          storedSavedCurrentProjectId
+        );
+        const storedSavedFilter = localStorage.getItem(saveFilterKeyName);
 
-      if (storedSavedFilter && storedSavedFilter.length > 0) {
-        const savedFilterState = JSON.parse(storedSavedFilter);
-        this.filter.setState(savedFilterState);
+        if (storedSavedFilter && storedSavedFilter.length > 0) {
+          const savedFilterState = JSON.parse(storedSavedFilter);
+          this.filter.setState(savedFilterState);
+        }
       }
+    } catch (error) {
+      this.handleError(error);
     }
   }
 
@@ -359,7 +363,7 @@ export class PullRequestsTab extends React.Component<
   }
 
   private async getTeamProjects(): Promise<TeamProjectReference[]> {
-    const projects = (await this.coreClient.getProjects()).sort(
+    const projects = (await this.coreClient.getProjects(undefined, 1000)).sort(
       Data.sortMethod
     );
     return projects;
@@ -610,7 +614,8 @@ export class PullRequestsTab extends React.Component<
               item === Data.AlternateStatusPr.ReadForCompletion &&
               pr.hasFailures === false) ||
             (item === Data.AlternateStatusPr.NotReadyForCompletion && (
-              pr.hasFailures === true || pr.isAllPoliciesOk === false))
+              pr.hasFailures === true || pr.isAllPoliciesOk === false)) ||
+              (item === Data.AlternateStatusPr.HasNewChanges && pr.hasNewChanges())
           );
         });
         return found;
@@ -824,8 +829,7 @@ export class PullRequestsTab extends React.Component<
     if (loading === true) {
       return (
         <div className="absolute-fill flex-column flex-grow flex-center justify-center">
-          <Spinner size={SpinnerSize.large} />
-          <div>Loading...</div>
+          <Spinner size={SpinnerSize.large} label="loading..." />
         </div>
       );
     }

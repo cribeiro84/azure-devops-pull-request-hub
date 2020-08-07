@@ -12,7 +12,7 @@ import {
   TeamProjectReference,
   WebApiTagDefinition,
 } from "azure-devops-extension-api/Core/Core";
-import { ITableColumn, SortOrder } from "azure-devops-ui/Table";
+import { ITableColumn, SortOrder, TableColumnStyle } from "azure-devops-ui/Table";
 import {
   StatusColumn,
   TitleColumn,
@@ -87,10 +87,11 @@ export enum YesOrNo {
 export enum AlternateStatusPr {
   AutoComplete = "Auto Complete",
   Conflicts = "Conflicts",
+  HasNewChanges = "Has New Changes",
   IsDraft = "Is Draft",
-  NotIsDraft = "Not Draft",
-  NotConflicts = "Not Conflicts",
   NotAutoComplete = "Not Auto Complete",
+  NotConflicts = "Not Conflicts",
+  NotIsDraft = "Not Draft",
   NotReadyForCompletion = "Not Ready for Completion",
   ReadForCompletion = "Ready for Completion"
 }
@@ -115,6 +116,8 @@ export const columns: ITableColumn<PullRequestModel>[] = [
     renderCell: StatusColumn,
     readonly: true,
     width: -4,
+    minWidth: -4,
+    columnStyle: TableColumnStyle.Primary
   },
   {
     id: "title",
@@ -128,7 +131,7 @@ export const columns: ITableColumn<PullRequestModel>[] = [
     id: "details",
     name: "Details",
     renderCell: DetailsColumn,
-    width: -15,
+    width: -20,
   },
   {
     id: "time",
@@ -146,7 +149,7 @@ export const columns: ITableColumn<PullRequestModel>[] = [
     id: "reviewers",
     name: "Reviewers",
     renderCell: ReviewersColumn,
-    width: -25,
+    width: -20,
   },
 ];
 
@@ -164,6 +167,7 @@ export class PullRequestRequiredReviewer {
 export class PullRequestComment {
   public terminatedComment: number = 0;
   public totalcomment: number = 0;
+  public lastUpdatedDate?: Date;
 }
 
 export interface IStatusIndicatorData {
@@ -217,11 +221,6 @@ export const pullRequestCriteria: GitPullRequestSearchCriteria = {
   status: PullRequestStatus.Active,
   targetRefName: "",
 };
-
-export interface IKeyValueData {
-  id: string;
-  text: string;
-}
 
 export interface IPullRequestsTabState {
   projects: TeamProjectReference[];

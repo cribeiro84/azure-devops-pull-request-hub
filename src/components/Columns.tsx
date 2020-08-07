@@ -22,7 +22,6 @@ import { PillGroup } from "azure-devops-ui/PillGroup";
 import { Pill, PillSize, PillVariant } from "azure-devops-ui/Pill";
 import { ConditionalChildren } from "azure-devops-ui/ConditionalChildren";
 import { Observer } from "azure-devops-ui/Observer";
-import { PullRequestStatus } from "azure-devops-extension-api/Git/Git";
 
 export function openNewWindowTab(targetUrl: string): void {
   window.open(targetUrl, "_blank");
@@ -36,7 +35,7 @@ export function StatusColumn(
 ): JSX.Element {
   return (
     <TwoLineTableCell
-      className="bolt-table-cell-content-with-inline-link no-v-padding"
+      className="bolt-table-cell-content-with-inline-link no-v-padding scroll-hidden"
       key={"col-stauts-" + columnIndex}
       columnIndex={columnIndex}
       tableColumn={tableColumn}
@@ -87,14 +86,14 @@ export function TitleColumn(
 
   return (
     <TwoLineTableCell
-      className="bolt-table-cell-content-with-inline-link no-v-padding"
+      className="bolt-table-cell-content-with-inline-link no-v-padding scroll-hidden"
       key={`col-title-${columnIndex}`}
       columnIndex={columnIndex}
       tableColumn={tableColumn}
       line1={
         <div className="flex-row scroll-hidden flex-wrap">
           <Button
-            className="branch-button"
+            className="branch-button text-ellipsis"
             text={tableItem.title}
             onClick={onClickPullRequestTitleHandler}
             tooltipProps={{ text: tooltip }}
@@ -209,114 +208,114 @@ export function DetailsColumn(
         </div>
       }
       line2={
-        <div className="flex-row">
-          <div className="flex-column">
-            <Icon
-              className={`icon-column-subdetails ${
-                tableItem.isAllPoliciesOk !== undefined
-                  ? tableItem.isAllPoliciesOk
-                    ? "icon-policy-green"
-                    : "icon-policy-red"
-                  : ""
-              }`}
-              iconName="Ribbon"
-              tooltipProps={{
-                renderContent: () => {
-                  return (
-                    <table className="table-border-spacing">
-                      <thead>
-                        <tr>
-                          <td colSpan={2}>
-                            <b>Policies</b>
-                          </td>
+        <div className="flex-row flex-wrap">
+          <Button
+            className={`button-icon fontSize font-size second-line-row ${
+              tableItem.isAllPoliciesOk === true
+                ? "icon-policy-green"
+                : "icon-policy-red"
+            }`}
+            iconProps={{ iconName: "Ribbon" }}
+            tooltipProps={{
+              renderContent: () => {
+                return (
+                  <table className="table-border-spacing">
+                    <thead>
+                      <tr>
+                        <td colSpan={2}>
+                          <b>Policies</b>
+                        </td>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {tableItem.policies !== undefined &&
+                      tableItem.policies.length > 0 ? (
+                        tableItem.policies.map((policy) => {
+                          return (
+                            <tr
+                              key={`pr-status1-tr-${policy.id}-${tableItem.gitPullRequest.pullRequestId}`}
+                            >
+                              <td className="td-vertical-align">
+                                <span
+                                  className={`fabric-icon ms-Icon--${
+                                    policy.isApproved
+                                      ? "StatusCircleCheckmark icon-green"
+                                      : "StatusCircleErrorX icon-red"
+                                  }`}
+                                />
+                              </td>
+                              <td className="span-tooltip">
+                                {policy.displayName}
+                              </td>
+                            </tr>
+                          );
+                        })
+                      ) : (
+                        <tr
+                          key={`pr-status6-tr-nopolicy-${tableItem.gitPullRequest.pullRequestId}`}
+                        >
+                          <td colSpan={2}>- No policies</td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {tableItem.policies !== undefined &&
-                        tableItem.policies.length > 0 ? (
-                          tableItem.policies.map((policy) => {
-                            return (
-                              <tr
-                                key={`pr-status1-tr-${policy.id}-${tableItem.gitPullRequest.pullRequestId}`}
-                              >
-                                <td className="td-vertical-align">
-                                  <span
-                                    className={`fabric-icon ms-Icon--${
-                                      policy.isApproved
-                                        ? "StatusCircleCheckmark icon-green"
-                                        : "StatusCircleErrorX icon-red"
-                                    }`}
-                                  />
-                                </td>
-                                <td className="span-tooltip">
-                                  {policy.displayName}
-                                </td>
-                              </tr>
-                            );
-                          })
-                        ) : (
-                          <tr
-                            key={`pr-status6-tr-nopolicy-${tableItem.gitPullRequest.pullRequestId}`}
-                          >
-                            <td colSpan={2}>- No policies</td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  );
-                },
-              }}
-            />
-          </div>
-          <div className="flex-column">
-            <Button
-              className="button-icon fontSize font-size second-line-row"
-              text={
+                      )}
+                    </tbody>
+                  </table>
+                );
+              },
+            }}
+            subtle={true}
+          />
+          <Button
+            className="button-icon fontSize font-size second-line-row"
+            text={
+              tableItem.comment.terminatedComment.toString() +
+              "/" +
+              tableItem.comment.totalcomment.toString()
+            }
+            iconProps={{ iconName: "ActivityFeed" }}
+            tooltipProps={{
+              text:
                 tableItem.comment.terminatedComment.toString() +
-                "/" +
-                tableItem.comment.totalcomment.toString()
-              }
-              iconProps={{ iconName: "ActivityFeed" }}
+                " out of " +
+                tableItem.comment.totalcomment.toString() +
+                " comments are marked as resolved, won't fix, or closed",
+              delayMs: 500,
+            }}
+            subtle={true}
+          />
+          <ConditionalChildren renderChildren={tableItem.workItemsCount > 0}>
+            <Button
+              className={`button-icon fontSize font-size second-line-row`}
+              iconProps={{ iconName: "WorkItem" }}
               tooltipProps={{
-                text:
-                  tableItem.comment.terminatedComment.toString() +
-                  " out of " +
-                  tableItem.comment.totalcomment.toString() +
-                  " comments are marked as resolved, won't fix, or closed",
+                text: `${tableItem.workItemsCount} linked Work Item(s)`,
                 delayMs: 500,
               }}
               subtle={true}
             />
-          </div>
-          <div className="flex-column second-line-row">
-            <Link
-              className="bolt-link subtle"
-              href={tableItem.lastCommitUrl!}
-              target="_blank"
-            >
-              <Icon iconName="BranchCommit" />
-              {tableItem.lastShortCommitId}
-            </Link>
-          </div>
-          <ConditionalChildren
-            renderChildren={
-              tableItem.gitPullRequest.status === PullRequestStatus.Active &&
-              tableItem.lastVisit &&
-              tableItem.lastVisit < tableItem.getLastCommitDate()
-            }
-          >
-            <div className="flex-column">
-              <Tooltip text="Pull Request has updates since your last access">
+          </ConditionalChildren>
+          <ConditionalChildren renderChildren={tableItem.hasNewChanges()}>
+            <ConditionalChildren renderChildren={tableItem.hasCommentChanges()}>
+              <Tooltip text="Pull Request has new comments or updates on existing comments since your last vist">
                 <Pill
                   size={PillSize.compact}
                   variant={PillVariant.colored}
                   color={Data.draftColor}
-                  className="icon-column-subdetails"
-                >
-                  New
-                </Pill>
+                  className="icon-column-subdetails hideText"
+                  iconProps={{ iconName: "Comment" }}
+                ></Pill>
               </Tooltip>
-            </div>
+            </ConditionalChildren>
+            <ConditionalChildren renderChildren={tableItem.hasCommitChanges()}>
+              <Tooltip text="Pull Request has new commit(s) since your last vist">
+                <Pill
+                  size={PillSize.compact}
+                  variant={PillVariant.colored}
+                  color={Data.draftColor}
+                  className="icon-column-subdetails hideText"
+                  iconProps={{ iconName: "BranchCommit" }}
+                />
+              </Tooltip>
+            </ConditionalChildren>
           </ConditionalChildren>
         </div>
       }
@@ -421,10 +420,20 @@ export function ReviewersColumn(
                         <div className="flex-row flex-center justify-start margin-top-8">
                           {reviewer.votedFor && reviewer.votedFor.length > 0 ? (
                             <span key={`span1-${i}-${reviewer.id}`}>
-                              <strong><br />Voted for:</strong> <br /><br />
+                              <strong>
+                                <br />
+                                Voted for:
+                              </strong>{" "}
+                              <br />
+                              <br />
                               {reviewer.votedFor.map((r) => {
                                 return (
-                                  <span key={`span2-${i}-${r.id}-${reviewer.id}`}> - {r.displayName} <br /></span>
+                                  <span
+                                    key={`span2-${i}-${r.id}-${reviewer.id}`}
+                                  >
+                                    {" "}
+                                    - {r.displayName} <br />
+                                  </span>
                                 );
                               })}
                             </span>
@@ -436,6 +445,7 @@ export function ReviewersColumn(
                 >
                   <div className="relative reviewer-vote-item">
                     <VssPersona
+                      key={`vss-persona-${rowIndex}-${reviewer.id}`}
                       className={`icon-margin repos-pr-reviewer-vote-avatar ${GetVoteIconColor(
                         reviewer
                       )}`}
@@ -443,6 +453,7 @@ export function ReviewersColumn(
                       size={"medium"}
                     />
                     <ReviewerVoteIconStatus
+                      key={`vss-persona-subicon-${rowIndex}-${reviewer.id}`}
                       className="repos-pr-reviewer-vote absolute"
                       reviewer={reviewer}
                     />

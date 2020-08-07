@@ -28,26 +28,25 @@ import { PullRequestModel } from "../models/PullRequestModel";
 import { Spinner } from "office-ui-fabric-react";
 import { IProjectInfo } from "azure-devops-extension-api";
 
-export const myApprovalStatuses: Data.IKeyValueData[] = Object.keys(
+export const myApprovalStatuses: IListBoxItem[] = Object.keys(
   Data.ReviewerVoteOption
 )
   .filter((value) => !isNaN(parseInt(value, 10)))
   .map((item) => {
     return {
       id: item,
-      text: getVoteDescription(parseInt(item, 10)),
+      text: getVoteDescription(parseInt(item, 10))
     };
   });
 
-export const alternateStatusPr: Data.IKeyValueData[] = Object.keys(
+export const alternateStatusPr: IListBoxItem[] = Object.keys(
   Data.AlternateStatusPr
-)
-  .map((item, index) => {
-    return {
-      id: Object.values(Data.AlternateStatusPr)[index].toString(),
-      text: Object.values(Data.AlternateStatusPr)[index].toString(),
-    };
-  });
+).map((item, index) => {
+  return {
+    id: Object.values(Data.AlternateStatusPr)[index].toString(),
+    text: Object.values(Data.AlternateStatusPr)[index].toString(),
+  };
+});
 
 export interface IFilterHubProps {
   filterPullRequests: () => void;
@@ -78,10 +77,14 @@ export interface IFilterHubProps {
 
 export function FilterBarHub(props: IFilterHubProps): JSX.Element {
   return (
-    <FilterBar filter={props.filter} onDismissClicked={() => {
-      props.filterPullRequests();
-    }}>
+    <FilterBar
+      filter={props.filter}
+      onDismissClicked={() => {
+        props.filterPullRequests();
+      }}
+    >
       <KeywordFilterBarItem
+        className="text-color"
         filterItemKey={`pullRequestTitle`}
         placeholder={"Search Pull Requests by Name or ID"}
         filter={props.filter}
