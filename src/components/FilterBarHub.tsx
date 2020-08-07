@@ -84,6 +84,7 @@ export function FilterBarHub(props: IFilterHubProps): JSX.Element {
       }}
     >
       <KeywordFilterBarItem
+        className="text-color"
         filterItemKey={`pullRequestTitle`}
         placeholder={"Search Pull Requests by Name or ID"}
         filter={props.filter}
