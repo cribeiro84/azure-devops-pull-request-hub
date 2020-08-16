@@ -1,6 +1,7 @@
+import "./index.scss";
+
 import * as DevOps from "azure-devops-extension-sdk";
 import * as React from "react";
-import "./index.scss";
 import { Surface } from "azure-devops-ui/Surface";
 import { Header, TitleSize } from "azure-devops-ui/Header";
 import { IHeaderCommandBarItem } from "azure-devops-ui/HeaderCommandBar";
@@ -8,7 +9,7 @@ import { Page } from "azure-devops-ui/Page";
 import { Tab, TabBar, TabSize } from "azure-devops-ui/Tabs";
 import {
   showRootComponent,
-  UsertSettingsInstance,
+  UserPreferencesInstance,
   ShowErrorMessage,
   isLocalStorageAvailable,
 } from "./common";
@@ -17,9 +18,11 @@ import { addPolyFills } from "./polyfills";
 import { PullRequestStatus } from "azure-devops-extension-api/Git/Git";
 import { ObservableValue } from "azure-devops-ui/Core/Observable";
 import { Observer } from "azure-devops-ui/Observer";
+import { UserSettingsPanel } from "./components/UserSettingsPanel";
 
 interface IHubContentState {
   errorMessage: string;
+  showUserPreferencesPanel: boolean;
 }
 
 addPolyFills();
@@ -40,15 +43,18 @@ export class App extends React.Component<{}, IHubContentState> {
     this.completedCount = new ObservableValue(0);
     this.abandonedCount = new ObservableValue(0);
 
+    this.toggleUserPreferencesPanel = this.toggleUserPreferencesPanel.bind(this);
+
     this.state = {
       errorMessage: "",
+      showUserPreferencesPanel: false
     };
   }
 
   public async componentWillMount() {
     try {
       DevOps.init();
-      UsertSettingsInstance.load();
+      UserPreferencesInstance.load();
     } catch (error) {
       this.handleError(error);
     }
@@ -67,13 +73,6 @@ export class App extends React.Component<{}, IHubContentState> {
 
   componentWillUnmount() {
     window.removeEventListener("beforeunload", this.onUnload);
-  }
-
-  private handleError(error: any): void {
-    console.log(error);
-    this.setState({
-      errorMessage: "There was an error during the extension load: " + error,
-    });
   }
 
   public render(): JSX.Element {
@@ -153,6 +152,8 @@ export class App extends React.Component<{}, IHubContentState> {
                 }
               }}
             </Observer>
+
+            {this.state.showUserPreferencesPanel && (<UserSettingsPanel onDismiss={this.toggleUserPreferencesPanel} />)}
           </div>
         </Page>
       </Surface>
@@ -175,22 +176,35 @@ export class App extends React.Component<{}, IHubContentState> {
     this.selectedTabId.value = newTabId;
   };
 
+  private handleError(error: any): void {
+    console.log(error);
+    this.setState({
+      errorMessage: "There was an error during the extension load: " + error,
+    });
+  }
+
+  private toggleUserPreferencesPanel(): void {
+    this.setState({
+      showUserPreferencesPanel: !this.state.showUserPreferencesPanel
+    });
+  }
+
   private getCommandBarItems(): IHeaderCommandBarItem[] {
     return [
-      // {
-      //   id: "configuration",
-      //   text: "Configuration",
-      //   onActivate: () => {
-      //     this.onPanelClick();
-      //   },
-      //   iconProps: {
-      //     iconName: "fabric-icon ms-Icon--Settings"
-      //   },
-      //   isPrimary: true,
-      //   tooltipProps: {
-      //     text: "Open the Pull Request Manager tab"
-      //   }
-      // }
+      {
+        id: "preferences",
+        text: "Preferences",
+        onActivate: () => {
+          this.toggleUserPreferencesPanel();
+        },
+        iconProps: {
+          iconName: "fabric-icon ms-Icon--Settings"
+        },
+        isPrimary: true,
+        tooltipProps: {
+          text: "Open the Pull Request Manager User settings"
+        }
+      }
     ];
   }
 }
