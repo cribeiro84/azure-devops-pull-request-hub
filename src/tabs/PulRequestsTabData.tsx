@@ -235,8 +235,6 @@ export interface IPullRequestsTabState {
   loading: boolean;
   errorMessage: string;
   pullRequestCount: number;
-  showToastMessage: boolean;
-  toastMessageToShow: string;
 }
 
 export function sortMethod(

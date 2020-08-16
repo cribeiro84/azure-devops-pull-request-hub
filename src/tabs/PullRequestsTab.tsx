@@ -32,7 +32,6 @@ import {
 } from "azure-devops-extension-api/Git/Git";
 
 // Azure DevOps UI
-import { Toast } from "azure-devops-ui/Toast";
 import { ListSelection } from "azure-devops-ui/List";
 import { Observer } from "azure-devops-ui/Observer";
 import { Dialog } from "azure-devops-ui/Dialog";
@@ -75,14 +74,15 @@ import { ShowErrorMessage } from "../common";
 
 export interface IPullRequestTabProps {
   prType: PullRequestStatus;
+  projects: TeamProjectReference[];
   onCountChange: (count: number) => void;
+  showToastMessage: (message: string) => void;
 }
 
 export class PullRequestsTab extends React.Component<
   IPullRequestTabProps,
   Data.IPullRequestsTabState
 > {
-  private toastRef: React.RefObject<Toast> = React.createRef<Toast>();
   private baseUrl: string = "";
   private prRowSelecion = new ListSelection({
     selectOnFocus: true,
@@ -116,7 +116,7 @@ export class PullRequestsTab extends React.Component<
     this.coreClient = getClient(CoreRestClient);
 
     this.state = {
-      projects: [],
+      projects: props.projects,
       pullRequests: [],
       repositories: [],
       currentProject: { id: "", name: "" },
@@ -128,8 +128,6 @@ export class PullRequestsTab extends React.Component<
       loading: true,
       errorMessage: "",
       pullRequestCount: 0,
-      showToastMessage: false,
-      toastMessageToShow: "",
     };
 
     this.filter = new Filter();
@@ -165,16 +163,6 @@ export class PullRequestsTab extends React.Component<
     });
   }
 
-  private showToastMessage(message: string) {
-    this.setState({ showToastMessage: true, toastMessageToShow: message });
-
-    setTimeout(() => {
-      this.toastRef.current!.fadeOut().promise.then(() => {
-        this.setState({ showToastMessage: false, toastMessageToShow: message });
-      });
-    }, 5000);
-  }
-
   private getCurrentFilterNameKey(projectId?: string): string {
     const { currentProject } = this.state;
     const currentProjectId =
@@ -191,7 +179,7 @@ export class PullRequestsTab extends React.Component<
       const currentFilter = this.filter.getState();
       localStorage.setItem(FILTER_STORE_KEY_NAME, currentProject!.id);
       localStorage.setItem(filterKey, JSON.stringify(currentFilter));
-      this.showToastMessage(
+      this.props.showToastMessage(
         `Current selected filters have been saved - ${currentProject!.name}.`
       );
     } catch (error) {
@@ -203,7 +191,7 @@ export class PullRequestsTab extends React.Component<
     try {
       const { currentProject } = this.state;
       const filterKey = this.getCurrentFilterNameKey();
-      this.showToastMessage(
+      this.props.showToastMessage(
         `Saved filters have been removed of selected project - ${
           currentProject!.name
         }.`
@@ -247,28 +235,16 @@ export class PullRequestsTab extends React.Component<
 
         this.loadSavedFilter(currentProjectId);
 
-        this.getTeamProjects()
-          .then(async (projects) => {
-            this.setState({
-              projects,
-            });
+        const currentProject =
+          currentProjectId && currentProjectId.length > 0
+            ? currentProjectId
+            : (await projectService.getProject())!.id;
 
-            const currentProject =
-              currentProjectId && currentProjectId.length > 0
-                ? currentProjectId
-                : (await projectService.getProject())!.id;
+        const projectIndex = self.changeProjectSelectionTo(currentProject);
 
-            const projectIndex = self.changeProjectSelectionTo(currentProject);
-
-            this.getRepositories(projects[projectIndex])
-              .then(() => {
-                this.getAllPullRequests().catch((error) =>
-                  this.handleError(error)
-                );
-              })
-              .catch((error) => {
-                this.handleError(error);
-              });
+        this.getRepositories(this.state.projects[projectIndex])
+          .then(() => {
+            this.getAllPullRequests().catch((error) => this.handleError(error));
           })
           .catch((error) => {
             this.handleError(error);
@@ -613,9 +589,10 @@ export class PullRequestsTab extends React.Component<
             (pr.isAllPoliciesOk === true &&
               item === Data.AlternateStatusPr.ReadForCompletion &&
               pr.hasFailures === false) ||
-            (item === Data.AlternateStatusPr.NotReadyForCompletion && (
-              pr.hasFailures === true || pr.isAllPoliciesOk === false)) ||
-              (item === Data.AlternateStatusPr.HasNewChanges && pr.hasNewChanges())
+            (item === Data.AlternateStatusPr.NotReadyForCompletion &&
+              (pr.hasFailures === true || pr.isAllPoliciesOk === false)) ||
+            (item === Data.AlternateStatusPr.HasNewChanges &&
+              pr.hasNewChanges())
           );
         });
         return found;
@@ -908,12 +885,7 @@ export class PullRequestsTab extends React.Component<
   }
 
   getRenderContent() {
-    const {
-      pullRequestCount,
-      pullRequests,
-      showToastMessage,
-      toastMessageToShow,
-    } = this.state;
+    const { pullRequestCount, pullRequests } = this.state;
 
     // Create the sorting behavior (delegate that is called when a column is sorted).
     const sortingBehavior = new ColumnSorting<
@@ -965,9 +937,6 @@ export class PullRequestsTab extends React.Component<
           contentProps={{ contentPadding: false }}
           headerCommandBarItems={this.listHeaderColumns}
         >
-          {showToastMessage && (
-            <Toast ref={this.toastRef} message={toastMessageToShow} />
-          )}
           <React.Fragment>
             <Table<PullRequestModel.PullRequestModel>
               key={this.props.prType}
