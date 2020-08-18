@@ -26,7 +26,6 @@ import { Status } from "azure-devops-ui/Status";
 import { getStatusSizeValue, getStatusIcon } from "../models/constants";
 import { PullRequestModel } from "../models/PullRequestModel";
 import { Spinner } from "office-ui-fabric-react";
-import { IProjectInfo } from "azure-devops-extension-api";
 
 export const myApprovalStatuses: IListBoxItem[] = Object.keys(
   Data.ReviewerVoteOption
@@ -50,7 +49,6 @@ export const alternateStatusPr: IListBoxItem[] = Object.keys(
 
 export interface IFilterHubProps {
   filterPullRequests: () => void;
-  currentProject: IProjectInfo | TeamProjectReference;
   pullRequests: PullRequestModel[];
   projects: TeamProjectReference[];
   filter: Filter;
@@ -93,7 +91,7 @@ export function FilterBarHub(props: IFilterHubProps): JSX.Element {
 
       <React.Fragment>
         <DropdownFilterBarItem
-          filterItemKey={`selectedProject`}
+          filterItemKey={`selectedProjects`}
           onSelect={props.selectedProjectChanged}
           filter={props.filter}
           selection={props.selectedProject}

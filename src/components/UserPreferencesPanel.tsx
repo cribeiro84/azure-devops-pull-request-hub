@@ -160,7 +160,7 @@ export function UserPreferencesPanel(props: IUserSettingsProps): JSX.Element {
               same.
             </div>
           </div>
-          <div className="feature flex-grow">
+          {false && <div className="feature flex-grow">
             <div className="feature-header">
               <div className="feature-name title-xs">
                 Default Selected Projects
@@ -210,7 +210,7 @@ export function UserPreferencesPanel(props: IUserSettingsProps): JSX.Element {
             <div className="feature-description">
               Will keep selected by default when the extension loads again.
             </div>
-          </div>
+          </div>}
           <div className="feature flex-grow">
             <div className="feature-header">
               <div className="feature-name title-xs">Default PR Sorting</div>

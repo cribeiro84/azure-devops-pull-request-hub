@@ -23,7 +23,6 @@ import * as DevOps from "azure-devops-extension-sdk";
 
 // Azure DevOps API
 import { IProjectPageService, getClient } from "azure-devops-extension-api";
-import { CoreRestClient } from "azure-devops-extension-api/Core/CoreClient";
 import { GitRestClient } from "azure-devops-extension-api/Git/GitClient";
 import {
   IdentityRefWithVote,
@@ -55,22 +54,28 @@ import {
   ColumnSorting,
   SortOrder,
   sortItems,
+  ITableColumn,
+  TableColumnStyle,
 } from "azure-devops-ui/Table";
 import { ZeroData } from "azure-devops-ui/ZeroData";
 import { IdentityRef } from "azure-devops-extension-api/WebApi/WebApi";
 import { ObservableValue } from "azure-devops-ui/Core/Observable";
-import { IProjectInfo } from "azure-devops-extension-api/Common/CommonServices";
 import {
   TeamProjectReference,
-  ProjectInfo,
   WebApiTagDefinition,
 } from "azure-devops-extension-api/Core/Core";
-import { IListBoxItem } from "azure-devops-ui/ListBox";
 import { FilterBarHub } from "../components/FilterBarHub";
 import { hasPullRequestFailure } from "../models/constants";
 import { ContentSize } from "azure-devops-ui/Callout";
 import { IHeaderCommandBarItem } from "azure-devops-ui/HeaderCommandBar";
-import { ShowErrorMessage } from "../common";
+import { ShowErrorMessage, UserPreferencesInstance } from "../common";
+import {
+  StatusColumn,
+  TitleColumn,
+  DetailsColumn,
+  DateColumn,
+  ReviewersColumn,
+} from "../components/Columns";
 
 export interface IPullRequestTabProps {
   prType: PullRequestStatus;
@@ -90,7 +95,7 @@ export class PullRequestsTab extends React.Component<
   });
   private isDialogOpen = new ObservableValue<boolean>(false);
   private filter: Filter;
-  private selectedProject = new DropdownSelection();
+  private selectedProjects = new DropdownMultiSelection();
   private selectedAuthors = new DropdownMultiSelection();
   private selectedRepos = new DropdownMultiSelection();
   private selectedSourceBranches = new DropdownMultiSelection();
@@ -105,7 +110,6 @@ export class PullRequestsTab extends React.Component<
   >();
 
   private readonly gitClient: GitRestClient;
-  private readonly coreClient: CoreRestClient;
 
   constructor(props: IPullRequestTabProps) {
     super(props);
@@ -113,13 +117,11 @@ export class PullRequestsTab extends React.Component<
     this.selectedProjectChanged = this.selectedProjectChanged.bind(this);
 
     this.gitClient = getClient(GitRestClient);
-    this.coreClient = getClient(CoreRestClient);
 
     this.state = {
       projects: props.projects,
       pullRequests: [],
       repositories: [],
-      currentProject: { id: "", name: "" },
       createdByList: [],
       sourceBranchList: [],
       targetBranchList: [],
@@ -163,25 +165,18 @@ export class PullRequestsTab extends React.Component<
     });
   }
 
-  private getCurrentFilterNameKey(projectId?: string): string {
-    const { currentProject } = this.state;
-    const currentProjectId =
-      projectId !== undefined ? projectId : currentProject!.id;
-    const filterKey = `${currentProjectId}_${FILTER_STORE_KEY_NAME}`;
+  private getCurrentFilterNameKey(): string {
+    const filterKey = `MY_${FILTER_STORE_KEY_NAME}`;
 
     return filterKey;
   }
 
   private saveCurrentFilters() {
     try {
-      const { currentProject } = this.state;
       const filterKey = this.getCurrentFilterNameKey();
       const currentFilter = this.filter.getState();
-      localStorage.setItem(FILTER_STORE_KEY_NAME, currentProject!.id);
       localStorage.setItem(filterKey, JSON.stringify(currentFilter));
-      this.props.showToastMessage(
-        `Current selected filters have been saved - ${currentProject!.name}.`
-      );
+      this.props.showToastMessage(`Current selected filters have been saved.`);
     } catch (error) {
       this.handleError(error);
     }
@@ -189,12 +184,9 @@ export class PullRequestsTab extends React.Component<
 
   private clearSavedFilter() {
     try {
-      const { currentProject } = this.state;
       const filterKey = this.getCurrentFilterNameKey();
       this.props.showToastMessage(
-        `Saved filters have been removed of selected project - ${
-          currentProject!.name
-        }.`
+        `Saved filters have been removed of selected project.`
       );
       localStorage.removeItem(FILTER_STORE_KEY_NAME);
       localStorage.removeItem(filterKey);
@@ -205,18 +197,14 @@ export class PullRequestsTab extends React.Component<
     }
   }
 
-  private loadSavedFilter(storedSavedCurrentProjectId: string | null): void {
+  private loadSavedFilter(): void {
     try {
-      if (storedSavedCurrentProjectId != null) {
-        const saveFilterKeyName = this.getCurrentFilterNameKey(
-          storedSavedCurrentProjectId
-        );
-        const storedSavedFilter = localStorage.getItem(saveFilterKeyName);
+      const saveFilterKeyName = this.getCurrentFilterNameKey();
+      const storedSavedFilter = localStorage.getItem(saveFilterKeyName);
 
-        if (storedSavedFilter && storedSavedFilter.length > 0) {
-          const savedFilterState = JSON.parse(storedSavedFilter);
-          this.filter.setState(savedFilterState);
-        }
+      if (storedSavedFilter && storedSavedFilter.length > 0) {
+        const savedFilterState = JSON.parse(storedSavedFilter);
+        this.filter.setState(savedFilterState);
       }
     } catch (error) {
       this.handleError(error);
@@ -233,22 +221,45 @@ export class PullRequestsTab extends React.Component<
 
         const currentProjectId = localStorage.getItem(FILTER_STORE_KEY_NAME);
 
-        this.loadSavedFilter(currentProjectId);
+        this.loadSavedFilter();
+        let savedProjects = this.filter.getFilterItemValue<string[]>(
+          "selectedProjects"
+        );
 
-        const currentProject =
-          currentProjectId && currentProjectId.length > 0
-            ? currentProjectId
-            : (await projectService.getProject())!.id;
+        if (savedProjects === undefined) {
+          savedProjects = [];
+        }
 
-        const projectIndex = self.changeProjectSelectionTo(currentProject);
+        if (savedProjects.length === 0) {
+          const currentProject =
+            currentProjectId && currentProjectId.length > 0
+              ? currentProjectId
+              : (await projectService.getProject())!.id;
 
-        this.getRepositories(this.state.projects[projectIndex])
-          .then(() => {
-            this.getAllPullRequests().catch((error) => this.handleError(error));
-          })
-          .catch((error) => {
-            this.handleError(error);
-          });
+          savedProjects.push(...[currentProject.toString()]);
+
+          this.selectedProjects.select(
+            this.state.projects.findIndex((p) => p.id === currentProject)
+          );
+        }
+
+        savedProjects.forEach(async (p) => {
+          const projectIndex = this.state.projects.findIndex(
+            (item) => item.id === p
+          );
+          this.selectedProjects.select(projectIndex);
+
+          self
+            .getRepositories(this.state.projects[projectIndex].id)
+            .then(() => {
+              this.getAllPullRequests().catch((error) =>
+                this.handleError(error)
+              );
+            })
+            .catch((error) => {
+              this.handleError(error);
+            });
+        });
       })
       .catch((error) => {
         this.handleError(error);
@@ -263,21 +274,15 @@ export class PullRequestsTab extends React.Component<
     });
   }
 
-  private async getRepositories(
-    project: IProjectInfo | TeamProjectReference
-  ): Promise<GitRepository[]> {
-    this.setState({
-      currentProject: project,
-    });
+  private async getRepositories(projectId: string): Promise<GitRepository[]> {
+    const repos = await this.gitClient.getRepositories(projectId, true);
 
-    this.loadSavedFilter(project.id);
-
-    const repos = (
-      await this.gitClient.getRepositories(project.name, true)
-    ).sort(Data.sortMethod);
+    let currentRepos = this.state.repositories;
+    currentRepos.push(...repos);
+    currentRepos = currentRepos.sort(Data.sortMethod);
 
     this.setState({
-      repositories: repos,
+      repositories: currentRepos,
     });
 
     return repos;
@@ -338,19 +343,10 @@ export class PullRequestsTab extends React.Component<
     this.props.onCountChange(newList.length);
   }
 
-  private async getTeamProjects(): Promise<TeamProjectReference[]> {
-    const projects = (await this.coreClient.getProjects(undefined, 1000)).sort(
-      Data.sortMethod
-    );
-    return projects;
-  }
-
   private async getAllPullRequests() {
     const self = this;
     this.setState({ loading: true });
-    const { currentProject, repositories, pullRequests } = this.state;
-
-    this.changeProjectSelectionTo(currentProject!.id);
+    const { repositories, pullRequests } = this.state;
 
     let newPullRequestList = Object.assign([], pullRequests);
 
@@ -369,7 +365,7 @@ export class PullRequestsTab extends React.Component<
         const top =
           this.props.prType === PullRequestStatus.Completed ||
           this.props.prType === PullRequestStatus.Abandoned
-            ? 25
+            ? UserPreferencesInstance.topNumberCompletedAbandoned
             : 0;
 
         const loadedPullRequests = await this.gitClient.getPullRequests(
@@ -393,7 +389,6 @@ export class PullRequestsTab extends React.Component<
           newPullRequestList.push(
             ...PullRequestModel.PullRequestModel.getModels(
               pr,
-              this.state.currentProject!.name,
               this.baseUrl,
               (updatedPr) => {
                 let { tagList } = self.state;
@@ -428,10 +423,11 @@ export class PullRequestsTab extends React.Component<
               a: PullRequestModel.PullRequestModel,
               b: PullRequestModel.PullRequestModel
             ) => {
-              return (
-                a.gitPullRequest.creationDate.getTime() -
-                b.gitPullRequest.creationDate.getTime()
-              );
+              return UserPreferencesInstance.selectedDefaultSorting === "asc"
+                ? b.gitPullRequest.creationDate.getTime() -
+                    a.gitPullRequest.creationDate.getTime()
+                : a.gitPullRequest.creationDate.getTime() -
+                    b.gitPullRequest.creationDate.getTime();
             }
           );
 
@@ -464,6 +460,10 @@ export class PullRequestsTab extends React.Component<
   private filterPullRequests() {
     const { pullRequests } = this.state;
 
+    const selectedProjectsFilter = this.filter.getFilterItemValue<string[]>(
+      "selectedProjects"
+    );
+
     const repositoriesFilter = this.filter.getFilterItemValue<string[]>(
       "selectedRepos"
     );
@@ -493,6 +493,16 @@ export class PullRequestsTab extends React.Component<
     );
 
     let filteredPullRequest = pullRequests;
+
+    if (selectedProjectsFilter && selectedProjectsFilter.length > 0) {
+      filteredPullRequest = filteredPullRequest.filter((pr) => {
+        const found = selectedProjectsFilter!.some((r) => {
+          return pr.gitPullRequest.repository.project.id === r;
+        });
+
+        return found;
+      });
+    }
 
     if (filterPullRequestTitle && filterPullRequestTitle.length > 0) {
       filteredPullRequest = pullRequests.filter((pr) => {
@@ -790,7 +800,6 @@ export class PullRequestsTab extends React.Component<
 
   public render(): JSX.Element {
     const {
-      currentProject,
       pullRequests,
       projects,
       repositories,
@@ -814,14 +823,13 @@ export class PullRequestsTab extends React.Component<
     return (
       <div className="flex-column">
         <FilterBarHub
-          currentProject={currentProject!}
           filterPullRequests={() => {
             this.refresh();
           }}
           pullRequests={pullRequests}
           filter={this.filter}
           selectedProjectChanged={this.selectedProjectChanged}
-          selectedProject={this.selectedProject}
+          selectedProject={this.selectedProjects}
           projects={projects}
           repositories={repositories}
           selectedRepos={this.selectedRepos}
@@ -861,28 +869,8 @@ export class PullRequestsTab extends React.Component<
   }
 
   async selectedProjectChanged(
-    _event: React.SyntheticEvent<HTMLElement, Event>,
-    item: IListBoxItem<TeamProjectReference | ProjectInfo>
-  ) {
-    const { projects } = this.state;
-    this.filter.reset();
-    const projectIndex = this.changeProjectSelectionTo(item.id);
-
-    this.getRepositories(projects[projectIndex]).then(() => {
-      this.refresh();
-    });
-  }
-
-  changeProjectSelectionTo(id: string): number {
-    const { projects } = this.state;
-    const projectIndex = projects.findIndex((p) => {
-      return p.id === id;
-    });
-
-    this.selectedProject.select(projectIndex);
-
-    return projectIndex;
-  }
+    _event: React.SyntheticEvent<HTMLElement, Event>
+  ) {}
 
   getRenderContent() {
     const { pullRequestCount, pullRequests } = this.state;
@@ -890,25 +878,19 @@ export class PullRequestsTab extends React.Component<
     // Create the sorting behavior (delegate that is called when a column is sorted).
     const sortingBehavior = new ColumnSorting<
       PullRequestModel.PullRequestModel
-    >(
-      (
-        columnIndex: number,
-        proposedSortOrder: SortOrder,
-        event: React.KeyboardEvent<HTMLElement> | React.MouseEvent<HTMLElement>
-      ) => {
-        this.pullRequestItemProvider.splice(
-          0,
-          this.pullRequestItemProvider.length,
-          ...sortItems<PullRequestModel.PullRequestModel>(
-            columnIndex,
-            proposedSortOrder,
-            this.sortFunctions,
-            Data.columns,
-            pullRequests
-          )
-        );
-      }
-    );
+    >((columnIndex: number, proposedSortOrder: SortOrder) => {
+      this.pullRequestItemProvider.splice(
+        0,
+        this.pullRequestItemProvider.length,
+        ...sortItems<PullRequestModel.PullRequestModel>(
+          columnIndex,
+          proposedSortOrder,
+          this.sortFunctions,
+          this.columns,
+          pullRequests
+        )
+      );
+    });
 
     if (
       pullRequestCount === 0 &&
@@ -941,7 +923,7 @@ export class PullRequestsTab extends React.Component<
             <Table<PullRequestModel.PullRequestModel>
               key={this.props.prType}
               behaviors={[sortingBehavior]}
-              columns={Data.columns}
+              columns={this.columns}
               itemProvider={this.pullRequestItemProvider}
               showLines={true}
               selection={this.prRowSelecion}
@@ -1058,6 +1040,53 @@ export class PullRequestsTab extends React.Component<
       );
     },
     null, // Reviewers column
+  ];
+
+  columns: ITableColumn<PullRequestModel.PullRequestModel>[] = [
+    {
+      id: "status",
+      name: "",
+      renderCell: StatusColumn,
+      readonly: true,
+      width: -4,
+      minWidth: -4,
+      columnStyle: TableColumnStyle.Primary,
+    },
+    {
+      id: "title",
+      name: "Pull Request",
+      renderCell: TitleColumn,
+      readonly: true,
+      width: -46,
+    },
+    {
+      className: "pipelines-two-line-cell",
+      id: "details",
+      name: "Details",
+      renderCell: DetailsColumn,
+      width: -20,
+    },
+    {
+      id: "time",
+      name: "When",
+      readonly: true,
+      renderCell: DateColumn,
+      width: -10,
+      sortProps: {
+        ariaLabelAscending: "Sorted new to older",
+        ariaLabelDescending: "Sorted older to new",
+        sortOrder:
+          UserPreferencesInstance.selectedDefaultSorting === "asc"
+            ? SortOrder.ascending
+            : SortOrder.descending,
+      },
+    },
+    {
+      id: "reviewers",
+      name: "Reviewers",
+      renderCell: ReviewersColumn,
+      width: -20,
+    },
   ];
 
   private listHeaderColumns: IHeaderCommandBarItem[] = [

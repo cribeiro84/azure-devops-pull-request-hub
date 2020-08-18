@@ -6,20 +6,11 @@ import {
 } from "azure-devops-extension-api/Git/Git";
 import { IStatusProps } from "azure-devops-ui/Status";
 import { IColor } from "azure-devops-ui/Utilities/Color";
-import { IProjectInfo } from "azure-devops-extension-api/Common/CommonServices";
 import { IdentityRef } from "azure-devops-extension-api/WebApi/WebApi";
 import {
   TeamProjectReference,
   WebApiTagDefinition,
 } from "azure-devops-extension-api/Core/Core";
-import { ITableColumn, SortOrder, TableColumnStyle } from "azure-devops-ui/Table";
-import {
-  StatusColumn,
-  TitleColumn,
-  DetailsColumn,
-  ReviewersColumn,
-  DateColumn,
-} from "../components/Columns";
 import { PullRequestModel } from "../models/PullRequestModel";
 
 export const refsPreffix = "refs/heads/";
@@ -93,7 +84,7 @@ export enum AlternateStatusPr {
   NotConflicts = "Not Conflicts",
   NotIsDraft = "Not Draft",
   NotReadyForCompletion = "Not Ready for Completion",
-  ReadForCompletion = "Ready for Completion"
+  ReadForCompletion = "Ready for Completion",
 }
 
 export class BranchDropDownItem {
@@ -108,50 +99,6 @@ export class BranchDropDownItem {
     return this.DISPLAY_NAME;
   }
 }
-
-export const columns: ITableColumn<PullRequestModel>[] = [
-  {
-    id: "status",
-    name: "",
-    renderCell: StatusColumn,
-    readonly: true,
-    width: -4,
-    minWidth: -4,
-    columnStyle: TableColumnStyle.Primary
-  },
-  {
-    id: "title",
-    name: "Pull Request",
-    renderCell: TitleColumn,
-    readonly: true,
-    width: -46,
-  },
-  {
-    className: "pipelines-two-line-cell",
-    id: "details",
-    name: "Details",
-    renderCell: DetailsColumn,
-    width: -20,
-  },
-  {
-    id: "time",
-    name: "When",
-    readonly: true,
-    renderCell: DateColumn,
-    width: -10,
-    sortProps: {
-      ariaLabelAscending: "Sorted new to older",
-      ariaLabelDescending: "Sorted older to new",
-      sortOrder: SortOrder.descending
-    }
-  },
-  {
-    id: "reviewers",
-    name: "Reviewers",
-    renderCell: ReviewersColumn,
-    width: -20,
-  },
-];
 
 export class PullRequestPolicy {
   public id: string = "";
@@ -224,7 +171,6 @@ export const pullRequestCriteria: GitPullRequestSearchCriteria = {
 
 export interface IPullRequestsTabState {
   projects: TeamProjectReference[];
-  currentProject: IProjectInfo | TeamProjectReference | undefined;
   pullRequests: PullRequestModel[];
   repositories: GitRepository[];
   createdByList: IdentityRef[];

@@ -480,7 +480,6 @@ export class PullRequestModel {
 
   public static getModels(
     pullRequestList: GitPullRequest[] | undefined,
-    projectName: string,
     baseUrl: string,
     callbackState: (pullRequestModel: PullRequestModel) => void
   ): PullRequestModel[] {
@@ -488,7 +487,7 @@ export class PullRequestModel {
 
     pullRequestList!.map((pr) => {
       modelList.push(
-        new PullRequestModel(pr, projectName, baseUrl, callbackState)
+        new PullRequestModel(pr, pr.repository.project.name, baseUrl, callbackState)
       );
 
       return pr;

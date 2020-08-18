@@ -22,9 +22,10 @@ import { PillGroup } from "azure-devops-ui/PillGroup";
 import { Pill, PillSize, PillVariant } from "azure-devops-ui/Pill";
 import { ConditionalChildren } from "azure-devops-ui/ConditionalChildren";
 import { Observer } from "azure-devops-ui/Observer";
+import { UserPreferencesInstance } from "../common";
 
 export function openNewWindowTab(targetUrl: string): void {
-  window.open(targetUrl, "_blank");
+  window.open(targetUrl, UserPreferencesInstance.openPRNewWindow ? "_blank" : "_top");
 }
 
 export function StatusColumn(
