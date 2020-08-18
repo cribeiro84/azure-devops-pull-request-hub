@@ -296,7 +296,7 @@ export function DetailsColumn(
           </ConditionalChildren>
           <ConditionalChildren renderChildren={tableItem.hasNewChanges()}>
             <ConditionalChildren renderChildren={tableItem.hasCommentChanges()}>
-              <Tooltip text="Pull Request has new comments or updates on existing comments since your last vist">
+              <Tooltip text="Pull Request has new comments or updates on existing comments since your last visit">
                 <Pill
                   size={PillSize.compact}
                   variant={PillVariant.colored}
@@ -307,7 +307,7 @@ export function DetailsColumn(
               </Tooltip>
             </ConditionalChildren>
             <ConditionalChildren renderChildren={tableItem.hasCommitChanges()}>
-              <Tooltip text="Pull Request has new commit(s) since your last vist">
+              <Tooltip text="Pull Request has new commit(s) since your last visit">
                 <Pill
                   size={PillSize.compact}
                   variant={PillVariant.colored}

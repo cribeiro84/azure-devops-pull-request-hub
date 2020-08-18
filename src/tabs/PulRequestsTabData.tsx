@@ -181,6 +181,7 @@ export interface IPullRequestsTabState {
   loading: boolean;
   errorMessage: string;
   pullRequestCount: number;
+  savedProjects: string[];
 }
 
 export function sortMethod(

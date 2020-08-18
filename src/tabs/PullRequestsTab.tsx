@@ -63,6 +63,7 @@ import { ObservableValue } from "azure-devops-ui/Core/Observable";
 import {
   TeamProjectReference,
   WebApiTagDefinition,
+  ProjectInfo,
 } from "azure-devops-extension-api/Core/Core";
 import { FilterBarHub } from "../components/FilterBarHub";
 import { hasPullRequestFailure } from "../models/constants";
@@ -76,6 +77,7 @@ import {
   DateColumn,
   ReviewersColumn,
 } from "../components/Columns";
+import { IListBoxItem } from "azure-devops-ui/ListBox";
 
 export interface IPullRequestTabProps {
   prType: PullRequestStatus;
@@ -130,6 +132,7 @@ export class PullRequestsTab extends React.Component<
       loading: true,
       errorMessage: "",
       pullRequestCount: 0,
+      savedProjects: [],
     };
 
     this.filter = new Filter();
@@ -186,12 +189,10 @@ export class PullRequestsTab extends React.Component<
     try {
       const filterKey = this.getCurrentFilterNameKey();
       this.props.showToastMessage(
-        `Saved filters have been removed of selected project.`
+        `Saved filters have been removed.`
       );
       localStorage.removeItem(FILTER_STORE_KEY_NAME);
       localStorage.removeItem(filterKey);
-      this.filter.reset();
-      this.refresh();
     } catch (error) {
       this.handleError(error);
     }
@@ -212,7 +213,11 @@ export class PullRequestsTab extends React.Component<
   }
 
   private async initializePage() {
-    const self = this;
+    let { savedProjects } = this.state;
+    this.setState({
+      pullRequests: []
+    });
+
     this.getOrganizationBaseUrl()
       .then(async () => {
         const projectService = await DevOps.getService<IProjectPageService>(
@@ -222,12 +227,15 @@ export class PullRequestsTab extends React.Component<
         const currentProjectId = localStorage.getItem(FILTER_STORE_KEY_NAME);
 
         this.loadSavedFilter();
-        let savedProjects = this.filter.getFilterItemValue<string[]>(
+        const savedProjectsFilter = this.filter.getFilterItemValue<string[]>(
           "selectedProjects"
         );
 
-        if (savedProjects === undefined) {
-          savedProjects = [];
+        if (
+          savedProjectsFilter !== undefined &&
+          savedProjectsFilter.length > 0
+        ) {
+          savedProjects = savedProjectsFilter;
         }
 
         if (savedProjects.length === 0) {
@@ -243,23 +251,33 @@ export class PullRequestsTab extends React.Component<
           );
         }
 
+        this.setState({
+          savedProjects,
+        });
+
         savedProjects.forEach(async (p) => {
           const projectIndex = this.state.projects.findIndex(
             (item) => item.id === p
           );
           this.selectedProjects.select(projectIndex);
 
-          self
-            .getRepositories(this.state.projects[projectIndex].id)
-            .then(() => {
-              this.getAllPullRequests().catch((error) =>
-                this.handleError(error)
-              );
-            })
-            .catch((error) => {
-              this.handleError(error);
-            });
+          await this.loadProject(p);
         });
+      })
+      .catch((error) => {
+        this.handleError(error);
+      });
+  }
+
+  private async loadProject(projectId: string): Promise<void> {
+    const self = this;
+
+    return self
+      .getRepositories(projectId)
+      .then((repos) => {
+        this.getAllPullRequests(repos).catch((error) =>
+          this.handleError(error)
+        )
       })
       .catch((error) => {
         this.handleError(error);
@@ -343,10 +361,10 @@ export class PullRequestsTab extends React.Component<
     this.props.onCountChange(newList.length);
   }
 
-  private async getAllPullRequests() {
+  private async getAllPullRequests(repositories: GitRepository[]) {
     const self = this;
     this.setState({ loading: true });
-    const { repositories, pullRequests } = this.state;
+    const { pullRequests } = this.state;
 
     let newPullRequestList = Object.assign([], pullRequests);
 
@@ -405,7 +423,6 @@ export class PullRequestsTab extends React.Component<
                   tagList,
                 });
 
-                //this.pullRequestItemProvider.splice(0, this.pullRequestItemProvider.length, ...pullRequests);
                 this.filterPullRequests();
               }
             )
@@ -418,25 +435,21 @@ export class PullRequestsTab extends React.Component<
       })
       .finally(() => {
         if (newPullRequestList.length > 0) {
-          newPullRequestList = newPullRequestList.sort(
-            (
-              a: PullRequestModel.PullRequestModel,
-              b: PullRequestModel.PullRequestModel
-            ) => {
-              return UserPreferencesInstance.selectedDefaultSorting === "asc"
-                ? b.gitPullRequest.creationDate.getTime() -
-                    a.gitPullRequest.creationDate.getTime()
-                : a.gitPullRequest.creationDate.getTime() -
-                    b.gitPullRequest.creationDate.getTime();
-            }
-          );
+          this.state.pullRequests.push(...newPullRequestList);
 
           this.setState({
-            pullRequests: newPullRequestList,
-          });
-        } else {
-          this.setState({
-            pullRequests: [],
+            pullRequests: this.state.pullRequests.sort(
+              (
+                a: PullRequestModel.PullRequestModel,
+                b: PullRequestModel.PullRequestModel
+              ) => {
+                return UserPreferencesInstance.selectedDefaultSorting === "asc"
+                  ? b.gitPullRequest.creationDate.getTime() -
+                      a.gitPullRequest.creationDate.getTime()
+                  : a.gitPullRequest.creationDate.getTime() -
+                      b.gitPullRequest.creationDate.getTime();
+              }
+            ),
           });
         }
 
@@ -452,9 +465,10 @@ export class PullRequestsTab extends React.Component<
     this.pullRequestItemProvider.push(...pullRequests);
 
     this.populateFilterBarFields(pullRequests);
-    this.setState({ loading: false });
 
     this.filterPullRequests();
+
+    this.setState({ loading: false });
   }
 
   private filterPullRequests() {
@@ -791,7 +805,9 @@ export class PullRequestsTab extends React.Component<
   };
 
   refresh = async () => {
-    await this.getAllPullRequests().catch((error) => this.handleError(error));
+    await this.getAllPullRequests(this.state.repositories).catch((error) =>
+      this.handleError(error)
+    );
   };
 
   onHelpDismiss = () => {
@@ -824,7 +840,7 @@ export class PullRequestsTab extends React.Component<
       <div className="flex-column">
         <FilterBarHub
           filterPullRequests={() => {
-            this.refresh();
+            this.initializePage();
           }}
           pullRequests={pullRequests}
           filter={this.filter}
@@ -869,8 +885,22 @@ export class PullRequestsTab extends React.Component<
   }
 
   async selectedProjectChanged(
-    _event: React.SyntheticEvent<HTMLElement, Event>
-  ) {}
+    _event: React.SyntheticEvent<HTMLElement, Event>,
+    item: IListBoxItem<TeamProjectReference | ProjectInfo>
+  ) {
+    let { savedProjects } = this.state;
+    const foundIndex = savedProjects.findIndex((p) => p === item.id);
+
+    if (foundIndex < 0) {
+      savedProjects.push(item.id);
+
+      this.setState({
+        savedProjects,
+      });
+
+      this.loadProject(item.id);
+    }
+  }
 
   getRenderContent() {
     const { pullRequestCount, pullRequests } = this.state;
