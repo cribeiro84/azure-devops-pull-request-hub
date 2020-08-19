@@ -12,6 +12,7 @@ import {
   WebApiTagDefinition,
 } from "azure-devops-extension-api/Core/Core";
 import { PullRequestModel } from "../models/PullRequestModel";
+import { UserPreferencesInstance } from "../common";
 
 export const refsPreffix = "refs/heads/";
 
@@ -210,4 +211,15 @@ export function sortTagRepoTeamProject(
   }
 
   return 0;
+}
+
+export function sortPullRequests(
+  a: PullRequestModel,
+  b: PullRequestModel
+) {
+  return UserPreferencesInstance.selectedDefaultSorting === "asc"
+    ? b.gitPullRequest.creationDate.getTime() -
+        a.gitPullRequest.creationDate.getTime()
+    : a.gitPullRequest.creationDate.getTime() -
+        b.gitPullRequest.creationDate.getTime();
 }

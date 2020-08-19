@@ -372,7 +372,7 @@ export class PullRequestsTab extends React.Component<
   private async getAllPullRequests(repositories: GitRepository[]) {
     const self = this;
     this.setState({ loading: true });
-    const { pullRequests } = this.state;
+    let { pullRequests } = this.state;
 
     let newPullRequestList = Object.assign([], pullRequests);
 
@@ -443,21 +443,10 @@ export class PullRequestsTab extends React.Component<
       })
       .finally(() => {
         if (newPullRequestList.length > 0) {
-          this.state.pullRequests.push(...newPullRequestList);
+          pullRequests.push(...newPullRequestList);
 
           this.setState({
-            pullRequests: this.state.pullRequests.sort(
-              (
-                a: PullRequestModel.PullRequestModel,
-                b: PullRequestModel.PullRequestModel
-              ) => {
-                return UserPreferencesInstance.selectedDefaultSorting === "asc"
-                  ? b.gitPullRequest.creationDate.getTime() -
-                      a.gitPullRequest.creationDate.getTime()
-                  : a.gitPullRequest.creationDate.getTime() -
-                      b.gitPullRequest.creationDate.getTime();
-              }
-            ),
+            pullRequests: pullRequests.sort(Data.sortPullRequests),
           });
         }
 
