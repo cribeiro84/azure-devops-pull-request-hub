@@ -444,9 +444,10 @@ export class PullRequestsTab extends React.Component<
       .finally(() => {
         if (newPullRequestList.length > 0) {
           pullRequests.push(...newPullRequestList);
+          pullRequests = pullRequests.sort(Data.sortPullRequests);
 
           this.setState({
-            pullRequests: pullRequests.sort(Data.sortPullRequests),
+            pullRequests
           });
         }
 
