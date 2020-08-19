@@ -420,7 +420,7 @@ export class PullRequestsTab extends React.Component<
                 let { tagList } = self.state;
                 updatedPr.labels
                   .filter((t) => !this.hasFilterValue(tagList, t.id))
-                  .map((t) => {
+                  .forEach((t) => {
                     tagList.push(t);
                     tagList = tagList.sort(Data.sortTagRepoTeamProject);
 
@@ -710,7 +710,7 @@ export class PullRequestsTab extends React.Component<
     createdByList = [];
     reviewerList = [];
 
-    pullRequests.map((pr) => {
+    pullRequests.forEach((pr) => {
       let found = this.hasFilterValue(
         createdByList,
         pr.gitPullRequest.createdBy.id
