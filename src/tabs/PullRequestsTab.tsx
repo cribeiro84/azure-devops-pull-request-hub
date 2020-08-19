@@ -407,7 +407,7 @@ export class PullRequestsTab extends React.Component<
       })
     )
       .then((loadedPullRequests) => {
-        loadedPullRequests.map((pr) => {
+        loadedPullRequests.forEach((pr) => {
           if (!pr || pr.length === 0) {
             return pr;
           }
