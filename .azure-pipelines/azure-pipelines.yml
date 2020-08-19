@@ -10,7 +10,7 @@ trigger:
         exclude:
             - '*'
         include:
-            - master
+            - main
 
 pool:
     name: Hosted VS2017
