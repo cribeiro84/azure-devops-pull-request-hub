@@ -37,7 +37,6 @@ import { Dialog } from "azure-devops-ui/Dialog";
 import {
   Filter,
   FILTER_CHANGE_EVENT,
-  IFilterItemState,
 } from "azure-devops-ui/Utilities/Filter";
 import {
   DropdownMultiSelection,
@@ -255,18 +254,27 @@ export class PullRequestsTab extends React.Component<
           savedProjects,
         });
 
-        savedProjects.forEach(async (p) => {
-          const projectIndex = this.state.projects.findIndex(
-            (item) => item.id === p
-          );
-          this.selectedProjects.select(projectIndex);
-
-          await this.loadProject(p);
-        });
+        await this.loadAllProjects();
       })
       .catch((error) => {
         this.handleError(error);
       });
+  }
+
+  private async loadAllProjects(): Promise<void> {
+    const { savedProjects } = this.state;
+    this.setState({
+      pullRequests: []
+    });
+
+    savedProjects.forEach(async (p) => {
+      const projectIndex = this.state.projects.findIndex(
+        (item) => item.id === p
+      );
+      this.selectedProjects.select(projectIndex);
+
+      await this.loadProject(p);
+    });
   }
 
   private async loadProject(projectId: string): Promise<void> {
@@ -297,7 +305,7 @@ export class PullRequestsTab extends React.Component<
 
     let currentRepos = this.state.repositories;
     currentRepos.push(...repos);
-    currentRepos = currentRepos.sort(Data.sortMethod);
+    currentRepos = currentRepos.sort(Data.sortTagRepoTeamProject);
 
     this.setState({
       repositories: currentRepos,
@@ -414,7 +422,7 @@ export class PullRequestsTab extends React.Component<
                   .filter((t) => !this.hasFilterValue(tagList, t.id))
                   .map((t) => {
                     tagList.push(t);
-                    tagList = tagList.sort(Data.sortMethod);
+                    tagList = tagList.sort(Data.sortTagRepoTeamProject);
 
                     return tagList;
                   });
@@ -748,53 +756,10 @@ export class PullRequestsTab extends React.Component<
       return pr;
     });
 
-    sourceBranchList = sourceBranchList.sort(Data.sortMethod);
-    targetBranchList = targetBranchList.sort(Data.sortMethod);
-    createdByList = createdByList.sort(Data.sortMethod);
-    reviewerList = reviewerList.sort(Data.sortMethod);
-
-    const selectionObjectList = [
-      "selectedAuthors",
-      "selectedReviewers",
-      "selectedSourceBranches",
-      "selectedTargetBranches",
-    ];
-    const selectionFilterObjects = [
-      this.selectedAuthors,
-      this.selectedReviewers,
-      this.selectedSourceBranches,
-      this.selectedTargetBranches,
-    ];
-    const selectedItemsObjectList = [
-      createdByList,
-      reviewerList,
-      sourceBranchList,
-      targetBranchList,
-    ];
-
-    selectionObjectList.forEach((objectKey, index) => {
-      const filterItemState = this.filter.getFilterItemState(objectKey);
-
-      if (!filterItemState) {
-        return;
-      }
-
-      const filterStateValueList: string[] = (filterItemState as IFilterItemState)
-        .value;
-
-      filterStateValueList.map((item, itemIndex) => {
-        const found = this.hasFilterValue(selectedItemsObjectList[index], item);
-
-        if (!found) {
-          filterStateValueList.splice(itemIndex, 1);
-          selectionFilterObjects[index].clear();
-        }
-
-        return found;
-      });
-
-      this.filter.setFilterItemState(objectKey, filterItemState);
-    });
+    sourceBranchList = sourceBranchList.sort(Data.sortBranchOrIdentity);
+    targetBranchList = targetBranchList.sort(Data.sortBranchOrIdentity);
+    createdByList = createdByList.sort(Data.sortBranchOrIdentity);
+    reviewerList = reviewerList.sort(Data.sortBranchOrIdentity);
 
     this.setState({
       sourceBranchList,
@@ -805,9 +770,7 @@ export class PullRequestsTab extends React.Component<
   };
 
   refresh = async () => {
-    await this.getAllPullRequests(this.state.repositories).catch((error) =>
-      this.handleError(error)
-    );
+    await this.loadAllProjects();
   };
 
   onHelpDismiss = () => {

@@ -215,7 +215,7 @@ export class App extends React.Component<{}, IHubContentState> {
 
   private getTeamProjects = async (): Promise<void> => {
     const projects = (await this.coreClient.getProjects(undefined, 1000)).sort(
-      Data.sortMethod
+      Data.sortTagRepoTeamProject
     );
 
     this.setState({

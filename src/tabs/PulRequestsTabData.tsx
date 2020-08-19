@@ -184,44 +184,30 @@ export interface IPullRequestsTabState {
   savedProjects: string[];
 }
 
-export function sortMethod(
-  a:
-    | BranchDropDownItem
-    | IdentityRef
-    | WebApiTagDefinition
-    | GitRepository
-    | TeamProjectReference,
-  b:
-    | BranchDropDownItem
-    | IdentityRef
-    | WebApiTagDefinition
-    | GitRepository
-    | TeamProjectReference
-) {
-  if (a.hasOwnProperty("displayName")) {
-    const convertedA = a as BranchDropDownItem | IdentityRef;
-    const convertedB = b as BranchDropDownItem | IdentityRef;
-    if (convertedA.displayName! < convertedB.displayName!) {
-      return -1;
-    }
-    if (convertedA.displayName! > convertedB.displayName!) {
-      return 1;
-    }
-  } else if (a.hasOwnProperty("name")) {
-    const convertedA = a as
-      | WebApiTagDefinition
-      | GitRepository
-      | TeamProjectReference;
-    const convertedB = b as
-      | WebApiTagDefinition
-      | GitRepository
-      | TeamProjectReference;
-    if (convertedA.name < convertedB.name) {
-      return -1;
-    }
-    if (convertedA.name > convertedB.name) {
-      return 1;
-    }
+export function sortBranchOrIdentity(
+  a: BranchDropDownItem | IdentityRef,
+  b: BranchDropDownItem | IdentityRef
+): number {
+  if (a.displayName! < b.displayName!) {
+    return -1;
   }
+  if (a.displayName! > b.displayName!) {
+    return 1;
+  }
+
+  return 0;
+}
+
+export function sortTagRepoTeamProject(
+  a: WebApiTagDefinition | GitRepository | TeamProjectReference,
+  b: WebApiTagDefinition | GitRepository | TeamProjectReference
+): number {
+  if (a.name! < b.name!) {
+    return -1;
+  }
+  if (a.name! > b.name!) {
+    return 1;
+  }
+
   return 0;
 }

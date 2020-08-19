@@ -392,7 +392,7 @@ export function ReviewersColumn(
       line2={
         <div className="flex-row flex-wrap">
           {tableItem.gitPullRequest.reviewers
-            .sort(Data.sortMethod)
+            .sort(Data.sortBranchOrIdentity)
             .map((reviewer, i) => {
               return (
                 <Tooltip
@@ -426,8 +426,26 @@ export function ReviewersColumn(
                                 Voted for:
                               </strong>{" "}
                               <br />
-                              <br />
                               {reviewer.votedFor.map((r) => {
+                                return (
+                                  <span
+                                    key={`span2-${i}-${r.id}-${reviewer.id}`}
+                                  >
+                                    {" "}
+                                    - {r.displayName} <br />
+                                  </span>
+                                );
+                              })}
+                            </span>
+                          ) : null}
+                          {reviewer.isContainer && reviewer.isContainer === true ? (
+                            <span key={`span1-${i}-${reviewer.id}`}>
+                              <strong>
+                                <br />
+                                Voted by:
+                              </strong>{" "}
+                              <br />
+                              {tableItem.gitPullRequest.reviewers.filter(rv => rv.votedFor && rv.votedFor.some(vf => vf.id === reviewer.id)).map((r) => {
                                 return (
                                   <span
                                     key={`span2-${i}-${r.id}-${reviewer.id}`}
