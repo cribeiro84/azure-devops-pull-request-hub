@@ -34,10 +34,7 @@ import {
 import { ListSelection } from "azure-devops-ui/List";
 import { Observer } from "azure-devops-ui/Observer";
 import { Dialog } from "azure-devops-ui/Dialog";
-import {
-  Filter,
-  FILTER_CHANGE_EVENT,
-} from "azure-devops-ui/Utilities/Filter";
+import { Filter, FILTER_CHANGE_EVENT } from "azure-devops-ui/Utilities/Filter";
 import {
   DropdownMultiSelection,
   DropdownSelection,
@@ -132,6 +129,7 @@ export class PullRequestsTab extends React.Component<
       errorMessage: "",
       pullRequestCount: 0,
       savedProjects: [],
+      firstLoad: true,
     };
 
     this.filter = new Filter();
@@ -169,7 +167,6 @@ export class PullRequestsTab extends React.Component<
 
   private getCurrentFilterNameKey(): string {
     const filterKey = `MY_${FILTER_STORE_KEY_NAME}`;
-
     return filterKey;
   }
 
@@ -187,9 +184,7 @@ export class PullRequestsTab extends React.Component<
   private clearSavedFilter() {
     try {
       const filterKey = this.getCurrentFilterNameKey();
-      this.props.showToastMessage(
-        `Saved filters have been removed.`
-      );
+      this.props.showToastMessage(`Saved filters have been removed.`);
       localStorage.removeItem(FILTER_STORE_KEY_NAME);
       localStorage.removeItem(filterKey);
     } catch (error) {
@@ -214,7 +209,7 @@ export class PullRequestsTab extends React.Component<
   private async initializePage() {
     let { savedProjects } = this.state;
     this.setState({
-      pullRequests: []
+      pullRequests: [],
     });
 
     this.getOrganizationBaseUrl()
@@ -223,9 +218,9 @@ export class PullRequestsTab extends React.Component<
           getCommonServiceIdsValue("ProjectPageService")
         );
 
-        const currentProjectId = localStorage.getItem(FILTER_STORE_KEY_NAME);
-
         this.loadSavedFilter();
+
+        const currentProjectId = localStorage.getItem(FILTER_STORE_KEY_NAME);
         const savedProjectsFilter = this.filter.getFilterItemValue<string[]>(
           "selectedProjects"
         );
@@ -264,7 +259,7 @@ export class PullRequestsTab extends React.Component<
   private async loadAllProjects(): Promise<void> {
     const { savedProjects } = this.state;
     this.setState({
-      pullRequests: []
+      pullRequests: [],
     });
 
     savedProjects.forEach(async (p) => {
@@ -273,19 +268,22 @@ export class PullRequestsTab extends React.Component<
       );
       this.selectedProjects.select(projectIndex);
 
-      await this.loadProject(p);
+      this.loadProject(p);
+    });
+
+    this.setState({
+      firstLoad: false,
     });
   }
 
   private async loadProject(projectId: string): Promise<void> {
     const self = this;
-
     return self
       .getRepositories(projectId)
       .then((repos) => {
         this.getAllPullRequests(repos).catch((error) =>
           this.handleError(error)
-        )
+        );
       })
       .catch((error) => {
         this.handleError(error);
@@ -447,7 +445,7 @@ export class PullRequestsTab extends React.Component<
           pullRequests = pullRequests.sort(Data.sortPullRequests);
 
           this.setState({
-            pullRequests
+            pullRequests,
           });
         }
 
@@ -458,15 +456,17 @@ export class PullRequestsTab extends React.Component<
   private loadLists() {
     const { pullRequests } = this.state;
 
+    this.setState({
+      loading: false
+    });
+
     this.reloadPullRequestItemProvider([]);
-
     this.pullRequestItemProvider.push(...pullRequests);
-
     this.populateFilterBarFields(pullRequests);
 
-    this.filterPullRequests();
+    this.loadSavedFilter();
 
-    this.setState({ loading: false });
+    this.filterPullRequests();
   }
 
   private filterPullRequests() {
@@ -794,6 +794,7 @@ export class PullRequestsTab extends React.Component<
         <FilterBarHub
           filterPullRequests={() => {
             this.initializePage();
+            this.props.showToastMessage(`Filters have been restored to its original state.`);
           }}
           pullRequests={pullRequests}
           filter={this.filter}
@@ -851,7 +852,7 @@ export class PullRequestsTab extends React.Component<
         savedProjects,
       });
 
-      this.loadProject(item.id);
+      await this.loadProject(item.id);
     }
   }
 
