@@ -59,4 +59,4 @@ steps:
     fileType: 'vsix'
     vsixFile: 'azure-pull-request-hub.vsix'
     updateTasksVersionType: 'patch'
-    extensionVersion: '1.$(Build.BuildNumber)'
+    extensionVersion: '2.$(Build.BuildNumber)'
