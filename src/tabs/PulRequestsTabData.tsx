@@ -183,7 +183,6 @@ export interface IPullRequestsTabState {
   errorMessage: string;
   pullRequestCount: number;
   savedProjects: string[];
-  firstLoad: boolean;
 }
 
 export function sortBranchOrIdentity(

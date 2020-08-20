@@ -129,7 +129,6 @@ export class PullRequestsTab extends React.Component<
       errorMessage: "",
       pullRequestCount: 0,
       savedProjects: [],
-      firstLoad: true,
     };
 
     this.filter = new Filter();
@@ -269,10 +268,6 @@ export class PullRequestsTab extends React.Component<
       this.selectedProjects.select(projectIndex);
 
       this.loadProject(p);
-    });
-
-    this.setState({
-      firstLoad: false,
     });
   }
 
