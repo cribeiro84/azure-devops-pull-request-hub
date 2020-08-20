@@ -420,7 +420,7 @@ export class PullRequestModel {
           p.configuration.isEnabled === true &&
           p.configuration.isBlocking === true
       )
-      .map((p) => {
+      .forEach((p) => {
         const pullRequestPolicy = new PullRequestPolicy();
         pullRequestPolicy.id = p.evaluationId;
         pullRequestPolicy.displayName = `${p.configuration.type.displayName}`;
@@ -480,15 +480,14 @@ export class PullRequestModel {
 
   public static getModels(
     pullRequestList: GitPullRequest[] | undefined,
-    projectName: string,
     baseUrl: string,
     callbackState: (pullRequestModel: PullRequestModel) => void
   ): PullRequestModel[] {
     const modelList: PullRequestModel[] = [];
 
-    pullRequestList!.map((pr) => {
+    pullRequestList!.forEach((pr) => {
       modelList.push(
-        new PullRequestModel(pr, projectName, baseUrl, callbackState)
+        new PullRequestModel(pr, pr.repository.project.name, baseUrl, callbackState)
       );
 
       return pr;

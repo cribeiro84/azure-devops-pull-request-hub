@@ -1,0 +1,103 @@
+@import "azure-devops-ui/Core/_platformCommon.scss";
+
+.title-s {
+  font-size: 1.0625rem;
+  font-weight: 600
+}
+
+.title-xs {
+  font-size: .9375rem;
+  font-weight: 600
+}
+
+.body-xl {
+  font-size: 1.0625rem
+}
+
+.body-l {
+  font-size: .9375rem
+}
+
+.body-m {
+  font-size: .875rem
+}
+
+.body-s {
+  font-size: .75rem
+}
+
+.body-xs {
+  font-size: .6875rem
+}
+
+.feature-management-container {
+  width: 100%;
+  height: 100%;
+}
+
+.feature-management-container .features-list {
+  width: 100%;
+  list-style-type: none;
+  padding-left: 0;
+}
+
+.feature-management-container .features-list.is-horizontalConstrained {
+  overflow: hidden;
+}
+
+.feature-management-container .features-list .feature {
+  padding: 20px 0;
+  border-bottom: solid 1px;
+  border-bottom-color: rgba(200, 200, 200, 1);
+  border-bottom-color: rgba(var(--palette-neutral-20, 200, 200, 200), 1);
+  white-space: normal;
+}
+
+.feature-management-container .features-list .feature.highlighted-feature {
+  background-color: rgba(251, 242, 236, 1);
+  background-color: var(--status-warning-background, rgba(251, 242, 236, 1));
+  margin-left: -10px;
+  margin-right: -10px;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.feature-management-container .features-list .feature:last-child {
+  border-bottom: none;
+}
+
+.feature-management-container .features-list .feature .feature-header {
+  display: flex;
+  align-items: center;
+}
+
+.feature-management-container .features-list .feature .feature-name {
+  flex-grow: 1;
+}
+
+.feature-management-container .features-list .feature .ms-Toggle {
+  margin-bottom: 0;
+  flex-shrink: 0;
+}
+
+.feature-management-container .features-list .feature input {
+  color: $primary-text;
+}
+
+.feature-management-container .features-list .feature .ms-Toggle.loading {
+  opacity: 0.3;
+}
+
+.feature-management-container .features-list .feature .ms-Toggle-label {
+  display: none;
+}
+
+.feature-management-container .features-list .feature .feature-description {
+  color: rgba(0, 0, 0, 0.55);
+  color: $primary-text;
+  margin-top: 10px;
+}
+
+.feature-management-container .features-list .feature .feature-toggle-error {
+  margin-top: 10px;
+}

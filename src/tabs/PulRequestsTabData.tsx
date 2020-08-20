@@ -6,21 +6,13 @@ import {
 } from "azure-devops-extension-api/Git/Git";
 import { IStatusProps } from "azure-devops-ui/Status";
 import { IColor } from "azure-devops-ui/Utilities/Color";
-import { IProjectInfo } from "azure-devops-extension-api/Common/CommonServices";
 import { IdentityRef } from "azure-devops-extension-api/WebApi/WebApi";
 import {
   TeamProjectReference,
   WebApiTagDefinition,
 } from "azure-devops-extension-api/Core/Core";
-import { ITableColumn, SortOrder, TableColumnStyle } from "azure-devops-ui/Table";
-import {
-  StatusColumn,
-  TitleColumn,
-  DetailsColumn,
-  ReviewersColumn,
-  DateColumn,
-} from "../components/Columns";
 import { PullRequestModel } from "../models/PullRequestModel";
+import { UserPreferencesInstance } from "../common";
 
 export const refsPreffix = "refs/heads/";
 
@@ -93,7 +85,7 @@ export enum AlternateStatusPr {
   NotConflicts = "Not Conflicts",
   NotIsDraft = "Not Draft",
   NotReadyForCompletion = "Not Ready for Completion",
-  ReadForCompletion = "Ready for Completion"
+  ReadForCompletion = "Ready for Completion",
 }
 
 export class BranchDropDownItem {
@@ -108,50 +100,6 @@ export class BranchDropDownItem {
     return this.DISPLAY_NAME;
   }
 }
-
-export const columns: ITableColumn<PullRequestModel>[] = [
-  {
-    id: "status",
-    name: "",
-    renderCell: StatusColumn,
-    readonly: true,
-    width: -4,
-    minWidth: -4,
-    columnStyle: TableColumnStyle.Primary
-  },
-  {
-    id: "title",
-    name: "Pull Request",
-    renderCell: TitleColumn,
-    readonly: true,
-    width: -46,
-  },
-  {
-    className: "pipelines-two-line-cell",
-    id: "details",
-    name: "Details",
-    renderCell: DetailsColumn,
-    width: -20,
-  },
-  {
-    id: "time",
-    name: "When",
-    readonly: true,
-    renderCell: DateColumn,
-    width: -10,
-    sortProps: {
-      ariaLabelAscending: "Sorted new to older",
-      ariaLabelDescending: "Sorted older to new",
-      sortOrder: SortOrder.descending
-    }
-  },
-  {
-    id: "reviewers",
-    name: "Reviewers",
-    renderCell: ReviewersColumn,
-    width: -20,
-  },
-];
 
 export class PullRequestPolicy {
   public id: string = "";
@@ -224,7 +172,6 @@ export const pullRequestCriteria: GitPullRequestSearchCriteria = {
 
 export interface IPullRequestsTabState {
   projects: TeamProjectReference[];
-  currentProject: IProjectInfo | TeamProjectReference | undefined;
   pullRequests: PullRequestModel[];
   repositories: GitRepository[];
   createdByList: IdentityRef[];
@@ -235,48 +182,44 @@ export interface IPullRequestsTabState {
   loading: boolean;
   errorMessage: string;
   pullRequestCount: number;
-  showToastMessage: boolean;
-  toastMessageToShow: string;
+  savedProjects: string[];
 }
 
-export function sortMethod(
-  a:
-    | BranchDropDownItem
-    | IdentityRef
-    | WebApiTagDefinition
-    | GitRepository
-    | TeamProjectReference,
-  b:
-    | BranchDropDownItem
-    | IdentityRef
-    | WebApiTagDefinition
-    | GitRepository
-    | TeamProjectReference
-) {
-  if (a.hasOwnProperty("displayName")) {
-    const convertedA = a as BranchDropDownItem | IdentityRef;
-    const convertedB = b as BranchDropDownItem | IdentityRef;
-    if (convertedA.displayName! < convertedB.displayName!) {
-      return -1;
-    }
-    if (convertedA.displayName! > convertedB.displayName!) {
-      return 1;
-    }
-  } else if (a.hasOwnProperty("name")) {
-    const convertedA = a as
-      | WebApiTagDefinition
-      | GitRepository
-      | TeamProjectReference;
-    const convertedB = b as
-      | WebApiTagDefinition
-      | GitRepository
-      | TeamProjectReference;
-    if (convertedA.name < convertedB.name) {
-      return -1;
-    }
-    if (convertedA.name > convertedB.name) {
-      return 1;
-    }
+export function sortBranchOrIdentity(
+  a: BranchDropDownItem | IdentityRef,
+  b: BranchDropDownItem | IdentityRef
+): number {
+  if (a.displayName! < b.displayName!) {
+    return -1;
   }
+  if (a.displayName! > b.displayName!) {
+    return 1;
+  }
+
   return 0;
+}
+
+export function sortTagRepoTeamProject(
+  a: WebApiTagDefinition | GitRepository | TeamProjectReference,
+  b: WebApiTagDefinition | GitRepository | TeamProjectReference
+): number {
+  if (a.name! < b.name!) {
+    return -1;
+  }
+  if (a.name! > b.name!) {
+    return 1;
+  }
+
+  return 0;
+}
+
+export function sortPullRequests(
+  a: PullRequestModel,
+  b: PullRequestModel
+) {
+  return UserPreferencesInstance.selectedDefaultSorting === "asc"
+    ? b.gitPullRequest.creationDate.getTime() -
+        a.gitPullRequest.creationDate.getTime()
+    : a.gitPullRequest.creationDate.getTime() -
+        b.gitPullRequest.creationDate.getTime();
 }
