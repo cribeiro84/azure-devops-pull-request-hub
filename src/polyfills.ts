@@ -5,11 +5,12 @@ export function addPolyFills() {
     // eslint-disable-next-line no-extend-native
     Array.prototype.flat = function (depth: any = 1) {
       depth = isNaN(depth) ? 0 : Math.floor(depth);
-      if (depth < 1) return this.slice();
+      const self = this as unknown as any[];
+      if (depth < 1) return self.slice();
       return [].concat(
         ...(depth < 2)
-          ? this
-          : this.map(v => Array.isArray(v) ? v.flat(depth - 1) : v)
+          ? self
+          : self.map(v => Array.isArray(v) ? v.flat(depth - 1) : v)
       )
     };
   }
