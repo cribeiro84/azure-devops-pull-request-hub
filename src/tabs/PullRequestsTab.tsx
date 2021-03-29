@@ -22,7 +22,7 @@ import * as PullRequestModel from "../models/PullRequestModel";
 import * as DevOps from "azure-devops-extension-sdk";
 
 // Azure DevOps API
-import { IProjectPageService, getClient } from "azure-devops-extension-api";
+import { IProjectPageService, getClient, IHostNavigationService } from "azure-devops-extension-api";
 import { GitRestClient } from "azure-devops-extension-api/Git/GitClient";
 import {
   IdentityRefWithVote,
@@ -169,32 +169,56 @@ export class PullRequestsTab extends React.Component<
     return filterKey;
   }
 
-  private saveCurrentFilters() {
+  private async saveCurrentFilters() {
     try {
       const filterKey = this.getCurrentFilterNameKey();
       const currentFilter = this.filter.getState();
-      localStorage.setItem(filterKey, JSON.stringify(currentFilter));
+      const serializedFilter = JSON.stringify(currentFilter);
+      localStorage.setItem(filterKey, serializedFilter);
       this.props.showToastMessage(`Current selected filters have been saved.`);
+
+      const navigationService = await DevOps.getService<IHostNavigationService>(
+        getCommonServiceIdsValue("HostNavigationService")
+      );
+      navigationService.setHash(`${filterKey}=${serializedFilter}`);
     } catch (error) {
       this.handleError(error);
     }
   }
 
-  private clearSavedFilter() {
+  private async clearSavedFilter() {
     try {
       const filterKey = this.getCurrentFilterNameKey();
       this.props.showToastMessage(`Saved filters have been removed.`);
       localStorage.removeItem(FILTER_STORE_KEY_NAME);
       localStorage.removeItem(filterKey);
+
+      const navigationService = await DevOps.getService<IHostNavigationService>(
+        getCommonServiceIdsValue("HostNavigationService")
+      );
+      navigationService.setHash("");
+
     } catch (error) {
       this.handleError(error);
     }
   }
 
-  private loadSavedFilter(): void {
+  private async loadSavedFilter(): Promise<void> {
     try {
       const saveFilterKeyName = this.getCurrentFilterNameKey();
-      const storedSavedFilter = localStorage.getItem(saveFilterKeyName);
+      const hashPrefix = `#${saveFilterKeyName}=`;
+
+      const navigationService = await DevOps.getService<IHostNavigationService>(
+        getCommonServiceIdsValue("HostNavigationService")
+      );
+      const hash = await navigationService.getHash();
+
+      let storedSavedFilter;
+      if (hash.startsWith(hashPrefix)) {
+        storedSavedFilter = decodeURIComponent(hash.substr(hashPrefix.length));
+      } else {
+        storedSavedFilter = localStorage.getItem(saveFilterKeyName);
+      }
 
       if (storedSavedFilter && storedSavedFilter.length > 0) {
         const savedFilterState = JSON.parse(storedSavedFilter);
@@ -217,7 +241,7 @@ export class PullRequestsTab extends React.Component<
           getCommonServiceIdsValue("ProjectPageService")
         );
 
-        this.loadSavedFilter();
+        await this.loadSavedFilter();
 
         const currentProjectId = localStorage.getItem(FILTER_STORE_KEY_NAME);
         const savedProjectsFilter = this.filter.getFilterItemValue<string[]>(
