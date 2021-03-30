@@ -26,7 +26,6 @@ import { IProjectPageService, getClient, IHostNavigationService } from "azure-de
 import { GitRestClient } from "azure-devops-extension-api/Git/GitClient";
 import {
   IdentityRefWithVote,
-  GitRepository,
   PullRequestStatus,
 } from "azure-devops-extension-api/Git/Git";
 
@@ -74,6 +73,7 @@ import {
   ReviewersColumn,
 } from "../components/Columns";
 import { IListBoxItem } from "azure-devops-ui/ListBox";
+import { GitRepositoryModel } from '../models/PullRequestModel';
 
 export interface IPullRequestTabProps {
   prType: PullRequestStatus;
@@ -317,8 +317,8 @@ export class PullRequestsTab extends React.Component<
     });
   }
 
-  private async getRepositories(projectId: string): Promise<GitRepository[]> {
-    const repos = await this.gitClient.getRepositories(projectId, true);
+  private async getRepositories(projectId: string): Promise<GitRepositoryModel[]> {
+    const repos = (await this.gitClient.getRepositories(projectId, true) as GitRepositoryModel[]).filter(r => r.isDisabled === false);
 
     let currentRepos = this.state.repositories;
     currentRepos.push(...repos);
@@ -386,7 +386,7 @@ export class PullRequestsTab extends React.Component<
     this.props.onCountChange(newList.length);
   }
 
-  private async getAllPullRequests(repositories: GitRepository[]) {
+  private async getAllPullRequests(repositories: GitRepositoryModel[]) {
     const self = this;
     this.setState({ loading: true });
     let { pullRequests } = this.state;
@@ -458,7 +458,7 @@ export class PullRequestsTab extends React.Component<
       .catch((error) => {
         this.handleError(error);
       })
-      .finally(() => {
+      .finally(async () => {
         if (newPullRequestList.length > 0) {
           pullRequests.push(...newPullRequestList);
           pullRequests = pullRequests.sort(Data.sortPullRequests);
@@ -468,11 +468,11 @@ export class PullRequestsTab extends React.Component<
           });
         }
 
-        this.loadLists();
+        await this.loadLists();
       });
   }
 
-  private loadLists() {
+  private async loadLists() {
     const { pullRequests } = this.state;
 
     this.setState({
@@ -483,7 +483,7 @@ export class PullRequestsTab extends React.Component<
     this.pullRequestItemProvider.push(...pullRequests);
     this.populateFilterBarFields(pullRequests);
 
-    this.loadSavedFilter();
+    await this.loadSavedFilter();
 
     this.filterPullRequests();
   }

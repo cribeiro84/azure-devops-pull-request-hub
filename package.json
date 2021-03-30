@@ -5,9 +5,9 @@
   "homepage": "./",
   "dependencies": {
     "@uifabric/utilities": "^7.33.5",
-    "azure-devops-ui": "^2.167.1",
     "azure-devops-extension-api": "~1.158.0",
     "azure-devops-extension-sdk": "^2.0.11",
+    "azure-devops-ui": "^2.167.1",
     "https-localhost": "^4.6.4",
     "immer": "^9.0.1",
     "prop-types": "^15.7.2",
