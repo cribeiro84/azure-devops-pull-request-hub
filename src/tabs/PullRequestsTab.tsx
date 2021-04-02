@@ -26,7 +26,6 @@ import { IProjectPageService, getClient, IHostNavigationService } from "azure-de
 import { GitRestClient } from "azure-devops-extension-api/Git/GitClient";
 import {
   IdentityRefWithVote,
-  GitRepository,
   PullRequestStatus,
 } from "azure-devops-extension-api/Git/Git";
 
@@ -37,7 +36,6 @@ import { Dialog } from "azure-devops-ui/Dialog";
 import { Filter, FILTER_CHANGE_EVENT } from "azure-devops-ui/Utilities/Filter";
 import {
   DropdownMultiSelection,
-  DropdownSelection,
 } from "azure-devops-ui/Utilities/DropdownSelection";
 import {
   ObservableArray,
@@ -74,6 +72,7 @@ import {
   ReviewersColumn,
 } from "../components/Columns";
 import { IListBoxItem } from "azure-devops-ui/ListBox";
+import { GitRepositoryModel } from '../models/PullRequestModel';
 
 export interface IPullRequestTabProps {
   prType: PullRequestStatus;
@@ -237,36 +236,7 @@ export class PullRequestsTab extends React.Component<
 
     this.getOrganizationBaseUrl()
       .then(async () => {
-        const projectService = await DevOps.getService<IProjectPageService>(
-          getCommonServiceIdsValue("ProjectPageService")
-        );
-
         await this.loadSavedFilter();
-
-        const currentProjectId = localStorage.getItem(FILTER_STORE_KEY_NAME);
-        const savedProjectsFilter = this.filter.getFilterItemValue<string[]>(
-          "selectedProjects"
-        );
-
-        if (
-          savedProjectsFilter !== undefined &&
-          savedProjectsFilter.length > 0
-        ) {
-          savedProjects = savedProjectsFilter;
-        }
-
-        if (savedProjects.length === 0) {
-          const currentProject =
-            currentProjectId && currentProjectId.length > 0
-              ? currentProjectId
-              : (await projectService.getProject())!.id;
-
-          savedProjects.push(...[currentProject.toString()]);
-
-          this.selectedProjects.select(
-            this.state.projects.findIndex((p) => p.id === currentProject)
-          );
-        }
 
         this.setState({
           savedProjects,
@@ -280,17 +250,38 @@ export class PullRequestsTab extends React.Component<
   }
 
   private async loadAllProjects(): Promise<void> {
-    const { savedProjects } = this.state;
+    let { savedProjects } = this.state;
     this.setState({
       pullRequests: [],
     });
 
-    savedProjects.forEach(async (p) => {
-      const projectIndex = this.state.projects.findIndex(
-        (item) => item.id === p
-      );
-      this.selectedProjects.select(projectIndex);
+    const currentProjectId = localStorage.getItem(FILTER_STORE_KEY_NAME);
+    const savedProjectsFilter = this.filter.getFilterItemValue<string[]>(
+      "selectedProjects"
+    );
 
+    if (
+      savedProjectsFilter !== undefined &&
+      savedProjectsFilter.length > 0
+    ) {
+      savedProjects = savedProjectsFilter;
+    }
+
+    if (savedProjects.length === 0) {
+      const projectService = await DevOps.getService<IProjectPageService>(
+        getCommonServiceIdsValue("ProjectPageService")
+      );
+
+      const currentProject =
+        currentProjectId && currentProjectId.length > 0
+          ? currentProjectId
+          : (await projectService.getProject())!.id;
+
+      savedProjects.push(...[currentProject.toString()]);
+    }
+
+    this.filter.setFilterItemState("selectedProjects", { value: savedProjects });
+    savedProjects.forEach(async (p) => {
       this.loadProject(p);
     });
   }
@@ -317,8 +308,8 @@ export class PullRequestsTab extends React.Component<
     });
   }
 
-  private async getRepositories(projectId: string): Promise<GitRepository[]> {
-    const repos = await this.gitClient.getRepositories(projectId, true);
+  private async getRepositories(projectId: string): Promise<GitRepositoryModel[]> {
+    const repos = (await this.gitClient.getRepositories(projectId, true) as GitRepositoryModel[]).filter(r => r.isDisabled === false);
 
     let currentRepos = this.state.repositories;
     currentRepos.push(...repos);
@@ -332,6 +323,11 @@ export class PullRequestsTab extends React.Component<
   }
 
   private async getOrganizationBaseUrl() {
+
+    if (this.baseUrl && this.baseUrl.length > 0) {
+      return;
+    }
+
     const oldOrgUrlFormat = AZDEVOPS_CLOUD_API_ORGANIZATION_OLD.replace(
       "[org]",
       DevOps.getHost().name
@@ -386,7 +382,7 @@ export class PullRequestsTab extends React.Component<
     this.props.onCountChange(newList.length);
   }
 
-  private async getAllPullRequests(repositories: GitRepository[]) {
+  private async getAllPullRequests(repositories: GitRepositoryModel[]) {
     const self = this;
     this.setState({ loading: true });
     let { pullRequests } = this.state;
@@ -458,7 +454,7 @@ export class PullRequestsTab extends React.Component<
       .catch((error) => {
         this.handleError(error);
       })
-      .finally(() => {
+      .finally(async () => {
         if (newPullRequestList.length > 0) {
           pullRequests.push(...newPullRequestList);
           pullRequests = pullRequests.sort(Data.sortPullRequests);
@@ -468,11 +464,11 @@ export class PullRequestsTab extends React.Component<
           });
         }
 
-        this.loadLists();
+        await this.loadLists();
       });
   }
 
-  private loadLists() {
+  private async loadLists() {
     const { pullRequests } = this.state;
 
     this.setState({
@@ -483,7 +479,7 @@ export class PullRequestsTab extends React.Component<
     this.pullRequestItemProvider.push(...pullRequests);
     this.populateFilterBarFields(pullRequests);
 
-    this.loadSavedFilter();
+    await this.loadSavedFilter();
 
     this.filterPullRequests();
   }
@@ -650,36 +646,6 @@ export class PullRequestsTab extends React.Component<
     }
 
     this.reloadPullRequestItemProvider(filteredPullRequest);
-  }
-
-  loadSavedFilterValues<T extends string | number | undefined, Y extends any>({
-    filterItems,
-    objectList,
-    selectedItems,
-    getObjectPredicate,
-  }: {
-    filterItems: T[] | undefined;
-    objectList: any[];
-    selectedItems: DropdownMultiSelection | DropdownSelection;
-    getObjectPredicate: (filterItem: Y) => T;
-  }) {
-    if (
-      filterItems &&
-      filterItems.length > 0 &&
-      selectedItems.selectedCount === 0
-    ) {
-      filterItems.forEach((r) => {
-        var foundIndex = objectList.findIndex((v) => {
-          return getObjectPredicate(v) === r;
-        });
-
-        if (foundIndex >= 0) {
-          selectedItems.select(foundIndex);
-        }
-
-        return r;
-      });
-    }
   }
 
   private hasFilterValue(

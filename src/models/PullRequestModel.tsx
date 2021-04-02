@@ -21,6 +21,11 @@ import { WebApiTagDefinition } from "azure-devops-extension-api/Core/Core";
 import { USER_SETTINGS_STORE_KEY } from "../common";
 import { getEvaluationsPerPullRequest } from "../services/AzureGitServices";
 import { EvaluationPolicyType } from "./GitModels";
+import { GitRepository } from 'azure-devops-extension-api/Git/Git';
+
+export interface GitRepositoryModel extends GitRepository {
+  isDisabled: boolean;
+}
 
 export class PullRequestModel {
   private baseHostUrl: string = "";
