@@ -36,7 +36,6 @@ import { Dialog } from "azure-devops-ui/Dialog";
 import { Filter, FILTER_CHANGE_EVENT } from "azure-devops-ui/Utilities/Filter";
 import {
   DropdownMultiSelection,
-  DropdownSelection,
 } from "azure-devops-ui/Utilities/DropdownSelection";
 import {
   ObservableArray,
@@ -237,36 +236,7 @@ export class PullRequestsTab extends React.Component<
 
     this.getOrganizationBaseUrl()
       .then(async () => {
-        const projectService = await DevOps.getService<IProjectPageService>(
-          getCommonServiceIdsValue("ProjectPageService")
-        );
-
         await this.loadSavedFilter();
-
-        const currentProjectId = localStorage.getItem(FILTER_STORE_KEY_NAME);
-        const savedProjectsFilter = this.filter.getFilterItemValue<string[]>(
-          "selectedProjects"
-        );
-
-        if (
-          savedProjectsFilter !== undefined &&
-          savedProjectsFilter.length > 0
-        ) {
-          savedProjects = savedProjectsFilter;
-        }
-
-        if (savedProjects.length === 0) {
-          const currentProject =
-            currentProjectId && currentProjectId.length > 0
-              ? currentProjectId
-              : (await projectService.getProject())!.id;
-
-          savedProjects.push(...[currentProject.toString()]);
-
-          this.selectedProjects.select(
-            this.state.projects.findIndex((p) => p.id === currentProject)
-          );
-        }
 
         this.setState({
           savedProjects,
@@ -280,17 +250,38 @@ export class PullRequestsTab extends React.Component<
   }
 
   private async loadAllProjects(): Promise<void> {
-    const { savedProjects } = this.state;
+    let { savedProjects } = this.state;
     this.setState({
       pullRequests: [],
     });
 
-    savedProjects.forEach(async (p) => {
-      const projectIndex = this.state.projects.findIndex(
-        (item) => item.id === p
-      );
-      this.selectedProjects.select(projectIndex);
+    const currentProjectId = localStorage.getItem(FILTER_STORE_KEY_NAME);
+    const savedProjectsFilter = this.filter.getFilterItemValue<string[]>(
+      "selectedProjects"
+    );
 
+    if (
+      savedProjectsFilter !== undefined &&
+      savedProjectsFilter.length > 0
+    ) {
+      savedProjects = savedProjectsFilter;
+    }
+
+    if (savedProjects.length === 0) {
+      const projectService = await DevOps.getService<IProjectPageService>(
+        getCommonServiceIdsValue("ProjectPageService")
+      );
+
+      const currentProject =
+        currentProjectId && currentProjectId.length > 0
+          ? currentProjectId
+          : (await projectService.getProject())!.id;
+
+      savedProjects.push(...[currentProject.toString()]);
+    }
+
+    this.filter.setFilterItemState("selectedProjects", { value: savedProjects });
+    savedProjects.forEach(async (p) => {
       this.loadProject(p);
     });
   }
@@ -650,36 +641,6 @@ export class PullRequestsTab extends React.Component<
     }
 
     this.reloadPullRequestItemProvider(filteredPullRequest);
-  }
-
-  loadSavedFilterValues<T extends string | number | undefined, Y extends any>({
-    filterItems,
-    objectList,
-    selectedItems,
-    getObjectPredicate,
-  }: {
-    filterItems: T[] | undefined;
-    objectList: any[];
-    selectedItems: DropdownMultiSelection | DropdownSelection;
-    getObjectPredicate: (filterItem: Y) => T;
-  }) {
-    if (
-      filterItems &&
-      filterItems.length > 0 &&
-      selectedItems.selectedCount === 0
-    ) {
-      filterItems.forEach((r) => {
-        var foundIndex = objectList.findIndex((v) => {
-          return getObjectPredicate(v) === r;
-        });
-
-        if (foundIndex >= 0) {
-          selectedItems.select(foundIndex);
-        }
-
-        return r;
-      });
-    }
   }
 
   private hasFilterValue(
