@@ -323,6 +323,11 @@ export class PullRequestsTab extends React.Component<
   }
 
   private async getOrganizationBaseUrl() {
+
+    if (this.baseUrl && this.baseUrl.length > 0) {
+      return;
+    }
+
     const oldOrgUrlFormat = AZDEVOPS_CLOUD_API_ORGANIZATION_OLD.replace(
       "[org]",
       DevOps.getHost().name
