@@ -231,6 +231,9 @@ export class PullRequestsTab extends React.Component<
   private async initializePage() {
     let { savedProjects } = this.state;
     this.setState({
+      repositories: [],
+      sourceBranchList: [],
+      targetBranchList: [],
       pullRequests: [],
     });
 
@@ -252,6 +255,9 @@ export class PullRequestsTab extends React.Component<
   private async loadAllProjects(): Promise<void> {
     let { savedProjects } = this.state;
     this.setState({
+      repositories: [],
+      sourceBranchList: [],
+      targetBranchList: [],
       pullRequests: [],
     });
 
