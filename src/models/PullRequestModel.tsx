@@ -24,7 +24,7 @@ import { EvaluationPolicyType } from "./GitModels";
 import { GitRepository } from 'azure-devops-extension-api/Git/Git';
 
 export interface GitRepositoryModel extends GitRepository {
-  isDisabled: boolean;
+  isDisabled: boolean | undefined;
 }
 
 export class PullRequestModel {
