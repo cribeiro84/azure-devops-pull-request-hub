@@ -8,6 +8,10 @@
 
 Please report any feedback/issue [here](https://github.com/cribeiro84/azure-devops-pull-request-hub):
 
+***Do you want to support this project?***
+
+[![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/donate/?business=PJYCMSELR9D2W&item_name=Open+Source+projects&currency_code=USD)
+
 ------
 
 Manage your Pull Requests of all your projects and repositories at a single place without having to switch between each repository. Track its status and what's most important to focus on your code review process.
