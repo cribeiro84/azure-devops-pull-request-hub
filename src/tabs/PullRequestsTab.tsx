@@ -255,9 +255,6 @@ export class PullRequestsTab extends React.Component<
   private async loadAllProjects(): Promise<void> {
     let { savedProjects } = this.state;
     this.setState({
-      repositories: [],
-      sourceBranchList: [],
-      targetBranchList: [],
       pullRequests: [],
     });
 
@@ -317,7 +314,7 @@ export class PullRequestsTab extends React.Component<
   private async getRepositories(projectId: string): Promise<GitRepositoryModel[]> {
     const repos = (await this.gitClient.getRepositories(projectId, true) as GitRepositoryModel[]).filter(r => r.isDisabled === undefined || r.isDisabled === false);
 
-    let currentRepos = this.state.repositories;
+    let currentRepos = [];
     currentRepos.push(...repos);
     currentRepos = currentRepos.sort(Data.sortTagRepoTeamProject);
 
