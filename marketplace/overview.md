@@ -48,15 +48,17 @@ Manage your Pull Requests of all your projects and repositories at a single plac
 
 ## Updates (dd/MM/yyyy)
 
+### 09/04/2021
+
+- Bug fixes reported in GitHub issues
+- Duplicated items
+- Disabled repos blocking extension to load
+
 ### 06/08/2020
 
 - New Alternate Status: Has New Changes
 - UI tweaks
 - New icons (comments or commits) for Has Changes since your last visit to the PR
-
-### 09/04/2021
-
-- Bug fixes reported in GitHub issues
 
 ### 02/08/2020
 
