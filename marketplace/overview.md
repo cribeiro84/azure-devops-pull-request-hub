@@ -54,6 +54,10 @@ Manage your Pull Requests of all your projects and repositories at a single plac
 - UI tweaks
 - New icons (comments or commits) for Has Changes since your last visit to the PR
 
+### 09/04/2021
+
+- Bug fixes reported in GitHub issues
+
 ### 02/08/2020
 
 - New Alternate Status: Ready for Completion and Not Ready for Completion
