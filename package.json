@@ -52,7 +52,7 @@
     "@types/react-router-dom": "^5.1.7",
     "core-js": "^3.9.1",
     "del-cli": "^3.0.1",
-    "node-sass": "^5.0.0",
+    "node-sass": "^7.0.0",
     "office-ui-fabric-react": "^7.165.1",
     "react-router-dom": "^5.2.0",
     "rename-webpack-plugin": "^2.0.0",
