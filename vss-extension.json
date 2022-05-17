@@ -10,7 +10,8 @@
   "demands": ["api-version/5.1"],
   "scopes": [
     "vso.code",
-    "vso.build"
+    "vso.build",
+    "vso.graph"
   ],
   "targets": [{
     "id": "Microsoft.VisualStudio.Services"

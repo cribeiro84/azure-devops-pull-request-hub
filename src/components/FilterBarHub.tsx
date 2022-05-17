@@ -65,6 +65,8 @@ export interface IFilterHubProps {
   selectedTargetBranches: DropdownMultiSelection;
   createdByList: IdentityRef[];
   selectedAuthors: DropdownMultiSelection;
+  teamsList: Record<string, Data.TeamRef>;
+  selectedTeams: DropdownMultiSelection;
   reviewerList: IdentityRefWithVote[];
   selectedReviewers: DropdownMultiSelection;
   selectedMyApprovalStatuses: DropdownMultiSelection;
@@ -104,6 +106,21 @@ export function FilterBarHub(props: IFilterHubProps): JSX.Element {
               text: i.name,
             };
           })}
+        />
+      </React.Fragment>
+
+      <React.Fragment>
+        <DropdownFilterBarItem
+          filterItemKey={`selectedTeams`}
+          noItemsText="No teams found"
+          filter={props.filter}
+          showFilterBox={true}
+          items={Object.keys(props.teamsList).map((key) => ({ 
+              id: JSON.stringify(props.teamsList[key]), 
+              text: props.teamsList[key].name
+          }))}
+          selection={props.selectedTeams}
+          placeholder="Team"
         />
       </React.Fragment>
 
