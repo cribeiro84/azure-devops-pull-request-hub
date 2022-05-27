@@ -24,6 +24,7 @@ import * as DevOps from "azure-devops-extension-sdk";
 // Azure DevOps API
 import { IProjectPageService, getClient, IHostNavigationService } from "azure-devops-extension-api";
 import { GitRestClient } from "azure-devops-extension-api/Git/GitClient";
+import { CoreRestClient } from "azure-devops-extension-api/Core/CoreClient";
 import {
   IdentityRefWithVote,
   PullRequestStatus,
@@ -57,7 +58,7 @@ import { ObservableValue } from "azure-devops-ui/Core/Observable";
 import {
   TeamProjectReference,
   WebApiTagDefinition,
-  ProjectInfo,
+  ProjectInfo
 } from "azure-devops-extension-api/Core/Core";
 import { FilterBarHub } from "../components/FilterBarHub";
 import { hasPullRequestFailure } from "../models/constants";
@@ -73,6 +74,7 @@ import {
 } from "../components/Columns";
 import { IListBoxItem } from "azure-devops-ui/ListBox";
 import { GitRepositoryModel } from '../models/PullRequestModel';
+import { TeamRef } from "./PulRequestsTabData";
 
 export interface IPullRequestTabProps {
   prType: PullRequestStatus;
@@ -94,6 +96,7 @@ export class PullRequestsTab extends React.Component<
   private filter: Filter;
   private selectedProjects = new DropdownMultiSelection();
   private selectedAuthors = new DropdownMultiSelection();
+  private selectedTeams = new DropdownMultiSelection();
   private selectedRepos = new DropdownMultiSelection();
   private selectedSourceBranches = new DropdownMultiSelection();
   private selectedTargetBranches = new DropdownMultiSelection();
@@ -107,6 +110,7 @@ export class PullRequestsTab extends React.Component<
   >();
 
   private readonly gitClient: GitRestClient;
+  private readonly coreClient: CoreRestClient;
 
   constructor(props: IPullRequestTabProps) {
     super(props);
@@ -114,12 +118,14 @@ export class PullRequestsTab extends React.Component<
     this.selectedProjectChanged = this.selectedProjectChanged.bind(this);
 
     this.gitClient = getClient(GitRestClient);
+    this.coreClient = getClient(CoreRestClient);
 
     this.state = {
       projects: props.projects,
       pullRequests: [],
       repositories: [],
       createdByList: [],
+      teamsList: {},
       sourceBranchList: [],
       targetBranchList: [],
       reviewerList: [],
@@ -229,7 +235,7 @@ export class PullRequestsTab extends React.Component<
   }
 
   private async initializePage() {
-    let { savedProjects } = this.state;
+    const { savedProjects } = this.state;
     this.setState({
       repositories: [],
       sourceBranchList: [],
@@ -250,6 +256,49 @@ export class PullRequestsTab extends React.Component<
       .catch((error) => {
         this.handleError(error);
       });
+  }
+
+  private async loadTeams(project: string): Promise<void> {
+    // get all the teams for a project
+    const teams = await this.coreClient.getTeams(project, undefined, undefined, undefined, true);
+
+    // for each team get the members
+    // there is no endpoint currently available to retrieve the members as part of the team
+    const promises = [];
+    for (let k = 0; k < teams.length; k++) {
+      const team = teams[k];
+      const promise = this.coreClient.getTeamMembersWithExtendedProperties(project, team.id);
+
+      promises.push(promise.then((members) => {
+        team.identity.members = members.map(member => ({ identifier: member.identity.id, identityType: "user" }));
+
+        return team;
+      }));
+    }
+
+    // load members in parallel to make it faster.
+    const result = await Promise.all(promises);
+
+    // populate teams
+    let allTeams = this.state.teamsList;
+    for (let k = 0; k < result.length; k++) {
+      const team = result[k];
+      const teamMembers = team.identity.members;
+
+      // do not add the team if it has no members
+      if (teamMembers.length > 0) {
+        allTeams[team.id] = {
+          id: team.id,
+          name: team.name,
+          members: teamMembers.map(tm => tm.identifier)
+        };
+      }
+    }
+
+    // set the teams
+    this.setState({
+      teamsList: allTeams,
+    });
   }
 
   private async loadAllProjects(): Promise<void> {
@@ -283,24 +332,27 @@ export class PullRequestsTab extends React.Component<
       savedProjects.push(...[currentProject.toString()]);
     }
 
+    for (let i = 0; i < savedProjects.length; i++) {
+      await this.loadProject(savedProjects[i]);
+    }
+
     this.filter.setFilterItemState("selectedProjects", { value: savedProjects });
-    savedProjects.forEach(async (p) => {
-      this.loadProject(p);
-    });
   }
 
   private async loadProject(projectId: string): Promise<void> {
     const self = this;
-    return self
-      .getRepositories(projectId)
-      .then((repos) => {
-        this.getAllPullRequests(repos).catch((error) =>
-          this.handleError(error)
-        );
-      })
-      .catch((error) => {
-        this.handleError(error);
-      });
+
+    try {
+      const projectRepos = await self.getRepositories(projectId);
+
+      // load the teams before loading the pull requests
+      // otherwise the filter saving does not properly persist
+      await this.loadTeams(projectId);
+
+      await this.getAllPullRequests(projectRepos);
+    } catch (error) {
+      this.handleError(error);
+    }
   }
 
   private handleError(error: any): void {
@@ -313,13 +365,13 @@ export class PullRequestsTab extends React.Component<
 
   private async getRepositories(projectId: string): Promise<GitRepositoryModel[]> {
     const repos = (await this.gitClient.getRepositories(projectId, true) as GitRepositoryModel[]).filter(r => r.isDisabled === undefined || r.isDisabled === false);
+    let { repositories } = this.state;
 
-    let currentRepos = [];
-    currentRepos.push(...repos);
-    currentRepos = currentRepos.sort(Data.sortTagRepoTeamProject);
+    repositories.push(...repos);
+    repositories = repositories.sort(Data.sortTagRepoTeamProject);
 
     this.setState({
-      repositories: currentRepos,
+      repositories,
     });
 
     return repos;
@@ -390,7 +442,7 @@ export class PullRequestsTab extends React.Component<
     this.setState({ loading: true });
     let { pullRequests } = this.state;
 
-    let newPullRequestList = Object.assign([], pullRequests);
+    const newPullRequestList = Object.assign([], pullRequests);
 
     // clear the pull request list to be reloaded...
     newPullRequestList.splice(0, newPullRequestList.length);
@@ -402,7 +454,7 @@ export class PullRequestsTab extends React.Component<
 
     Promise.all(
       repositories.map(async (r) => {
-        let criteria = Object.assign({}, Data.pullRequestCriteria);
+        const criteria = Object.assign({}, Data.pullRequestCriteria);
         criteria.status = this.props.prType;
         const top =
           this.props.prType === PullRequestStatus.Completed ||
@@ -509,6 +561,9 @@ export class PullRequestsTab extends React.Component<
     const createdByFilter = this.filter.getFilterItemValue<string[]>(
       "selectedAuthors"
     );
+    const teamsFilter = this.filter.getFilterItemValue<string[]>(
+      "selectedTeams"
+    );
     const reviewersFilter = this.filter.getFilterItemValue<string[]>(
       "selectedReviewers"
     );
@@ -578,6 +633,20 @@ export class PullRequestsTab extends React.Component<
       filteredPullRequest = filteredPullRequest.filter((pr) => {
         const found = createdByFilter.some((r) => {
           return pr.gitPullRequest.createdBy.id === r;
+        });
+
+        return found;
+      });
+    }
+
+    if (teamsFilter && teamsFilter.length > 0) {
+      filteredPullRequest = filteredPullRequest.filter((pr) => {
+        const found = teamsFilter.some((r) => {
+          const team: TeamRef = JSON.parse(r);
+
+          return team.members.some(m => {
+            return pr.gitPullRequest.createdBy.id === m;
+          });
         });
 
         return found;
@@ -761,6 +830,7 @@ export class PullRequestsTab extends React.Component<
       projects,
       repositories,
       createdByList,
+      teamsList,
       sourceBranchList,
       targetBranchList,
       reviewerList,
@@ -797,6 +867,8 @@ export class PullRequestsTab extends React.Component<
           selectedTargetBranches={this.selectedTargetBranches}
           createdByList={createdByList}
           selectedAuthors={this.selectedAuthors}
+          teamsList={teamsList}
+          selectedTeams={this.selectedTeams}
           reviewerList={reviewerList}
           selectedReviewers={this.selectedReviewers}
           selectedMyApprovalStatuses={this.selectedMyApprovalStatuses}

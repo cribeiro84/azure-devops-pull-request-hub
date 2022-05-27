@@ -9,7 +9,7 @@ import { IColor } from "azure-devops-ui/Utilities/Color";
 import { IdentityRef } from "azure-devops-extension-api/WebApi/WebApi";
 import {
   TeamProjectReference,
-  WebApiTagDefinition,
+  WebApiTagDefinition
 } from "azure-devops-extension-api/Core/Core";
 import { PullRequestModel } from "../models/PullRequestModel";
 import { UserPreferencesInstance } from "../common";
@@ -170,11 +170,21 @@ export const pullRequestCriteria: GitPullRequestSearchCriteria = {
   targetRefName: "",
 };
 
+/**
+ * Custom type for the team to reduce the size of filter value in local storage
+ */
+export interface TeamRef {
+  id: string,
+  name: string,
+  members: string[]
+}
+
 export interface IPullRequestsTabState {
   projects: TeamProjectReference[];
   pullRequests: PullRequestModel[];
   repositories: GitRepository[];
   createdByList: IdentityRef[];
+  teamsList: Record<string, TeamRef>;
   sourceBranchList: BranchDropDownItem[];
   targetBranchList: BranchDropDownItem[];
   reviewerList: IdentityRefWithVote[];

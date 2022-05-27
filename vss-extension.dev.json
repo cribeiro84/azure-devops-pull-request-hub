@@ -6,7 +6,8 @@
     "version": "1.20200130.1",
     "scopes": [
       "vso.code",
-      "vso.build"
+      "vso.build",
+      "vso.graph"
     ],
   "contributions": [{
     "id": "view",
