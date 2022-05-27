@@ -235,7 +235,7 @@ export class PullRequestsTab extends React.Component<
   }
 
   private async initializePage() {
-    let { savedProjects } = this.state;
+    const { savedProjects } = this.state;
     this.setState({
       repositories: [],
       sourceBranchList: [],
@@ -264,11 +264,11 @@ export class PullRequestsTab extends React.Component<
 
     // for each team get the members
     // there is no endpoint currently available to retrieve the members as part of the team
-    var promises = [];
+    const promises = [];
     for (let k = 0; k < teams.length; k++) {
       const team = teams[k];
       const promise = this.coreClient.getTeamMembersWithExtendedProperties(project, team.id);
-      
+
       promises.push(promise.then((members) => {
         team.identity.members = members.map(member => ({ identifier: member.identity.id, identityType: "user" }));
 
@@ -290,7 +290,7 @@ export class PullRequestsTab extends React.Component<
         allTeams[team.id] = {
           id: team.id,
           name: team.name,
-          members: teamMembers.map(tm => tm.identifier) 
+          members: teamMembers.map(tm => tm.identifier)
         };
       }
     }
@@ -343,13 +343,13 @@ export class PullRequestsTab extends React.Component<
     const self = this;
 
     try {
-      const repositories = await self.getRepositories(projectId);
+      const projectRepos = await self.getRepositories(projectId);
 
       // load the teams before loading the pull requests
       // otherwise the filter saving does not properly persist
       await this.loadTeams(projectId);
 
-      await this.getAllPullRequests(repositories);
+      await this.getAllPullRequests(projectRepos);
     } catch (error) {
       this.handleError(error);
     }
@@ -365,13 +365,13 @@ export class PullRequestsTab extends React.Component<
 
   private async getRepositories(projectId: string): Promise<GitRepositoryModel[]> {
     const repos = (await this.gitClient.getRepositories(projectId, true) as GitRepositoryModel[]).filter(r => r.isDisabled === undefined || r.isDisabled === false);
+    let { repositories } = this.state;
 
-    let currentRepos = [];
-    currentRepos.push(...repos);
-    currentRepos = currentRepos.sort(Data.sortTagRepoTeamProject);
+    repositories.push(...repos);
+    repositories = repositories.sort(Data.sortTagRepoTeamProject);
 
     this.setState({
-      repositories: currentRepos,
+      repositories,
     });
 
     return repos;
@@ -442,7 +442,7 @@ export class PullRequestsTab extends React.Component<
     this.setState({ loading: true });
     let { pullRequests } = this.state;
 
-    let newPullRequestList = Object.assign([], pullRequests);
+    const newPullRequestList = Object.assign([], pullRequests);
 
     // clear the pull request list to be reloaded...
     newPullRequestList.splice(0, newPullRequestList.length);
@@ -454,7 +454,7 @@ export class PullRequestsTab extends React.Component<
 
     Promise.all(
       repositories.map(async (r) => {
-        let criteria = Object.assign({}, Data.pullRequestCriteria);
+        const criteria = Object.assign({}, Data.pullRequestCriteria);
         criteria.status = this.props.prType;
         const top =
           this.props.prType === PullRequestStatus.Completed ||
