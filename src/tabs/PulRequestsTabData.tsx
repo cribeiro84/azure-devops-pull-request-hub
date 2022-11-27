@@ -228,8 +228,19 @@ export function sortPullRequests(
   b: PullRequestModel
 ) {
   return UserPreferencesInstance.selectedDefaultSorting === "asc"
-    ? b.gitPullRequest.creationDate.getTime() -
-        a.gitPullRequest.creationDate.getTime()
-    : a.gitPullRequest.creationDate.getTime() -
-        b.gitPullRequest.creationDate.getTime();
+    ? comparePullRequestAge(a, b)
+    : -comparePullRequestAge(a, b); // Invert if descending
+}
+
+/**
+ * Compares the age of two pull requests.
+ * @returns A negative number if {@link a} is more recent than {@link b},
+ * a positive number if {@link a} is older than {@link b}, otherwise 0.
+ */
+export function comparePullRequestAge(
+  a: PullRequestModel,
+  b: PullRequestModel
+) {
+  return b.gitPullRequest.creationDate.getTime() -
+  a.gitPullRequest.creationDate.getTime();
 }

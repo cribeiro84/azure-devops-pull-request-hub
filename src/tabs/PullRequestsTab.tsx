@@ -1074,15 +1074,7 @@ export class PullRequestsTab extends React.Component<
     null, // Title column
     null, // Details column
     // Sort on When column
-    (
-      item1: PullRequestModel.PullRequestModel,
-      item2: PullRequestModel.PullRequestModel
-    ): number => {
-      return (
-        item2.gitPullRequest.creationDate.getTime() -
-        item1.gitPullRequest.creationDate.getTime()
-      );
-    },
+    Data.comparePullRequestAge,
     null, // Reviewers column
   ];
 
