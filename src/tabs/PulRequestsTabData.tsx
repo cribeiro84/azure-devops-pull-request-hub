@@ -6,6 +6,7 @@ import {
 } from "azure-devops-extension-api/Git/Git";
 import { IStatusProps } from "azure-devops-ui/Status";
 import { IColor } from "azure-devops-ui/Utilities/Color";
+import { SortOrder } from "azure-devops-ui/Table";
 import { IdentityRef } from "azure-devops-extension-api/WebApi/WebApi";
 import {
   TeamProjectReference,
@@ -193,6 +194,8 @@ export interface IPullRequestsTabState {
   errorMessage: string;
   pullRequestCount: number;
   savedProjects: string[];
+  /** Direction to sort pull request age in */
+  sortOrder: SortOrder;
 }
 
 export function sortBranchOrIdentity(
@@ -225,9 +228,10 @@ export function sortTagRepoTeamProject(
 
 export function sortPullRequests(
   a: PullRequestModel,
-  b: PullRequestModel
+  b: PullRequestModel,
+  order: SortOrder
 ) {
-  return UserPreferencesInstance.selectedDefaultSorting === "asc"
+  return order === SortOrder.ascending
     ? comparePullRequestAge(a, b)
     : -comparePullRequestAge(a, b); // Invert if descending
 }
