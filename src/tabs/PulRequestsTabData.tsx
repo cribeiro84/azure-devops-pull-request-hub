@@ -13,7 +13,6 @@ import {
   WebApiTagDefinition
 } from "azure-devops-extension-api/Core/Core";
 import { PullRequestModel } from "../models/PullRequestModel";
-import { UserPreferencesInstance } from "../common";
 
 export const refsPreffix = "refs/heads/";
 
