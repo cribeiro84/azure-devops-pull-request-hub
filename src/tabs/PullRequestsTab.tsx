@@ -134,6 +134,9 @@ export class PullRequestsTab extends React.Component<
       errorMessage: "",
       pullRequestCount: 0,
       savedProjects: [],
+      sortOrder: UserPreferencesInstance.selectedDefaultSorting === "asc"
+        ? SortOrder.ascending
+        : SortOrder.descending
     };
 
     this.filter = new Filter();
@@ -511,8 +514,9 @@ export class PullRequestsTab extends React.Component<
       })
       .finally(async () => {
         if (newPullRequestList.length > 0) {
+          const { sortOrder } = this.state;
           pullRequests.push(...newPullRequestList);
-          pullRequests = pullRequests.sort(Data.sortPullRequests);
+          pullRequests = pullRequests.sort((a, b) => Data.sortPullRequests(a, b, sortOrder));
 
           this.setState({
             pullRequests,
@@ -934,6 +938,7 @@ export class PullRequestsTab extends React.Component<
           pullRequests
         )
       );
+      this.setState({ sortOrder: proposedSortOrder });
     });
 
     if (
@@ -1074,15 +1079,7 @@ export class PullRequestsTab extends React.Component<
     null, // Title column
     null, // Details column
     // Sort on When column
-    (
-      item1: PullRequestModel.PullRequestModel,
-      item2: PullRequestModel.PullRequestModel
-    ): number => {
-      return (
-        item2.gitPullRequest.creationDate.getTime() -
-        item1.gitPullRequest.creationDate.getTime()
-      );
-    },
+    Data.comparePullRequestAge,
     null, // Reviewers column
   ];
 

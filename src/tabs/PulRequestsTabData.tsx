@@ -6,13 +6,13 @@ import {
 } from "azure-devops-extension-api/Git/Git";
 import { IStatusProps } from "azure-devops-ui/Status";
 import { IColor } from "azure-devops-ui/Utilities/Color";
+import { SortOrder } from "azure-devops-ui/Table";
 import { IdentityRef } from "azure-devops-extension-api/WebApi/WebApi";
 import {
   TeamProjectReference,
   WebApiTagDefinition
 } from "azure-devops-extension-api/Core/Core";
 import { PullRequestModel } from "../models/PullRequestModel";
-import { UserPreferencesInstance } from "../common";
 
 export const refsPreffix = "refs/heads/";
 
@@ -193,6 +193,8 @@ export interface IPullRequestsTabState {
   errorMessage: string;
   pullRequestCount: number;
   savedProjects: string[];
+  /** Direction to sort pull request age in */
+  sortOrder: SortOrder;
 }
 
 export function sortBranchOrIdentity(
@@ -225,11 +227,23 @@ export function sortTagRepoTeamProject(
 
 export function sortPullRequests(
   a: PullRequestModel,
+  b: PullRequestModel,
+  order: SortOrder
+) {
+  return order === SortOrder.ascending
+    ? comparePullRequestAge(a, b)
+    : -comparePullRequestAge(a, b); // Invert if descending
+}
+
+/**
+ * Compares the age of two pull requests.
+ * @returns A negative number if {@link a} is more recent than {@link b},
+ * a positive number if {@link a} is older than {@link b}, otherwise 0.
+ */
+export function comparePullRequestAge(
+  a: PullRequestModel,
   b: PullRequestModel
 ) {
-  return UserPreferencesInstance.selectedDefaultSorting === "asc"
-    ? b.gitPullRequest.creationDate.getTime() -
-        a.gitPullRequest.creationDate.getTime()
-    : a.gitPullRequest.creationDate.getTime() -
-        b.gitPullRequest.creationDate.getTime();
+  return b.gitPullRequest.creationDate.getTime() -
+  a.gitPullRequest.creationDate.getTime();
 }
