@@ -13,6 +13,7 @@ import {
   WebApiTagDefinition
 } from "azure-devops-extension-api/Core/Core";
 import { PullRequestModel } from "../models/PullRequestModel";
+import { compare } from "../lib/date";
 
 export const refsPreffix = "refs/heads/";
 
@@ -244,6 +245,8 @@ export function comparePullRequestAge(
   a: PullRequestModel,
   b: PullRequestModel
 ) {
-  return b.gitPullRequest.creationDate.getTime() -
-  a.gitPullRequest.creationDate.getTime();
+  return compare(
+    b.gitPullRequest.creationDate,
+    a.gitPullRequest.creationDate
+  );
 }

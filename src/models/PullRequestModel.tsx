@@ -22,6 +22,7 @@ import { USER_SETTINGS_STORE_KEY } from "../common";
 import { getEvaluationsPerPullRequest } from "../services/AzureGitServices";
 import { EvaluationPolicyType } from "./GitModels";
 import { GitRepository } from 'azure-devops-extension-api/Git/Git';
+import { compare } from "../lib/date";
 
 export interface GitRepositoryModel extends GitRepository {
   isDisabled: boolean | undefined;
@@ -334,7 +335,7 @@ export class PullRequestModel {
         if (value === undefined) {
           return;
         }
-        
+
         const threads = value.filter((x) => x.status !== undefined && !x.isDeleted);
         const terminatedThread = threads.filter(
           (x) =>
@@ -342,10 +343,8 @@ export class PullRequestModel {
             x.status === CommentThreadStatus.WontFix ||
             x.status === CommentThreadStatus.Fixed
         );
-        const lastUpdatedDate = threads.find(
-          (x) =>
-            this.lastVisit !== undefined && x.lastUpdatedDate > this.lastVisit
-        )?.lastUpdatedDate;
+        const lastUpdatedDate = threads.map(x => x.lastUpdatedDate)
+          .reduce((x, y) => compare(x, y) > 0 ? x : y); // Get most recent
 
         self.comment = new PullRequestComment();
         self.comment.totalcomment = threads.length;
