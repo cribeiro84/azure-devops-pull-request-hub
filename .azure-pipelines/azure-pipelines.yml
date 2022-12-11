@@ -48,11 +48,11 @@ steps:
     ArtifactName: 'drop'
     publishLocation: 'Container'
 
-- task: TfxInstaller@2
+- task: TfxInstaller@4
   inputs:
-    version: 'v0.12.x'
+    version: 'v0.11.x'
 
-- task: PublishAzureDevOpsExtension@2
+- task: PublishAzureDevOpsExtension@4
   inputs:
     connectTo: 'VsTeam'
     connectedServiceName: 'Azure DevOps Marketplace'
