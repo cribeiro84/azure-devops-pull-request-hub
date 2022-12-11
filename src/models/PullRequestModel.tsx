@@ -331,34 +331,26 @@ export class PullRequestModel {
         self.gitPullRequest.pullRequestId
       )
       .then((value) => {
-        if (value !== undefined) {
-          const threads = value.filter((x) => x.status !== undefined);
-          const terminatedThread = value.filter(
-            (x) =>
-              x.status !== undefined &&
-              (x.status === CommentThreadStatus.Closed ||
-                x.status === CommentThreadStatus.WontFix ||
-                x.status === CommentThreadStatus.Fixed)
-          );
-          const lastUpdatedDateIndex = value.findIndex(
-            (x) =>
-              this.lastVisit !== undefined && x.lastUpdatedDate > this.lastVisit
-          );
-          const lastUpdatedDate =
-            lastUpdatedDateIndex >= 0
-              ? value[lastUpdatedDateIndex].lastUpdatedDate
-              : undefined;
-
-          self.comment = new PullRequestComment();
-
-          self.comment.totalcomment =
-            threads !== undefined
-              ? threads.filter((x) => !x.isDeleted).length
-              : 0;
-          self.comment.terminatedComment =
-            terminatedThread !== undefined ? terminatedThread.length : 0;
-          self.comment.lastUpdatedDate = lastUpdatedDate;
+        if (value === undefined) {
+          return;
         }
+        
+        const threads = value.filter((x) => x.status !== undefined && !x.isDeleted);
+        const terminatedThread = threads.filter(
+          (x) =>
+            x.status === CommentThreadStatus.Closed ||
+            x.status === CommentThreadStatus.WontFix ||
+            x.status === CommentThreadStatus.Fixed
+        );
+        const lastUpdatedDate = threads.find(
+          (x) =>
+            this.lastVisit !== undefined && x.lastUpdatedDate > this.lastVisit
+        )?.lastUpdatedDate;
+
+        self.comment = new PullRequestComment();
+        self.comment.totalcomment = threads.length;
+        self.comment.terminatedComment = terminatedThread.length;
+        self.comment.lastUpdatedDate = lastUpdatedDate;
       })
       .catch((error) => {
         console.log(
