@@ -15,7 +15,7 @@ jobs:
       - name: Install TFX CLI
         run: npm i -g tfx-cli
       - name: Build
-        run: npm run build
+        run: npm install && npm run build
       - name: Package
         run: npm run package-dev
       - uses: actions/upload-artifact@v2
