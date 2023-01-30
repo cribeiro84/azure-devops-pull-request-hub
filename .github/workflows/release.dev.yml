@@ -5,7 +5,7 @@ on:
     branches: [ development, main ]
 
 env:
-  EXTENSION_NAME_VERSION_COMMAND: echo "EXTENSION_NAME_VERSION=azure-pull-request-hub-dev-2.$(date +'%Y%m%d').$GITHUB_RUN_NUMBER.gen.vsix" >> $GITHUB_ENV
+  EXTENSION_NAME_VERSION_COMMAND: echo "EXTENSION_NAME_VERSION=caribeiro84.pull-request-manager-hub-2.$(date +'%Y%m%d').$GITHUB_RUN_NUMBER.gen.vsix" >> $GITHUB_ENV
 
 jobs:
   build:
