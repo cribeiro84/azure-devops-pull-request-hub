@@ -4,15 +4,10 @@ on:
   push:
     branches: [ development, main ]
 
-env:
-  EXTENSION_VERSION_COMMAND: echo "EXTENSION_VERSION=2.$(date +'%Y%m%d').$GITHUB_RUN_NUMBER" >> $GITHUB_ENV
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: set env
-        run: ${{ env.EXTENSION_VERSION_COMMAND }}
       - name: Checkout the code
         uses: actions/checkout@v2
       - name: Add nuget to PATH
@@ -32,8 +27,6 @@ jobs:
     environment: 'dev'
     needs: build
     steps:
-      - name: set env
-        run: ${{ env.EXTENSION_NAME_VERSION_COMMAND }}
       - uses: actions/download-artifact@v3
         with:
           name: "pull-request-manager-hub-extension"
