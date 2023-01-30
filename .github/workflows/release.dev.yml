@@ -33,7 +33,7 @@ jobs:
     needs: build
     steps:
       - name: set env
-        run: ${{ env.extension_version_command }}
+        run: ${{ env.EXTENSION_NAME_VERSION_COMMAND }}
       - uses: actions/download-artifact@v3
         with:
           name: "pull-request-manager-hub-extension"
