@@ -5,14 +5,14 @@ on:
     branches: [ development, main ]
 
 env:
-  extension_version_command: echo "EXTENSION_VERSION=v2.$(date +'%Y%m%d').$GITHUB_RUN_NUMBER" >> $GITHUB_ENV
+  EXTENSION_NAME_VERSION_COMMAND: echo "EXTENSION_NAME_VERSION=azure-pull-request-hub-dev-2.$(date +'%Y%m%d').$GITHUB_RUN_NUMBER.gen.vsix" >> $GITHUB_ENV
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: set env
-        run: ${{ env.extension_version_command }}
+        run: ${{ env.EXTENSION_NAME_VERSION_COMMAND }}
       - name: Checkout the code
         uses: actions/checkout@v2
       - name: Add nuget to PATH
@@ -25,8 +25,8 @@ jobs:
         run: npm run package-dev
       - uses: actions/upload-artifact@v2
         with:
-          name: "azure-pull-request-hub-dev.${{ env.EXTENSION_VERSION }}.vsix"
-          path: "${{ github.workspace }}/azure-pull-request-hub-dev.vsix"
+          name: "pull-request-manager-hub-extension"
+          path: "${{ github.workspace }}/${{ env.EXTENSION_NAME_VERSION }}"
   deploy:
     runs-on: ubuntu-latest
     environment: 'dev'
@@ -36,12 +36,10 @@ jobs:
         run: ${{ env.extension_version_command }}
       - uses: actions/download-artifact@v3
         with:
-          name: "azure-pull-request-hub-dev.${{ env.EXTENSION_VERSION }}.vsix"
-      - name: Display structure of downloaded files
-        run: ls -R
+          name: "pull-request-manager-hub-extension"
       - name: Add nuget to PATH
         uses: nuget/setup-nuget@v1
       - name: Install TFX CLI
         run: npm i -g tfx-cli
       - name: Publish Extension - DEV
-        run: tfx extension publish --json --publisher ${{ vars.PUBLISHER_ID }} --vsix "${{ github.workspace }}/azure-pull-request-hub-dev.vsix" --share-with ${{ vars.SHARE_WITH }} --auth-type pat --token ${{ secrets.ADO_TOKEN }}
+        run: tfx extension publish --json --publisher ${{ vars.PUBLISHER_ID }} --service-url https://marketplace.visualstudio.com/ --vsix "${{ github.workspace }}/${{ env.EXTENSION_NAME_VERSION }}" --share-with ${{ vars.SHARE_WITH }} --auth-type pat --token ${{ secrets.ADO_TOKEN }}
