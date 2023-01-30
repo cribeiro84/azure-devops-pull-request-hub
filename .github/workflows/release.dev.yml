@@ -21,7 +21,7 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: "azure-pull-request-hub-dev.v${{ github.GITHUB_RUN_NUMBER }}.vsix"
-          path: "${{ github.workspace }}/build/azure-pull-request-hub-dev.vsix"
+          path: "${{ github.workspace }}/azure-pull-request-hub-dev.vsix"
   deploy:
     runs-on: ubuntu-latest
     environment: 'dev'
