@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: set env
-        run: "${{ env.EXTENSION_VERSION_COMMAND }} && echo \"{\"version\": \"$EXTENSION_VERSION\"}\" > vss-extension.version.json"
+        run: "${{ env.EXTENSION_VERSION_COMMAND }} && echo \"{\"version\": \"$EXTENSION_VERSION\"}\" > vss-extension.version.json && cat vss-extension.version.json"
       - name: Checkout the code
         uses: actions/checkout@v2
       - name: Add nuget to PATH
