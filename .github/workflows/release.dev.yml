@@ -1,0 +1,46 @@
+name: Release Pull Request Manager Hub - DEV
+
+on:
+  push:
+    branches: [ development, main ]
+
+env:
+  EXTENSION_VERSION_COMMAND: "export EXTENSION_VERSION_GH=\"2.$(date +'%Y%m%d').$GITHUB_RUN_NUMBER\" && echo \"EXTENSION_VERSION=$EXTENSION_VERSION_GH\" >> $GITHUB_ENV"
+  EXTENSION_VERSION_JSON_COMMAND: "echo \"{\"version\": \"$EXTENSION_VERSION_GH\"}\" > vss-extension.version.json"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: set env
+        run: "${{ env.EXTENSION_VERSION_COMMAND }}"
+      - name: set version
+        run: "${{ env.EXTENSION_VERSION_JSON_COMMAND }}"
+      - name: Checkout the code
+        uses: actions/checkout@v2
+      - name: Add nuget to PATH
+        uses: nuget/setup-nuget@v1
+      - name: Install TFX CLI
+        run: npm i -g tfx-cli
+      - name: Build
+        run: npm install && npm run build
+      - name: Package
+        run: npm run package-dev
+      - uses: actions/upload-artifact@v2
+        with:
+          name: "pull-request-manager-hub-extension"
+          path: "${{ github.workspace }}/azure-devops-pull-request-manager-hub.vsix"
+  deploy:
+    runs-on: ubuntu-latest
+    environment: 'dev'
+    needs: build
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: "pull-request-manager-hub-extension"
+      - name: Add nuget to PATH
+        uses: nuget/setup-nuget@v1
+      - name: Install TFX CLI
+        run: npm i -g tfx-cli
+      - name: Publish Extension - DEV
+        run: tfx extension publish --json --publisher ${{ vars.PUBLISHER_ID }} --service-url https://marketplace.visualstudio.com/ --vsix "${{ github.workspace }}/azure-devops-pull-request-manager-hub.vsix" --share-with ${{ vars.SHARE_WITH }} --auth-type pat --token ${{ secrets.ADO_TOKEN }}
