@@ -4,12 +4,15 @@ on:
   push:
     branches: [ development, main ]
 
+env:
+  extension_version_command: echo "EXTENSION_VERSION=v2.$(date +'%Y%m%d').$GITHUB_RUN_NUMBER" >> $GITHUB_ENV
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: set env
-        run: echo "::set-env name=EXTENSION_VERSION::v2.$(date +'%Y%m%d').$GITHUB_RUN_NUMBER"
+        run: ${{ env.extension_version_command }}
       - name: Checkout the code
         uses: actions/checkout@v2
       - name: Add nuget to PATH
@@ -30,7 +33,7 @@ jobs:
     needs: build
     steps:
       - name: set env
-        run: echo "::set-env name=EXTENSION_VERSION::v2.$(date +'%Y%m%d').$GITHUB_RUN_NUMBER"
+        run: ${{ env.extension_version_command }}
       - uses: actions/download-artifact@v3
         with:
           name: "azure-pull-request-hub-dev.${{ env.EXTENSION_VERSION }}.vsix"
