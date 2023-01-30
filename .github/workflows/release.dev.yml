@@ -5,14 +5,14 @@ on:
     branches: [ development, main ]
 
 env:
-  EXTENSION_VERSION_COMMAND: echo "EXTENSION_VERSION=2.$(date +'%Y%m%d').$GITHUB_RUN_NUMBER" >> $GITHUB_ENV
+  EXTENSION_VERSION_COMMAND: export EXTENSION_VERSION_GH="2.$(date +'%Y%m%d').$GITHUB_RUN_NUMBER" && echo "EXTENSION_VERSION=$EXTENSION_VERSION_GH" >> $GITHUB_ENV
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: set env
-        run: "${{ env.EXTENSION_VERSION_COMMAND }} && echo \"{\"version\": \"$EXTENSION_VERSION\"}\" > vss-extension.version.json && cat vss-extension.version.json"
+        run: "${{ env.EXTENSION_VERSION_COMMAND }} && echo \"{\"version\": \"$EXTENSION_VERSION_GH\"}\" > vss-extension.version.json && cat vss-extension.version.json"
       - name: Checkout the code
         uses: actions/checkout@v2
       - name: Add nuget to PATH
