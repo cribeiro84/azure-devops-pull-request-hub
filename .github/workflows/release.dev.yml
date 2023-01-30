@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: set env
-        run: "${{ env.EXTENSION_VERSION_COMMAND }} && export EXTENSION_VERSION_JSON=\"{\"version\": \"$EXTENSION_VERSION_GH\"}\""
+        run: "${{ env.EXTENSION_VERSION_COMMAND }} && export EXTENSION_VERSION_JSON=\"{\"version\": \"$EXTENSION_VERSION_GH\"}\" && echo $EXTENSION_VERSION_JSON"
       - name: Checkout the code
         uses: actions/checkout@v2
       - name: Add nuget to PATH
