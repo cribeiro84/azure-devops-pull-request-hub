@@ -44,4 +44,4 @@ jobs:
       - name: Install TFX CLI
         run: npm i -g tfx-cli
       - name: Publish Extension - DEV
-        run: tfx extension publish --json --publisher ${{ vars.PUBLISHER_ID }} --vsix "${{ github.workspace }}/azure-pull-request-hub-dev.${{ env.EXTENSION_VERSION }}.vsix" --share-with ${{ vars.SHARE_WITH }} --auth-type ${{ secrets.ADO_TOKEN }}
+        run: tfx extension publish --json --publisher ${{ vars.PUBLISHER_ID }} --vsix "${{ github.workspace }}/azure-pull-request-hub-dev.vsix" --share-with ${{ vars.SHARE_WITH }} --auth-type ${{ secrets.ADO_TOKEN }}
