@@ -4,13 +4,12 @@ on:
   push:
     branches: [ development, main ]
 
-env:
-  extension_version: "v2.${{ github.run_number }}"
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - name: set env
+        run: echo "::set-env name=EXTENSION_VERSION::v2.$(date +'%Y%m%d').$GITHUB_RUN_NUMBER"
       - name: Checkout the code
         uses: actions/checkout@v2
       - name: Add nuget to PATH
@@ -23,19 +22,21 @@ jobs:
         run: npm run package-dev
       - uses: actions/upload-artifact@v2
         with:
-          name: "azure-pull-request-hub-dev.v2.${{ github.run_number }}.vsix"
+          name: "azure-pull-request-hub-dev.${{ env.EXTENSION_VERSION }}.vsix"
           path: "${{ github.workspace }}/azure-pull-request-hub-dev.vsix"
   deploy:
     runs-on: ubuntu-latest
     environment: 'dev'
     needs: build
     steps:
+      - name: set env
+        run: echo "::set-env name=EXTENSION_VERSION::v2.$(date +'%Y%m%d').$GITHUB_RUN_NUMBER"
       - uses: actions/download-artifact@v3
         with:
-          name: "azure-pull-request-hub-dev.${{ env.extension_version }}.vsix"
+          name: "azure-pull-request-hub-dev.${{ env.EXTENSION_VERSION }}.vsix"
       - name: Add nuget to PATH
         uses: nuget/setup-nuget@v1
       - name: Install TFX CLI
         run: npm i -g tfx-cli
       - name: Publish Extension - DEV
-        run: tfx extension publish --json --publisher ${{ vars.PUBLISHER_ID }} --vsix "azure-devops-pull-request-hub/azure-pull-request-hub-dev.${{ env.extension_version }}.vsix" --share-with ${{ vars.SHARE_WITH }} --auth-type ${{ secrets.ADO_TOKEN }}
+        run: tfx extension publish --json --publisher ${{ vars.PUBLISHER_ID }} --vsix "azure-devops-pull-request-hub/azure-pull-request-hub-dev.${{ env.EXTENSION_VERSION }}.vsix" --share-with ${{ vars.SHARE_WITH }} --auth-type ${{ secrets.ADO_TOKEN }}
