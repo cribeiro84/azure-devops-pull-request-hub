@@ -1,6 +1,5 @@
 {
   "manifestVersion": 1,
-  "id": "pull-request-manager-hub",
   "publisher": "caribeiro84",
   "name": "Pull Request Manager Hub",
   "description": "A complete and friendly Pull Request Hub to manage all your repositories' PRs with must have filters at one simplified view.",
