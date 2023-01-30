@@ -37,9 +37,11 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           name: "azure-pull-request-hub-dev.${{ env.EXTENSION_VERSION }}.vsix"
+      - name: Display structure of downloaded files
+        run: ls -R
       - name: Add nuget to PATH
         uses: nuget/setup-nuget@v1
       - name: Install TFX CLI
         run: npm i -g tfx-cli
       - name: Publish Extension - DEV
-        run: tfx extension publish --json --publisher ${{ vars.PUBLISHER_ID }} --vsix "azure-devops-pull-request-hub/azure-pull-request-hub-dev.${{ env.EXTENSION_VERSION }}.vsix" --share-with ${{ vars.SHARE_WITH }} --auth-type ${{ secrets.ADO_TOKEN }}
+        run: tfx extension publish --json --publisher ${{ vars.PUBLISHER_ID }} --vsix "${{ github.workspace }}/azure-pull-request-hub-dev.${{ env.EXTENSION_VERSION }}.vsix" --share-with ${{ vars.SHARE_WITH }} --auth-type ${{ secrets.ADO_TOKEN }}
