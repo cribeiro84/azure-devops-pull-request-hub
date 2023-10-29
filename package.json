@@ -58,7 +58,7 @@
     "react-router-dom": "^5.2.0",
     "rename-webpack-plugin": "^2.0.0",
     "sass": "^1.52.1",
-    "tfx-cli": "^0.12.0",
+    "tfx-cli": "^0.16.0",
     "tslint": "^5.20.1",
     "tslint-config-prettier": "^1.18.0",
     "tslint-react": "^4.1.0",
