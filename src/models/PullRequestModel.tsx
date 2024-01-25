@@ -9,6 +9,7 @@ import * as DevOps from "azure-devops-extension-sdk";
 import { Statuses } from "azure-devops-ui/Status";
 import { getClient } from "azure-devops-extension-api";
 import { GitRestClient } from "azure-devops-extension-api/Git/GitClient";
+import { WorkItemTrackingRestClient } from "azure-devops-extension-api/WorkItemTracking/WorkItemTrackingClient";
 import { hasPullRequestFailure } from "./constants";
 import {
   BranchDropDownItem,
@@ -23,6 +24,8 @@ import { getEvaluationsPerPullRequest } from "../services/AzureGitServices";
 import { EvaluationPolicyType } from "./GitModels";
 import { GitRepository } from 'azure-devops-extension-api/Git/Git';
 import { compare } from "../lib/date";
+import { WorkItem } from "azure-devops-extension-api/WorkItemTracking/WorkItemTracking";
+import { ResourceRef } from "azure-devops-extension-api/WebApi/WebApi";
 
 export interface GitRepositoryModel extends GitRepository {
   isDisabled: boolean | undefined;
@@ -46,6 +49,7 @@ export class PullRequestModel {
   public lastCommitDetails: GitCommitRef | undefined;
   public isAutoCompleteSet: boolean = false;
   public workItemsCount: number = 0;
+  public workItems: WorkItem[] = [];
   public comment: PullRequestComment;
   public policies: PullRequestPolicy[] = [];
   public isAllPoliciesOk: boolean = false;
@@ -226,10 +230,7 @@ export class PullRequestModel {
     return voteResult;
   }
 
-  private getStatusIndicatorData(
-    reviewers: IdentityRefWithVote[],
-    isAllPoliciesOk: boolean
-  ): IStatusIndicatorData {
+  private getStatusIndicatorData(reviewers: IdentityRefWithVote[], isAllPoliciesOk: boolean): IStatusIndicatorData {
     const indicatorData: IStatusIndicatorData = {
       label: "Waiting Review",
       statusProps: { ...Statuses.Queued, ariaLabel: "Waiting Review" },
@@ -241,56 +242,68 @@ export class PullRequestModel {
         ariaLabel: "Pull Request is in failure status.",
       };
       indicatorData.label = "Pull Request is in failure status.";
-    } else if (reviewers.some((r) => r.vote === ReviewerVoteOption.Rejected)) {
+
+      return indicatorData;
+    }
+
+    if (reviewers.some((r) => r.vote === ReviewerVoteOption.Rejected)) {
       indicatorData.statusProps = {
         ...Statuses.Failed,
         ariaLabel: "One or more reviewer(s) has rejected.",
       };
       indicatorData.label = "One or more reviewer(s) has rejected.";
-    } else if (
-      reviewers.some((r) => r.vote === ReviewerVoteOption.WaitingForAuthor)
-    ) {
+
+      return indicatorData;
+    }
+
+    if (reviewers.some((r) => r.vote === ReviewerVoteOption.WaitingForAuthor)) {
       indicatorData.statusProps = {
         ...Statuses.Warning,
         ariaLabel: "One or more reviewer(s) is waiting for the author.",
       };
-      indicatorData.label =
-        "One or more reviewer(s) is waiting for the author.";
-    } else if (
-      this.requiredReviewers.every(
-        (r) =>
-          r.vote === ReviewerVoteOption.Approved ||
-          r.vote === ReviewerVoteOption.ApprovedWithSuggestions
-      ) &&
-      isAllPoliciesOk
-    ) {
+      indicatorData.label = "One or more reviewer(s) is waiting for the author.";
+
+      return indicatorData;
+    }
+
+    if (this.requiredReviewers.every((r) => r.vote === ReviewerVoteOption.Approved || r.vote === ReviewerVoteOption.ApprovedWithSuggestions)  && isAllPoliciesOk) {
       indicatorData.statusProps = {
         ...Statuses.Success,
         ariaLabel: "Ready for completion",
       };
       indicatorData.label = "Success";
-    } else if (isAllPoliciesOk === false) {
+
+      return indicatorData;
+    }
+
+    if (isAllPoliciesOk === false) {
       indicatorData.statusProps = {
         ...Statuses.Running,
         ariaLabel: "Waiting all policies to be completed",
       };
-      indicatorData.label = "Waiting all policies to be completed";
-    } else if (
-      this.requiredReviewers.every((r) => r.vote === ReviewerVoteOption.NoVote)
-    ) {
+      indicatorData.label = "Some policies are not completed";
+
+      return indicatorData;
+    }
+
+    if (this.requiredReviewers.every((r) => r.vote === ReviewerVoteOption.NoVote)) {
       indicatorData.statusProps = {
         ...Statuses.Waiting,
         ariaLabel: "Waiting Review of required Reviewers",
       };
       indicatorData.label = "Waiting Review of required Reviewers";
-    } else if (
-      this.requiredReviewers.some((r) => r.vote === ReviewerVoteOption.NoVote)
-    ) {
+
+      return indicatorData;
+    }
+
+    if (this.requiredReviewers.some((r) => r.vote === ReviewerVoteOption.NoVote)) {
       indicatorData.statusProps = {
         ...Statuses.Running,
         ariaLabel: "Waiting remaining required Reviewers",
       };
       indicatorData.label = "Review in progress";
+
+      return indicatorData;
     }
 
     return indicatorData;
@@ -362,6 +375,7 @@ export class PullRequestModel {
   private async getPullRequestWorkItemAsync() {
     const gitClient: GitRestClient = getClient(GitRestClient);
     let self = this;
+    let workItemIds : number[] = [];
 
     await gitClient
       .getPullRequestWorkItemRefs(
@@ -371,11 +385,31 @@ export class PullRequestModel {
       )
       .then((value) => {
         self.workItemsCount = value !== undefined ? value.length : 0;
+        workItemIds = value.map(v => Number(v.id));
       })
       .catch((error) => {
-        console.log(
-          "There was an error calling the Pull Request work item (method: getPullRequestWorkItemAsync)."
-        );
+        console.log("There was an error calling the Pull Request work item (method: getPullRequestWorkItemAsync).");
+        console.log(error);
+      });
+
+      await this.getWorkItemsAsync(workItemIds);
+  }
+
+  private async getWorkItemsAsync(workItemIds : number[]) {
+    if (workItemIds.length === 0) {
+      return;
+    }
+
+    const gitClient: WorkItemTrackingRestClient = getClient(WorkItemTrackingRestClient);
+    let self = this;
+
+    await gitClient
+      .getWorkItems(workItemIds, self.projectName)
+      .then((value) => {
+        self.workItems = value;
+      })
+      .catch((error) => {
+        console.log("There was an error calling the Work Item (method: getWorkItemsAsync).");
         console.log(error);
       });
   }
