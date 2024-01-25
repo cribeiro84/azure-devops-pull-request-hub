@@ -406,7 +406,7 @@ export class PullRequestModel {
     await gitClient
       .getWorkItems(workItemIds, self.projectName)
       .then((value) => {
-        self.workItems = value;
+        self.workItems = value.sort(m => m.id);
       })
       .catch((error) => {
         console.log("There was an error calling the Work Item (method: getWorkItemsAsync).");

@@ -299,7 +299,7 @@ export function DetailsColumn(
                         </tr>
                       </thead>
                       <tbody>
-                        {(tableItem.workItems.sort(w => w.id).map((workItem) => {
+                        {(tableItem.workItems.map((workItem) => {
                             return (
                               <tr>
                                 <td className="span-tooltip">
