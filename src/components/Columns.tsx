@@ -301,7 +301,7 @@ export function DetailsColumn(
                       <tbody>
                         {(tableItem.workItems.map((workItem) => {
                             return (
-                              <tr>
+                              <tr key={`pr-workitem-tr-${workItem.id}-${tableItem.gitPullRequest.pullRequestId}`}>
                                 <td className="span-tooltip">
                                   {workItem.fields['System.WorkItemType']} {workItem.id} - {workItem.fields['System.Title']}
                                 </td>

@@ -25,7 +25,6 @@ import { EvaluationPolicyType } from "./GitModels";
 import { GitRepository } from 'azure-devops-extension-api/Git/Git';
 import { compare } from "../lib/date";
 import { WorkItem } from "azure-devops-extension-api/WorkItemTracking/WorkItemTracking";
-import { ResourceRef } from "azure-devops-extension-api/WebApi/WebApi";
 
 export interface GitRepositoryModel extends GitRepository {
   isDisabled: boolean | undefined;
