@@ -288,7 +288,31 @@ export function DetailsColumn(
               className={`button-icon fontSize font-size second-line-row`}
               iconProps={{ iconName: "WorkItem" }}
               tooltipProps={{
-                text: `${tableItem.workItemsCount} linked Work Item(s)`,
+                renderContent: () => {
+                  return (
+                    <table className="table-border-spacing">
+                      <thead>
+                        <tr>
+                          <td colSpan={2}>
+                            <b>{tableItem.workItemsCount} linked Work Item(s)</b>
+                          </td>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(tableItem.workItems.map((workItem) => {
+                            return (
+                              <tr key={`pr-workitem-tr-${workItem.id}-${tableItem.gitPullRequest.pullRequestId}`}>
+                                <td className="span-tooltip">
+                                  {workItem.fields['System.WorkItemType']} {workItem.id} - {workItem.fields['System.Title']}
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
+                      </tbody>
+                    </table>
+                  );
+                },
                 delayMs: 500,
               }}
               subtle={true}
