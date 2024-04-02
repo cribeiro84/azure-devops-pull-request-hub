@@ -96,7 +96,6 @@ export function TitleColumn(
           <Button
             className="branch-button text-ellipsis"
             text={tableItem.title}
-            href={tableItem.pullRequestHref!}
             onClick={onClickPullRequestTitleHandler}
             tooltipProps={{ text: tooltip }}
             subtle={true}
