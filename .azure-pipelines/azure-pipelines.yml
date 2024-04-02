@@ -58,5 +58,7 @@ steps:
     connectedServiceName: 'Azure DevOps Marketplace'
     fileType: 'vsix'
     vsixFile: 'azure-devops-pull-request-manager-hub.vsix'
+    publisherId: '$(PUBLISHER_ID)'
+    extensionId: "pull-request-manager-hub"
     updateTasksVersionType: 'patch'
     extensionVersion: '2.$(Build.BuildNumber)'
