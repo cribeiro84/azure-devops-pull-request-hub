@@ -6,7 +6,8 @@
     "scopes": [
       "vso.code",
       "vso.build",
-      "vso.graph"
+      "vso.graph",
+      "vso.work"
     ],
   "contributions": [{
     "id": "view",
