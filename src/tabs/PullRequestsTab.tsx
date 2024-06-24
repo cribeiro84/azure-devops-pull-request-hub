@@ -368,13 +368,14 @@ export class PullRequestsTab extends React.Component<
 
   private async getRepositories(projectId: string): Promise<GitRepositoryModel[]> {
     const repos = (await this.gitClient.getRepositories(projectId, true) as GitRepositoryModel[]).filter(r => r.isDisabled === undefined || r.isDisabled === false);
+    
     let { repositories } = this.state;
 
-    repositories.push(...repos);
-    repositories = repositories.sort(Data.sortTagRepoTeamProject);
+    let newRepositories = repos.map(x => repositories.find(r => r.id === x.id) ?? x);
+    newRepositories = newRepositories.sort(Data.sortTagRepoTeamProject);
 
     this.setState({
-      repositories,
+      repositories: newRepositories,
     });
 
     return repos;
