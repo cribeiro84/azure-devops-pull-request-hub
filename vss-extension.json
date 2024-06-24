@@ -9,7 +9,8 @@
   "scopes": [
     "vso.code",
     "vso.build",
-    "vso.graph"
+    "vso.graph",
+    "vso.work"
   ],
   "targets": [{
     "id": "Microsoft.VisualStudio.Services"
